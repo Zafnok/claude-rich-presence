@@ -26,7 +26,7 @@ Designed in [ADR-0012](../../architecture/adr/0012-project-profiles-and-reposito
 
 In `internal/config`:
 
-- A `projects` list in the configuration file. Each entry has `path`, and optionally `privacy`, `name` and `link`.
+- A `projects` list in the configuration file. Each entry has `path`, and optionally `privacy`, `name`, `areas` and `link`.
 - A pure function that, given a working directory and the loaded configuration, returns the effective settings for that session: the matching profile's values over the global ones.
 - Matching rules:
   - a session matches a profile when its working directory is the profile's path or inside it;
@@ -36,6 +36,7 @@ In `internal/config`:
 - Validation per entry, with the fall-back-and-warn behaviour of CRP-012: a bad entry is skipped with one warning and never stops the program.
 - A link validator as a pure function, implementing the rules in ADR-0012: `https` only, host allowlist with `github.com` as default and a `link_hosts` setting to extend it, no credentials, no query, no fragment, owner and repository path in a conservative character set, length limit. It accepts a trailing `.git` and removes it.
 - A display-name validator: one line, a length cap, control characters and markup removed.
+- An areas validator: a capped number of entries, each cleaned like a display name with a shorter cap, duplicates removed after normalising case and spacing.
 - Use of the profile's `name` in place of the directory name wherever the project name is shown.
 
 Profiles are read from the user's configuration file only. Environment variables do not define profiles.
@@ -54,6 +55,7 @@ Profiles are read from the user's configuration file only. Environment variables
 - [ ] A profile can lower the privacy level as well as raise it.
 - [ ] The link validator has a table test with at least: a valid GitHub link, `http`, a credential in the URL, a query string, a fragment, an extra path segment, a host not on the allowlist, a look-alike host such as one that merely ends with or contains the allowed name, an over-long value, and a link with a trailing `.git`.
 - [ ] A fuzz test shows the validator never accepts a URL containing `@`, `?` or `#`, and never panics.
+- [ ] The areas list is covered for: over the entry cap, an over-long entry, duplicates differing only in case or spacing, and entries that are empty after cleaning.
 - [ ] A rejected link produces one warning that names the profile and does not echo the value.
 - [ ] An invalid or duplicate profile entry is skipped with one warning, and the rest load.
 - [ ] No code path reads a file inside a project directory.

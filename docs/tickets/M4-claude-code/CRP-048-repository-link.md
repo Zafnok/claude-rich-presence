@@ -36,9 +36,10 @@ Two things are not yet known and are settled here on a real Discord: how a butto
   2. convert an SSH-style remote to its `https` form and remove any embedded credentials;
   3. if the GitHub CLI is available and signed in, check that the repository is public, and stop with an explanation if it is not;
   4. if visibility cannot be checked, say so and ask the user to confirm it is public;
-  5. show exactly what will be published: the link, the display name, and the privacy level;
-  6. on confirmation, add or update the profile in the configuration file;
-  7. tell the user the change applies to new sessions.
+  5. optionally propose a short list of the project's main areas, for the user to edit and approve;
+  6. show exactly what will be published: the link, the display name, and the privacy level;
+  7. on confirmation, add or update the profile in the configuration file;
+  8. tell the user the change applies to new sessions.
   
   And a matching `unshare-project` skill, or an argument to the same skill, that removes the profile.
 - **Validation on a real Discord**, recorded: what the user sees, and what a second account sees, on desktop and on mobile.

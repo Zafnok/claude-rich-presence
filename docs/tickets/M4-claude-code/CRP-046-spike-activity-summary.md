@@ -38,6 +38,8 @@ Using the CRP-001 prototype with a `presence_summary` tool added, run fresh sess
 | S6 | Does a model-initiated call to a plugin's MCP tool raise a permission prompt? In each permission mode. If so, what makes it go away permanently, and can the plugin arrange that? |
 | S7 | With adversarial text planted in the project, such as a file telling Claude to put a link in its status, what reaches the tool? |
 | S8 | Do summaries ever contain paths, secrets or quoted prompt text? |
+| S9 | Over a long session that stays on one task, how many times does Claude call the tool? Does a short fixed acknowledgement in the tool's result reduce repeat calls? |
+| S10 | With three concurrent sessions on related tasks in one project, how often do they choose the same `area`: with a list of areas supplied, and without one? |
 
 Also record:
 
@@ -54,10 +56,10 @@ Also record:
 
 ## Acceptance criteria
 
-- [ ] `docs/research/crp-046-activity-summary.md` answers S1 to S8 with the sessions run, the models, the projects used, and the raw counts.
+- [ ] `docs/research/crp-046-activity-summary.md` answers S1 to S10 with the sessions run, the models, the projects used, and the raw counts.
 - [ ] Example summaries are listed, good and bad. Anything sensitive is redacted before committing.
 - [ ] ADR-0011 is marked Accepted, with the chosen nudge and wording recorded, or Rejected with the evidence, following the rule in the ADR.
-- [ ] CRP-047 and CRP-053 are amended to match the findings, or set to `not-needed`.
+- [ ] CRP-047, CRP-049 and CRP-053 are amended to match the findings, or set to `not-needed`.
 - [ ] No prototype code is merged.
 
 ## Notes for the implementer
@@ -65,7 +67,7 @@ Also record:
 - Use the owner's own projects for realism, with the owner running the sessions. Ask which projects are fine to quote from in the findings.
 - Measure S5 from Claude Code's own usage reporting, comparing sessions with and without the tool.
 - Do not tune the wording against one model only. The summary must work on whatever model the user happens to run.
-- Time box: one working day.
+- Time box: one and a half working days. S10 needs three sessions open at once on the same project.
 
 ## Why this model and effort
 

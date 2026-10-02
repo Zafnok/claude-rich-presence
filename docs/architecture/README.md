@@ -165,6 +165,8 @@ Exact strings, truncation to Discord's limits and the tool-kind vocabulary are s
 
 Nothing in a hook event says what the user is working on. The session's own Claude knows, so at the `summary` level the adapter exposes one more tool, `presence_summary`, and asks Claude to call it with a short phrase when a task begins or changes: "Building the battle system", with the project named beside it. The phrase is sanitised in the adapter, can be limited to chosen project directories, and is never logged. The same tool can give Claude Desktop Chat a real activity line. This is proposed in [ADR-0011](adr/0011-model-authored-activity-summary.md) and depends on a spike, [CRP-046](../tickets/M4-claude-code/CRP-046-spike-activity-summary.md), because it rests on how reliably the model makes the call.
 
+The phrase is meant to be stable. The adapter holds it for the life of the session, Claude is asked for it once per task and not per turn, a repeat changes nothing, and a new phrase replaces the shown one no sooner than a minimum dwell time. When several sessions are open in one project, each labels its task with a broader area, and a fixed rule in the renderer shows the shared area: sessions on battler AI, the prep screen and sprites read as "Working on the battle engine". A project's profile can list its areas so that sessions agree on the words.
+
 ### Project profiles and the repository link
 
 Privacy is not one setting for everything. The configuration file can hold a profile per project directory, giving that project its own privacy level, a display name, and optionally a link to its repository. So a user can stay at `minimal` everywhere and opt one project in to a summary and a link, shown as a button on the activity.

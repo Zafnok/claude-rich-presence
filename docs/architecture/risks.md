@@ -23,6 +23,7 @@ Ordered by how much damage each could do to the plan. "Retired by" names the tic
 | R17 | Claude does not call the summary tool reliably, or a permission prompt interrupts the user | Medium | Low: the feature is dropped or marked experimental | Spike with explicit pass criteria before any code. A hook-delivered reminder as the fallback nudge | CRP-046 |
 | R18 | A published repository link points at a private repository, or a repository is made private later | Low | Low: the owner and name are revealed and the link leads nowhere | Per-project opt-in only. The setup skill checks visibility with the user's GitHub CLI. Documented | CRP-048 |
 | R19 | In a permission mode without prompts, text in a repository talks Claude into opting that project in by editing the configuration file | Low | Low: a link and phrase for that project are published | No tool can write profiles. The edit is visible and prompted in default modes. The link is validated. Documented | CRP-048, CRP-062 |
+| R20 | Sessions in one project label related work with different area names, so the shared line does not appear | Medium without a list of areas, low with one | Low: presence shows the focus session's own phrase instead | Areas listed in the project profile. Agreement measured in the spike before the roll-up is built | CRP-046, CRP-049 |
 
 ## Accepted limitations
 

@@ -32,6 +32,7 @@ Facts:
    | `path` | The project's root directory |
    | `privacy` | A privacy level for this project, overriding the global one in either direction |
    | `name` | A display name, such as "Visions of Shuyi", used in place of the directory name |
+   | `areas` | An optional list of the project's main parts, such as "battle engine" or "story". Claude chooses from it when labelling a task, which is what lets several sessions roll up to a shared line. See [ADR-0011](0011-model-authored-activity-summary.md) |
    | `link` | A repository URL to publish |
 
 2. Profiles live **only in the user's own configuration file**. A file inside a repository can never opt a user in, because then cloning a repository would change what the user publishes.
