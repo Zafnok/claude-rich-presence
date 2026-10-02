@@ -43,6 +43,14 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\crp-002-spike\runbook
 
 The runbook asks for each action in Claude Desktop, records it in the log, and shows which servers are alive after each step.
 
+The first run, on 2026-10-02, left out every step that needs Claude Desktop to be quit. Those are a second, shorter list of about ten minutes:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\crp-002-spike\runbook.ps1" -Later
+```
+
+The raw logs stay on the owner's machine. They are not committed, because they hold local paths.
+
 ## Clean up
 
 Uninstall the extension in Claude Desktop, then delete `~/crp-002-spike`, `~/.rich-presence-crp002`, `%TEMP%\rich-presence-crp002`, `%LOCALAPPDATA%\rich-presence-crp002` and `%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Local\rich-presence-crp002`.
