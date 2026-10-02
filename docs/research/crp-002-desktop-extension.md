@@ -1,115 +1,237 @@
 # CRP-002 findings: Claude Desktop extension lifecycle
 
-**Status: draft.** The parts that could be run without the Claude Desktop user interface are done and recorded below. The owner's run of the runbook is pending; every answer that depends on it says so.
-
 Ticket: [CRP-002](../tickets/M0-foundation/CRP-002-spike-desktop-extension.md). Prototype: branch [`spike/crp-002`](https://github.com/Zafnok/claude-rich-presence/tree/spike/crp-002/spike/crp-002), never merged.
+
+**Coverage.** Windows is covered except for the steps that need Claude Desktop to be quit and started again, which the owner deferred. macOS is untested. Both gaps are listed under [Not tested](#not-tested) and [Remaining steps](#remaining-steps).
+
+## Answers
+
+| # | Question | Answer | Basis |
+|---|---|---|---|
+| B1 | When is the server started | As soon as the extension is installed and enabled, with no chat opened and no tool used. Whether it also starts at app launch is not tested | Observed |
+| B2 | One server per app, window or conversation | **Two per app.** Claude Desktop runs two copies of the server for as long as the extension is enabled, one for each of two internal clients. New chats, messages and a new Code-tab session started no others. A second window was not tried | Observed |
+| B3 | When is it stopped; is it restarted | Minimising does nothing. Uninstalling closes its input and ends the process within five seconds. **A server that exits by itself is not restarted**, with exit code 0 or 1, until the extension is switched off and on. Saving the extension's settings restarts one of the two copies only. Closing the window, the tray and quitting are not tested | Observed |
+| B4 | `clientInfo` | `claude-ai` version `0.1.0` for one copy, `local-agent-mode-` followed by the extension's display name, version `1.0.0`, for the other. Claude Code sends `claude-code`. All three are distinguishable | Observed |
+| B5 | A server with one diagnostic tool, or none | Both install and run with no warning beyond the standard notice that an extension can access everything on the computer. A successful tool call from Chat was not observed | Observed, with a gap |
+| B6 | How `user_config` reaches the server | Substituted into the arguments and environment named in the manifest, as strings. An optional value left empty arrives as the **literal text** `${user_config.KEY}`. The server is first started before the settings form is saved | Observed |
+| B7 | Shared host | **Fails at `%LOCALAPPDATA%\rich-presence`.** Works under `%TEMP%` and under a folder in the home directory. Named pipes also cross the boundary | Observed |
+| B8 | Job object | Yes. The server is in a job whose limits include kill-on-close. What happens when the app exits is not tested | Observed |
+| B9 | macOS Gatekeeper | Not tested. Open, flagged in the risk register as R5 | |
+| B10 | Unsigned binary on Windows | No SmartScreen or antivirus prompt, with Defender's real-time protection on and the bundle marked as downloaded from the internet | Observed |
+| B11 | Extension in the Code tab | Not attached. A new Code-tab session saw no extension tool, and Claude Code started no copy of the server. No doubled adapter | Observed |
+| B12 | Discord pipe from inside | The server opened `\\.\pipe\discord-ipc-0` every time. A handshake sent from inside Claude Desktop's process tree got the expected reply. A handshake with a real application id was not sent | Observed, with a gap |
+| B13 | Console window | None seen at install. The process has a console window that is not visible. App launch is not tested | Observed |
+| | Cowork | Not tested | |
 
 ## Environment
 
 | Item | Value |
 |---|---|
-| Date | 2026-10-02 |
+| Date | 2026-10-02. Times below are UTC |
 | Operating system | Windows 11 Pro 25H2, build 26200.9457 |
-| Claude Desktop | 2.9939.4.0, Store package `Claude_pzs8sxrjxfjjc`, x64 |
+| Claude Desktop | 2.9939.4.0, Store package family `Claude_pzs8sxrjxfjjc`, x64 |
 | Claude Code, as bundled with Claude Desktop | 2.1.284 |
-| Go | 1.27.0 |
-| macOS | Not tested yet |
+| Discord | Desktop client, running |
+| Microsoft Defender | Real-time protection on |
+| Go | 1.27.0, `windows/amd64`, `CGO_ENABLED=0` |
+| macOS | Not tested |
 
-## Method
+## What was run
 
-The prototype is one Go binary. As an MCP server it answers `initialize`, `ping`, `tools/list` and `tools/call`, and appends everything it observes to a log in the user's home directory: start, arguments, environment, parent process chain, package identity, job object, console window, and where each path really resolves. For B7 it plays the election of ADR-0005 in three candidate directories at once. The same binary runs as a `peer` from a terminal for comparison. Its README on the spike branch describes it in full.
+The prototype is one Go binary, standard library only. As an MCP server it answers `initialize`, `ping`, `tools/list` and `tools/call`, and appends what it observes to a log in the home directory: start, arguments, environment, parent process chain, package identity, job object, console window, the real location of each path it opens, a heartbeat every five seconds, input closing, and exit. For B7 it plays the election of [ADR-0005](../architecture/adr/0005-presence-host-election.md) in three candidate directories at once: take the lock, then listen on the socket or connect to it. The same binary runs as a `peer` from a terminal for comparison. It was packed as an MCPB bundle of server type `binary`, manifest version `0.3`, with one `user_config` option of each kind. The bundle file was given a Mark of the Web, as a downloaded release would have.
 
-Two kinds of process were compared:
+Reading the parent process chain and the job object is spike instrumentation. The product does neither ([ADR-0008](../architecture/adr/0008-privacy-and-safety-by-default.md)).
 
-- **Inside**: a process whose ancestors include Claude Desktop. So far this is a shell in the Desktop Code tab: `Claude.exe` (the Store package) → `claude.exe` (Claude Code) → `cmd.exe` → `powershell.exe` → prototype.
-- **Outside**: a process with no Claude ancestor. So far this was started through WMI, so its parent is `WmiPrvSE.exe`. The owner's run repeats it from an ordinary terminal.
+Three kinds of process were compared:
 
-## Observed so far
+| Name here | What it is | Parent chain |
+|---|---|---|
+| Extension server | The bundle's binary as Claude Desktop starts it | `Claude.exe` (the Store package) → server |
+| Code-tab process | Started from a shell in a Desktop Code-tab session | `Claude.exe` → `claude.exe` (Claude Code) → `cmd.exe` → `powershell.exe` → prototype |
+| Outside process | No Claude ancestor | Windows Terminal → PowerShell → prototype, and in the pre-tests `WmiPrvSE.exe` → prototype |
 
-### Claude Desktop's children see a redirected `%LOCALAPPDATA%`
+Two runs:
 
-1. A file written to `%LOCALAPPDATA%\crp002-probe\` from the Code-tab shell was physically created at `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\crp002-probe\`, as reported by `GetFinalPathNameByHandle`. Inside, it is visible at both paths.
-2. That private directory already held `go-build`, `pip`, `NuGet`, `GitHub CLI` and others: caches written by tools that Code-tab sessions ran.
-3. The inside process has **no package identity**: `GetCurrentPackageFullName` returns 15700. The redirection applies anyway. It is in a job object; the innermost job has no limit flags.
-4. Claude Desktop's package manifest declares file-system write virtualisation with four excluded directories, all Claude's own. Anything else new under `AppData` is redirected.
-5. Claude Code reports its own path under `...\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude-code\`, so `%APPDATA%` is redirected in the same way.
+1. **Pre-tests**, by the agent, from a Code-tab session: the redirection probes, B7 in both orders between a Code-tab process and an outside process, the named pipe test, the `%APPDATA%` test, Claude Code's `clientInfo`, and a Discord handshake.
+2. **The runbook**, by the owner, from Windows Terminal, 06:14 to 06:31: `runbook.ps1` on the spike branch prompted each action in Claude Desktop and recorded it in the same log. The owner installed the bundle by the install dialog, kept the default settings, typed a sample secret, and left the Discord application id empty.
 
-Microsoft documents this for packaged apps on Windows 10 version 1903 and later: new files and folders created directly under `AppData\Local` and `AppData\Roaming` go to a private per-package location; an existing real folder is opened in place.
+Corrections the owner made to the run, applied here:
 
-### B7, first result: `%LOCALAPPDATA%\rich-presence` does not work
+- The steps that said "close the window with X", "quit Claude Desktop" and "start Claude Desktop again" were **not performed**. Their recorded results are discarded.
+- Several steps that asked for a Chat conversation were done in the **Code tab** instead.
+
+## Observations
+
+### Start, number of servers and clients (B1, B2, B4)
+
+At 06:15:59, on completing the install dialog and before any chat was opened, two servers started within 8 ms of each other. Both are direct children of the Claude Desktop main process. They differ only in the client that initialised them:
+
+| | First copy | Second copy |
+|---|---|---|
+| `clientInfo.name` | `claude-ai` | `local-agent-mode-CRP-002 spike (throwaway)`, which is `local-agent-mode-` plus the manifest's `display_name` |
+| `clientInfo.version` | `0.1.0` | `1.0.0` |
+| `protocolVersion` | `2025-11-25` | `2025-11-25` |
+| `capabilities` | `extensions` with `io.modelcontextprotocol/ui` | The same, plus `roots` with `listChanged` |
+| After `initialize` | `notifications/initialized`, then `tools/list` | The same |
+| Later messages | None | `notifications/roots/list_changed`, three times |
+
+For comparison, Claude Code 2.1.284 in print mode sent `clientInfo.name` `claude-code`, title `Claude Code`, version `2.1.284`, protocol `2025-11-25`, capabilities `roots` and `elicitation`.
+
+Between 06:17 and 06:22 the owner opened a new conversation, sent messages, opened a second conversation and started a new Code-tab session. No further server started. No `ping` and no `tools/call` reached either server at any point in the run.
+
+The three `roots/list_changed` notifications arrived within seconds of the owner sending a message or starting a session. The prototype logged the method name only. This is a signal about activity, which the project does not use ([ADR-0008](../architecture/adr/0008-privacy-and-safety-by-default.md)).
+
+### Stop and restart (B3)
+
+| Event | What Claude Desktop did |
+|---|---|
+| Window minimised for 15 s | Nothing. Both servers kept running |
+| Both servers exited by themselves with code 0 | Not restarted in the 116 s before the owner intervened. The app showed "MCP server disconnected". A tool call in that time failed with "Tool execution failed"; it did not restart the server |
+| Extension switched off and on | Both copies started again |
+| Both servers exited by themselves with code 1 | The same: "server disconnected", no restart in 54 s, both started again when switched off and on |
+| Settings form saved, twice | The `claude-ai` copy had its input closed and a replacement started about 90 ms later with the new values. **The `local-agent-mode` copy was not restarted** and kept the old values |
+| Extension uninstalled | Both copies had their input closed in the same 20 ms. The copy set to stay alive after input closes wrote nothing after the first half second: its next heartbeat, due within five seconds, never came |
+
+### Tools (B5)
+
+With one tool listed, the install dialog said only that the extension would have access to everything on the computer. With the `claude-ai` copy restarted to list no tools, the owner saw no warning.
+
+No tool call reached the server. The one request to call the tool from a Code-tab session was answered by Claude with "There is no spike_status tool in this session". A later request, made while both servers were down, was attempted by Claude and failed, which shows the tool was listed in that conversation; which mode that conversation was in is not recorded.
+
+### Settings (B6)
+
+| Manifest option | How it arrived |
+|---|---|
+| String with a default, `minimal` | `minimal`, in both the environment variable and the argument |
+| Number with a default, `42`, later changed to `7` | `42`, then `7`, as text |
+| Boolean | `true` or `false`, as text |
+| Optional string, no default, left empty | The literal text `${user_config.discord_client_id}` |
+| Sensitive string | In the two servers started at install, before the form was saved: the literal placeholder. After saving: the value, in the environment in plain text |
+| `${__dirname}` | `C:\Users\<user>\AppData\Roaming\Claude\Claude Extensions\local.mcpb.nick-wentz.crp002-spike`, which is physically under the package's private copy of `Roaming` |
+
+Other facts about how the server is started:
+
+- The command `${__dirname}/server/crp002-spike.exe`, from the manifest's `win32` override, was run as written, with the forward slash.
+- Working directory: `C:\Windows\system32`.
+- Standard input and output are pipes. Standard error is a file.
+- The environment is a plain Windows user environment of 38 variables, plus the manifest's. No Claude-specific variable is set. `TEMP`, `LOCALAPPDATA` and `APPDATA` have their normal values.
+- The extracted binary carries no Mark of the Web, although the bundle did.
+
+### Redirection of `AppData` under Claude Desktop
+
+1. A file written to `%LOCALAPPDATA%\crp002-probe\` from a Code-tab process was physically created at `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\crp002-probe\`, as reported by `GetFinalPathNameByHandle`. From inside it is visible at both paths. From outside it is visible only at the second.
+2. The extension server's lock file under `%LOCALAPPDATA%` landed in the same private location.
+3. Neither kind of process has package identity: `GetCurrentPackageFullName` returns 15700. The redirection applies anyway.
+4. That private directory already held `go-build`, `pip`, `NuGet`, `GitHub CLI` and others: caches written by tools that Code-tab sessions ran.
+5. Claude Desktop's package manifest declares file-system write virtualisation with four excluded directories, all Claude's own.
+6. `%APPDATA%` behaves the same way. Tested with a folder holding a `config.json`:
+
+   | Who created the folder | Result |
+   |---|---|
+   | An outside process first | Fully shared. The inside process read the file, overwrote it and added a new file, all at the real path, and the outside process saw every change |
+   | An inside process first | **Split for good.** The folder exists only in the private copy. The outside process did not see it and created its own. The inside process kept reading its private file |
+
+Microsoft documents the rule for packaged apps on Windows 10 version 1903 and later: new files and folders created directly under `AppData\Local` and `AppData\Roaming` go to a private per-package location, and a file that exists only at the real location is opened there without redirection.
+
+### Shared host (B7)
 
 Each process tried, in each candidate directory, to take the lock, and then either listened on the socket or connected to it.
 
-**Inside process first, then outside:**
+**Extension servers running, then an outside process from a terminal** (the runbook):
 
-| Candidate | Inside process | Outside process | Result |
+| Candidate | Extension servers | Outside process | Result |
 |---|---|---|---|
-| `%LOCALAPPDATA%\rich-presence-crp002` | Lock taken, in the private package copy. `bind` on the socket failed: "An invalid argument was supplied" | Lock taken, in the real directory. Listening | **Two hosts** |
-| `%TEMP%\rich-presence-crp002` | Lock taken, real path. Listening | Lock refused. Connected to the inside process | One host |
-| `%USERPROFILE%\.rich-presence-crp002` | Lock taken, real path. Listening | Lock refused. Connected to the inside process | One host |
+| `%LOCALAPPDATA%\rich-presence-crp002` | One took the lock, in the private copy. `bind` failed: "An invalid argument was supplied". The other could not connect, same error | Took its own lock at the real path and listened | **Two hosts, and no working socket inside** |
+| `%TEMP%\rich-presence-crp002` | One took the lock at the real path and listened. The other connected to it | Lock refused. Connected to the extension server | One host |
+| `%USERPROFILE%\.rich-presence-crp002` | The same | The same | One host |
 
-**Outside process first, private copy deleted, then inside:**
+**Code-tab process first, then an outside process** (pre-test): the same three results.
 
-| Candidate | Outside process | Inside process | Result |
+**Outside process first, private copy deleted, then a Code-tab process** (pre-test):
+
+| Candidate | Outside process | Code-tab process | Result |
 |---|---|---|---|
-| `%LOCALAPPDATA%\rich-presence-crp002` | Lock taken, real path. Listening | Lock refused, correctly. `connect` failed: "An invalid argument was supplied" | **One host, unreachable from inside** |
-| `%TEMP%\rich-presence-crp002` | Lock taken. Listening | Lock refused. Connected | One host |
-| `%USERPROFILE%\.rich-presence-crp002` | Lock taken. Listening | Lock refused. Connected | One host |
+| `%LOCALAPPDATA%\rich-presence-crp002` | Took the lock at the real path and listened | Lock refused, correctly. `connect` failed: "An invalid argument was supplied" | **One host, unreachable from inside** |
+| `%TEMP%\rich-presence-crp002` | Took the lock and listened | Lock refused. Connected | One host |
+| `%USERPROFILE%\.rich-presence-crp002` | Took the lock and listened | Lock refused. Connected | One host |
 
-So under `%LOCALAPPDATA%` the design fails both ways. If the inside process creates the directory, there are two hosts. If the outside process creates it, the lock is shared but an inside process can neither bind nor connect a Unix socket there.
+Failover was also seen under `%TEMP%` and the home directory: when the copy holding the lock was replaced after a settings change, the surviving copy noticed the closed connection and connected to the new holder 300 ms later.
 
-`%TEMP%` is `%LOCALAPPDATA%\Temp`. It is not redirected, because the folder already exists for real, and Unix sockets work in it from both sides.
+`%TEMP%` is `%LOCALAPPDATA%\Temp`. Files created in it are not redirected, which matches the documented rule: the `Temp` folder already exists at the real location.
 
-### Named pipes cross the boundary
+**Named pipes.** A pipe created outside was opened from a Code-tab process, and one created inside was opened from outside. Data flowed both ways.
 
-A named pipe created outside was opened from inside, and one created inside was opened from outside. Data flowed both ways. This used .NET's pipe classes from PowerShell, not the prototype.
+### Job object (B8)
 
-### B4, first half: what Claude Code sends
-
-Claude Code 2.1.284, started in print mode with the prototype as its only MCP server, sent:
-
-| Field | Value |
-|---|---|
-| `protocolVersion` | `2025-11-25` |
-| `clientInfo.name` | `claude-code` |
-| `clientInfo.title` | `Claude Code` |
-| `clientInfo.version` | `2.1.284` |
-| `capabilities` | `roots`, `elicitation` |
-
-It started the server with pipes for all three standard streams and no console window.
-
-## Inferred, not yet observed
-
-- The extension's server, a direct child of `Claude.exe`, sees the same redirection as the Code-tab shell. The owner's run checks it.
-- The redirection affects **every adapter started under Claude Desktop**, including the Claude Code plugin's adapter in a Code-tab session. The problem is wider than the desktop extension.
-- The configuration directory of CRP-012 and the log directory of CRP-034 are under `AppData` and would be affected in the same way.
-
-## Answers
-
-| # | Question | Answer |
+| Process | In a job | Limit flags of the innermost job |
 |---|---|---|
-| B1 | When is the server started | Pending owner run |
-| B2 | One server per app, window or conversation | Pending owner run |
-| B3 | When is it stopped; is it restarted | Pending owner run |
-| B4 | `clientInfo` from Claude Desktop | Pending owner run. Claude Code's is above |
-| B5 | A server with one diagnostic tool, or none | Pending owner run |
-| B6 | How `user_config` reaches the server | Pending owner run |
-| B7 | Shared host | **Fails at `%LOCALAPPDATA%`** for a Code-tab process. Works at `%TEMP%` and in a home-directory folder. Pending confirmation for the extension's own server |
-| B8 | Job object | Code-tab shell: in a job, no limit flags. Pending for the extension's server |
-| B9 | macOS Gatekeeper | Not tested |
-| B10 | Windows SmartScreen and antivirus | Pending owner run |
-| B11 | Extension in the Code tab | Pending owner run |
-| B12 | Discord pipe from inside | Pending owner run. Named pipes in general cross the boundary |
-| B13 | Console window | Pending owner run |
+| Extension server | Yes | `0x3c00`: kill on job close, die on unhandled exception, breakaway allowed, silent breakaway allowed |
+| Code-tab process | Yes | None |
+| Outside process | No | |
 
-## Untested
+### Unsigned binary and console window (B10, B13)
 
-Everything marked pending, and all of macOS.
+The owner saw no SmartScreen prompt, no antivirus prompt and no console window during the install. The server reports that it has a console window and that the window is not visible.
+
+### Code tab (B11)
+
+The owner started a new Code-tab session and asked for tools with "spike" in the name. Claude reported none. In the whole run no server was started by a `claude-code` client.
+
+### Discord (B12)
+
+All eight extension servers and both outside processes opened `\\.\pipe\discord-ipc-0` at the first attempt. With no application id configured, no handshake was sent from an extension server. A handshake sent from a Code-tab process with the deliberately invalid id `1` was answered by a close frame, opcode 2, code 4000, "Invalid Client ID". That is the reply the `discord-ipc` skill describes for a bad application id.
+
+## Inferred, not observed
+
+- The redirection comes from the job or container Claude Desktop's children run in, not from package identity. It therefore reaches **every adapter started under Claude Desktop, including the Claude Code plugin's adapter in a Code-tab session**. The Code-tab results above are direct evidence for that case.
+- The `local-agent-mode` client serves Cowork or agent sessions. Its name and its `roots` capability suggest it. Nothing observed says which.
+- The extension server would be ended with the app, because its job has kill-on-close. Not observed.
+- A handshake with a valid application id would succeed from an extension server. The pipe opens there, and the protocol works from a Code-tab process.
+
+## Not tested
+
+| What | Why | Where it stays open |
+|---|---|---|
+| Server start at app launch, with no chat opened | Needs the app to be quit and started. Deferred by the owner | Remaining steps |
+| Closing the window to the tray, and quitting | Deferred by the owner | Remaining steps |
+| Whether a server that ignores its input closing is ended at quit, and by what | Deferred by the owner | Remaining steps |
+| B7 with an outside process holding the lock **before** an extension server starts | Needs the app to be started second. The runbook's attempt is void: its clean-up deleted the socket files of a live host. The order was tested with a Code-tab process | Remaining steps |
+| A tool call from a Chat conversation | The tool steps were run in the Code tab | Remaining steps |
+| A second window | Not attempted | Remaining steps |
+| A Discord handshake with a real application id, from an extension server | No application id exists yet (CRP-003) | CRP-052, step V2 |
+| Cowork | Skipped | The first release does not cover Cowork |
+| Everything on macOS, including Gatekeeper (B9) and the socket location | No Mac was used | Risk register, R5 |
+| Other Windows versions, and other antivirus products | One machine | CRP-052 |
+| Whether the specification's bare relative command, without `${__dirname}`, works | The prototype used `${__dirname}` | CRP-051 |
+
+## Consequences applied in the same pull request
+
+| Finding | Change |
+|---|---|
+| B7 fails at `%LOCALAPPDATA%` | [ADR-0006](../architecture/adr/0006-control-channel.md): the Windows runtime directory is under `%TEMP%`. CRP-031 amended to match |
+| The same redirection would split the configuration file and the logs | New [ADR-0016](../architecture/adr/0016-windows-file-locations.md): on Windows nothing of ours lives directly under `AppData`. CRP-012 and CRP-034 amended |
+| Two servers per app, clients named as above, no restart after a self-exit | [ADR-0007](../architecture/adr/0007-integration-and-distribution.md), Desktop section revised. [ADR-0005](../architecture/adr/0005-presence-host-election.md) clarified. CRP-050 and CRP-052 amended |
+| Empty optional settings arrive as a placeholder; first start precedes the settings form; one copy keeps old settings | CRP-012, CRP-050 and CRP-051 amended |
+| No doubled adapter in the Code tab | Recorded in CRP-050 |
+| The directory no longer accepts MCPB submissions | CRP-064 amended |
+| R3, R4 and R5 | [Risk register](../architecture/risks.md) updated |
+| Facts others will look up | `claude-surfaces` skill updated |
+
+## Remaining steps
+
+These need about ten minutes at a time when Claude Desktop can be quit. `runbook.ps1 -Later` on the spike branch walks through them.
+
+1. Install the bundle again. In a **Chat** conversation, ask Claude to call `spike_status`.
+2. Open a second window, if the app offers one.
+3. Close the window with X. Check whether the servers keep running while the app is in the tray.
+4. With the linger setting on, quit the app. Watch whether the servers are ended, and how soon.
+5. Start a copy of the prototype from a terminal, then start the app without opening a chat. Check that the servers start, and that they connect to the terminal copy under `%TEMP%`.
+6. Uninstall.
 
 ## Live documentation checked on 2026-10-02
 
 | Source | What was confirmed |
 |---|---|
-| MCPB manifest specification | Manifest version `0.3`. Server type `binary`. `platform_overrides` by `win32`, `darwin`, `linux`. `user_config` types string, number, boolean, directory, file. Substitution of `${user_config.KEY}` in arguments and environment. The specification's own binary example uses a path relative to the bundle with no `${__dirname}`; the prototype uses `${__dirname}` |
-| Claude's MCPB page | Install by double-click, by drag and drop, or from Settings > Extensions > Advanced settings > Install Extension. Nothing about when the server starts or stops. **The directory no longer accepts MCPB submissions**; a local server reaches the directory only inside a plugin |
-| Microsoft, "Understanding how packaged desktop apps run on Windows" | The `AppData` redirection rules quoted above |
+| [MCPB manifest specification](https://github.com/modelcontextprotocol/mcpb/blob/main/MANIFEST.md) | Manifest version `0.3`. Server type `binary`. `platform_overrides` by `win32`, `darwin`, `linux`. `user_config` types string, number, boolean, directory, file. Substitution of `${user_config.KEY}` in arguments and environment. Nothing about server lifetime or signing. The specification's own binary example uses a path relative to the bundle without `${__dirname}` |
+| [Claude's MCPB page](https://claude.com/docs/connectors/building/mcpb) | Install by double-click, by drag and drop, or from Settings > Extensions > Advanced settings > Install Extension. Nothing about when the server starts or stops. **The directory no longer accepts MCPB submissions**; a local server reaches the directory only inside a plugin |
+| [Microsoft, "Understanding how packaged desktop apps run on Windows"](https://learn.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes) | The `AppData` redirection rule quoted above |

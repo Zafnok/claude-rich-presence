@@ -42,6 +42,9 @@ On Windows, and on a Mac if one is available, with the bundle built from `main`:
 | V12 | Leave everything idle past the idle-clear period | Behaviour matches what CRP-050 decided |
 | V13 | If an alternative Discord client such as Vesktop is available, repeat V2 with it | Presence appears. If not, record it as a known limitation. One other project's card disappeared there |
 | V14 | With presence showing, start a game that Discord detects | Record which activity Discord shows first. One other project's users lost their game activity |
+| V15 | Quit Claude Desktop, start it again and do not open a chat | Presence appears. CRP-002 saw the server start when the extension was enabled, but did not get to observe an app launch |
+| V16 | Close the Claude Desktop window so the app stays in the tray | Record whether presence stays. CRP-002 did not get to observe this |
+| V17 | Run `doctor` from a terminal while only Claude Desktop is providing presence | It finds the host. This is the check that the runtime directory is shared across Claude Desktop's packaging on Windows |
 
 ## Out of scope
 
@@ -58,6 +61,8 @@ On Windows, and on a Mac if one is available, with the bundle built from `main`:
 
 - A model can prepare the checklist, read the logs, and write up the record. Sonnet 5.5 at low effort is enough. The steps themselves are the owner's.
 - Run `doctor` from a standalone copy of the binary if a step fails, and attach its output.
+- Run the terminal steps from a terminal opened outside Claude Desktop. A terminal inside a Code-tab session is inside Claude Desktop's packaging and does not test the same thing.
+- Two server processes for the one extension are expected. CRP-002 found that Claude Desktop always starts two.
 
 ## Why this model and effort
 

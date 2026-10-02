@@ -21,7 +21,7 @@ From ADR-0008, and not negotiable:
 | Surface | Runs our plugin | Notes |
 |---|---|---|
 | Claude Code in a terminal | Yes | |
-| Claude Desktop, Code tab, local session | Yes | Runs the same Claude Code binary and reads the same user plugins. Observed |
+| Claude Desktop, Code tab, local session | Yes | Runs the same Claude Code binary and reads the same user plugins. Observed. A desktop extension is not attached to these sessions (CRP-002) |
 | VS Code and JetBrains extensions | Expected | To be confirmed by CRP-001 |
 | Cloud sessions, Claude Code on the web | Not usefully | Hooks run remotely. `CLAUDE_CODE_REMOTE` is `true` there, and the adapter does nothing |
 | Claude Desktop, Chat | No | Uses the desktop extension instead. No hooks exist |
@@ -150,7 +150,31 @@ A zip archive with a `manifest.json`.
 | `${__dirname}` refers to the extracted bundle directory | |
 | Declaring tools in the manifest is optional | |
 
-Unverified, owned by CRP-002: when Claude Desktop starts and stops the server, whether there is one per app, and whether Claude Code's bundle loader honours everything in the specification.
+Desktop extension listings in Anthropic's directory are deprecated and the directory no longer accepts MCPB submissions (Claude's MCPB page, 2026-10-02). Users install the bundle file themselves.
+
+### How Claude Desktop runs a bundle
+
+Observed by CRP-002 on Windows with Claude Desktop 2.9939.4. Not documented anywhere. The full record is `docs/research/crp-002-desktop-extension.md`.
+
+| Fact | Consequence |
+|---|---|
+| Two copies of the server run while the extension is enabled. Their `clientInfo.name` values are `claude-ai` and `local-agent-mode-` plus the extension's display name. Claude Code sends `claude-code` | Only the `claude-ai` copy reports the app (ADR-0007) |
+| They start as soon as the extension is installed and enabled, not per conversation | |
+| A server that exits by itself is not restarted until the extension is switched off and on | Never exit while input is open |
+| Saving the settings restarts the `claude-ai` copy only | |
+| An optional setting left empty arrives as the literal text `${user_config.KEY}`. The first start comes before the settings form is saved | Treat a placeholder as unset |
+| Settings arrive as text in the arguments and environment the manifest names. A sensitive one is still a plain environment variable | |
+| The bundle is extracted under `%APPDATA%\Claude\Claude Extensions\`. The working directory is `C:\Windows\system32`. Standard error goes to a file | |
+| No console window is shown, and no SmartScreen or Defender prompt appeared for an unsigned binary | One machine |
+| The server is in a job with kill-on-close | |
+
+Unverified: what happens to the servers when the app is launched, closed to the tray and quit; everything on macOS; Cowork; and whether Claude Code's bundle loader honours everything in the specification, which CRP-001 owns.
+
+### Claude Desktop's packaging on Windows
+
+Claude Desktop is a Store app. Every process it starts, at any depth, has **new folders directly under `%LOCALAPPDATA%` and `%APPDATA%` redirected** to `%LOCALAPPDATA%\Packages\Claude_<id>\LocalCache\`. That includes extension servers, Code-tab sessions and every tool those sessions run. A Unix socket cannot be bound or connected in a redirected folder. `%TEMP%` and the home directory are not redirected, and named pipes are shared.
+
+So on Windows we keep nothing directly under `AppData` (ADR-0006, ADR-0016). When testing anything that involves "inside Claude Desktop" against "a terminal", the terminal must be opened outside Claude Desktop.
 
 ## MCP over standard streams
 

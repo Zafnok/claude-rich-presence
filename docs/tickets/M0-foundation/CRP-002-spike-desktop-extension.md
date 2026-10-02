@@ -55,10 +55,19 @@ Optional, if time allows: does Cowork run an extension's server on the host or i
 
 - [ ] `docs/research/crp-002-desktop-extension.md` exists and answers B1 to B13 with what was run, on which operating system and app version, and what was observed.
 - [ ] Windows is covered. macOS is covered, or listed as untested with B9 left open and flagged in [risks.md](../../architecture/risks.md).
-- [ ] If B7 fails on any platform, [ADR-0006](../../architecture/adr/0006-control-channel.md) is amended with the corrected location or transport. If CRP-031 is still `todo`, it is amended to match. If it has started or finished, a follow-up ticket is written instead.
-- [ ] If B1 to B3 show the lifetime assumption is false, the Desktop section of ADR-0007 is revised and CRP-050 and CRP-052 are amended, or set to `not-needed` with the reason.
-- [ ] If B11 shows doubled adapters, CRP-050 states how the duplicate is handled.
-- [ ] The prototype is pushed to a branch named `spike/crp-002`, linked from the findings, and never merged.
+- [x] If B7 fails on any platform, [ADR-0006](../../architecture/adr/0006-control-channel.md) is amended with the corrected location or transport. If CRP-031 is still `todo`, it is amended to match. If it has started or finished, a follow-up ticket is written instead.
+- [x] If B1 to B3 show the lifetime assumption is false, the Desktop section of ADR-0007 is revised and CRP-050 and CRP-052 are amended, or set to `not-needed` with the reason.
+- [x] If B11 shows doubled adapters, CRP-050 states how the duplicate is handled.
+- [x] The prototype is pushed to a branch named `spike/crp-002`, linked from the findings, and never merged.
+
+## Progress on 2026-10-02
+
+Not done yet. The [findings](../../research/crp-002-desktop-extension.md) answer B2, B4 to B8 and B10 to B13 on Windows, and the consequences above are applied. Still open:
+
+- **B1 and B3, in part.** The owner could not quit Claude Desktop during the run, so the server was not observed at app launch, at window close, or at quit. The findings list the steps under "Remaining steps", and `runbook.ps1 -Later` on the spike branch walks through them.
+- **B9 and the rest of macOS.** No Mac was used. Recorded as untested and flagged in the risk register under R5, as the second criterion allows.
+
+The first criterion is met once the remaining Windows steps are run and written up.
 
 ## Notes for the implementer
 

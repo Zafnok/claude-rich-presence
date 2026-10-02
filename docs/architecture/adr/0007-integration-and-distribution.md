@@ -4,6 +4,8 @@
 
 **Proposed.** Accepted or replaced by the outcome of [CRP-001](../../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) for Claude Code and [CRP-002](../../tickets/M0-foundation/CRP-002-spike-desktop-extension.md) for Claude Desktop. Until then, only the tickets that name this ADR depend on it. The core does not.
 
+CRP-002 has reported on Windows, and the Claude Desktop section below was revised on 2026-10-02 to match its [findings](../../research/crp-002-desktop-extension.md). Still open there: what happens to the server when the app is started and quit, and all of macOS.
+
 ## Context
 
 The binary has to reach the user's machine, be started by Claude, and receive events, on three operating systems, without requiring a shell or a language runtime.
@@ -64,7 +66,28 @@ An illustration of one hook entry, not a specification:
 
 ### Claude Desktop
 
-The user installs the same bundle as a desktop extension. The adapter recognises the client from the MCP `initialize` request and reports only that the app is open.
+The user installs the same bundle as a desktop extension.
+
+Observed in CRP-002, on Windows with Claude Desktop 2.9939.4:
+
+| Fact | Consequence |
+|---|---|
+| Claude Desktop starts **two** copies of the server as soon as the extension is enabled, and keeps both while it stays enabled. One is initialised by a client named `claude-ai`, the other by a client named `local-agent-mode-` followed by the extension's display name | Two adapters, one app. Only one may report |
+| New conversations and Code-tab sessions start no further copies | The server is a signal for the app, not for a conversation |
+| A server that exits by itself is not restarted until the extension is switched off and on | The adapter must not exit while its input is open |
+| Saving the extension's settings restarts the `claude-ai` copy only. The other keeps the old values | Settings are trusted only in the `claude-ai` copy |
+| The server is first started before the settings form is saved, and an optional setting left empty arrives as the literal text `${user_config.KEY}` | A placeholder is treated as unset |
+| The extension is not attached to Code-tab sessions | The plugin's adapter is the only one in a Code-tab session |
+
+Rules:
+
+1. The adapter recognises the client from the MCP `initialize` request. The names are kept in one table.
+2. The copy whose client is `claude-ai` reports that the app is open, and nothing more.
+3. A copy whose client name starts with `local-agent-mode-` reports no session and does not stand for host. It still answers `presence_status`.
+4. An adapter never exits while its input is open. Standing down as host ([ADR-0005](0005-presence-host-election.md)) releases the lock and keeps the process.
+5. A setting whose value still contains `${user_config.` is treated as not set.
+
+Not yet observed: whether both copies start when the app is launched and stop when it quits. The design assumes they do. If they do not, this section is revised again.
 
 ### Tools
 

@@ -22,7 +22,7 @@ The operating-system pieces under the control channel: where the socket and lock
 
 [ADR-0005](../../architecture/adr/0005-presence-host-election.md) elects the host with a lock, and [ADR-0006](../../architecture/adr/0006-control-channel.md) fixes the transport and the directory rules. The lock is what makes stale-socket cleanup safe.
 
-This ticket does not wait for CRP-002. If that spike's findings are already in `docs/research/`, follow them for the Windows location. If not, use the default in ADR-0006. A later change is confined to one function.
+CRP-002 found that the first Windows location, `%LOCALAPPDATA%\rich-presence`, does not work: Claude Desktop redirects it for every process it starts, and a Unix socket cannot be bound or connected there. ADR-0006 now puts the Windows runtime directory under `%TEMP%`. The evidence is in the [findings](../../research/crp-002-desktop-extension.md).
 
 ## Scope
 
@@ -47,6 +47,7 @@ Package `internal/control/transport`:
 ## Acceptance criteria
 
 - [ ] The resolver is tested for all three operating systems on every operating system, including the override, each fallback, and a path at, one under and one over the length limit.
+- [ ] For a Windows environment, the resolver returns `%TEMP%\rich-presence`, and never a folder directly under `%LOCALAPPDATA%` or `%APPDATA%`.
 - [ ] Two processes contend for the lock and exactly one gets it. Tested with a real second process on each operating system.
 - [ ] When the lock holder is killed, a waiting process can take the lock. Tested with a real process on each operating system.
 - [ ] A leftover socket file from a dead process does not prevent a new holder from listening.
@@ -60,7 +61,9 @@ Package `internal/control/transport`:
 ## Notes for the implementer
 
 - The second-process tests can re-execute the test binary with an environment variable that selects a helper mode. Keep that helper covered.
-- Unix sockets on Windows live in the file system like elsewhere but do not honour Unix permission bits. State what protects the directory on Windows, which is the default access control on the user's local application data, and test what can be tested.
+- Unix sockets on Windows live in the file system like elsewhere but do not honour Unix permission bits. State what protects the directory on Windows, which is the default access control on the user's temporary directory, and test what can be tested.
+- On Windows, resolve the temporary directory from the environment passed in, not from a system call, so the resolver stays a pure function. CRP-002 saw the same `TEMP` value in a terminal, in a Code-tab session and in a server started by Claude Desktop.
+- A socket file removed while its listener is still running leaves a host nobody can reach: followers are refused the lock and refused the connection. CRP-002 did this by accident. Nothing but the lock holder may remove the file, which is already a criterion above.
 - Check the macOS socket path limit against the temporary directory macOS actually assigns, which is long. The hashed fallback is likely to be the common path there.
 - On Windows, deleting a socket file that another process still has open behaves differently than on Unix. Test the stale-file case for real.
 
