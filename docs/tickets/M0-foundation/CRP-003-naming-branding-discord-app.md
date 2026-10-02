@@ -50,9 +50,9 @@ Only the owner can do this. It needs the owner's Discord account and the owner's
 ## Acceptance criteria
 
 - [ ] ADR-0010 is marked Accepted and records the chosen application name, the repository-name decision, and the decision on asking Anthropic.
-- [ ] The application id is recorded where CRP-012 defines the default, replacing the placeholder.
-- [ ] The four assets are uploaded under the keys above, and the source artwork with its license or authorship is stored in the repository under `extension/` or a documented location.
-- [ ] The extension icon is supplied for CRP-051.
+- [ ] The application id is recorded in ADR-0010. If CRP-012 has already landed, the default in the code is updated in the same pull request. If not, CRP-012 takes it from the ADR.
+- [ ] The four assets are uploaded under the keys above, and the source artwork with its license or authorship is stored in the repository under `assets/`, with a short note of its authorship and license.
+- [ ] The extension icon is stored as `assets/icon.png`. CRP-051 uses it if it is there and a placeholder if not.
 - [ ] The notice text is final in the README.
 
 ## Notes for the implementer

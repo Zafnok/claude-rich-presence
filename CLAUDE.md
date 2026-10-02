@@ -24,7 +24,7 @@ The repository is in its architecture phase. Until [CRP-004](docs/tickets/M0-fou
 
 ## Working on a ticket
 
-Use the `work-ticket` skill. In short: confirm every ticket in `blocked_by` is `done`, branch as `crp-NNN-short-slug`, write tests first, run the `quality-gate` skill before opening a pull request, and update the ticket's `status` and the index table in the same pull request.
+Use the `work-ticket` skill. In short: confirm every ticket in `blocked_by` is `done`, branch as `crp-NNN-short-slug`, write tests first, run the `quality-gate` skill before opening a pull request, and update the ticket's `status` in its own file in the same pull request. A ticket whose `blocked_by` tickets are all done can be worked in parallel with any other.
 
 ## Skills in this repository
 

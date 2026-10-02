@@ -50,7 +50,7 @@ Package `internal/adapter/code`:
   - `minimal`: publish only that the session exists and its timestamps.
   - `standard`: add status, tool kind and model family.
   - `full`: add the project name, which is the last element of the working directory.
-- Publishes through the host node's non-blocking call.
+- Publishes through a small publish interface that this package defines. CRP-033 connects it to the host node. This ticket does not need the host, and tests against a fake.
 - **Always returns an empty success result**, for valid input, invalid input and internal errors alike.
 
 **Session identity**
@@ -62,7 +62,7 @@ Package `internal/adapter/code`:
 
 **`presence_status` tool**
 
-- Returns the host's diagnostic summary as short text. Read-only.
+- Returns a diagnostic summary as short text. Read-only. The summary arrives through a second small interface defined here, which CRP-033 connects to the host.
 
 **Descriptions**
 
@@ -81,10 +81,10 @@ Package `internal/adapter/code`:
 - [ ] **Leak test**: every field that could carry user content is seeded with a marker string. At every privacy level, the marker never appears in any published event. At `minimal` and `standard`, no part of the working directory appears either.
 - [ ] At `full`, only the last path element of the working directory is published, for both slash styles and for a trailing separator.
 - [ ] Unknown event names, missing fields, wrong types and oversized values all produce an empty success result and publish nothing.
-- [ ] With the host node stalled, the tool handler still returns immediately.
+- [ ] With the publish interface stalled, the tool handler still returns immediately.
 - [ ] The provisional id is replaced by the real one without creating a second session, and a changed id rebinds without leaving the old session behind.
 - [ ] `presence_status` output contains no project name and no path.
-- [ ] The handler performs no I/O. Shown by construction: it has only the node's publish call and pure functions.
+- [ ] The handler performs no I/O. Shown by construction: it has only the publish interface and pure functions.
 
 ## Notes for the implementer
 

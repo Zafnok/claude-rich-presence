@@ -5,7 +5,7 @@ milestone: M4 Claude Code
 type: feature
 status: conditional
 priority: P0
-blocked_by: [CRP-001, CRP-032]
+blocked_by: [CRP-001, CRP-002, CRP-043]
 blocks: []
 model: claude-opus-5-5
 effort: high

@@ -5,7 +5,7 @@ milestone: M6 Release
 type: chore
 status: todo
 priority: P1
-blocked_by: [CRP-003, CRP-005, CRP-042, CRP-043, CRP-051]
+blocked_by: [CRP-003, CRP-005, CRP-007, CRP-042, CRP-043, CRP-051]
 blocks: [CRP-063, CRP-064]
 model: claude-sonnet-5-5
 effort: high

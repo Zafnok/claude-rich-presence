@@ -64,7 +64,7 @@ Also record, because later tickets need them:
 - [ ] The per-event field table is recorded, and the event table in the architecture overview is corrected if it was wrong.
 - [ ] ADR-0007's status is changed to Accepted, or to Superseded with a new ADR adopting the fallback. The decision follows the rule in the ADR: A1, A2, A4, A5 or A6 failing without a workaround means fallback.
 - [ ] CRP-044 is set to `not-needed` or to `todo` accordingly, and CRP-041, CRP-042 and CRP-051 are amended if the findings change their scope.
-- [ ] No prototype code is merged.
+- [ ] The prototype is pushed to a branch named `spike/crp-001`, linked from the findings, and never merged. CRP-046 builds on it.
 
 ## Notes for the implementer
 

@@ -5,8 +5,8 @@ milestone: M1 Core
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004]
-blocks: [CRP-011, CRP-030, CRP-032, CRP-041]
+blocked_by: [CRP-004, CRP-005]
+blocks: [CRP-011, CRP-020, CRP-030, CRP-032, CRP-041]
 model: claude-sonnet-5-5
 effort: high
 size: M
@@ -32,6 +32,7 @@ Package `internal/domain`:
 - **Tool kind**: a closed vocabulary. Editing, running commands, reading, searching, browsing, delegating, using tools, and a generic value.
 - **Registry**: applies an event and returns the new state; removes a session; replaces a session wholesale from a sync; returns an immutable snapshot.
 - Validation of each event: required fields per kind, length limits on every string.
+- **Activity**: the value the renderer produces and the Discord codec encodes: two text lines, a start time, large and small image keys with their hover text, and an activity type. It has equality, so duplicates can be dropped. It is defined here so that the renderer (CRP-011) and the codec (CRP-020) agree without depending on each other.
 
 ## Out of scope
 

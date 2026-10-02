@@ -5,7 +5,7 @@ milestone: M1 Core
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004]
+blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-014, CRP-033, CRP-034, CRP-041]
 model: claude-sonnet-5-5
 effort: medium
@@ -37,12 +37,12 @@ Package `internal/config`:
 
 - Precedence, highest first: environment variables named `RICH_PRESENCE_` plus the upper-cased setting name, the file, defaults.
 - The file is JSON, named `config.json`, in a `rich-presence` directory under the operating system's user configuration directory.
-- A function that resolves the configuration, log and runtime directories for the current operating system, taking the environment as a parameter.
+- A function that resolves the configuration and log directories for the current operating system, taking the environment as a parameter. The runtime directory for the control socket is not resolved here. CRP-031 owns it.
 - Validation that reports every problem and then **falls back to the default for that setting**. A missing file is normal. A malformed file, an unknown key or an invalid value produces a warning and never an error exit.
 
 ## Out of scope
 
-- The control socket path rules, which are CRP-031. This ticket supplies the base directory.
+- The runtime directory and the control socket path, which CRP-031 owns entirely.
 - Wiring plugin and extension options to environment variables, which is CRP-042 and CRP-051.
 
 ## Acceptance criteria
@@ -59,7 +59,7 @@ Package `internal/config`:
 ## Notes for the implementer
 
 - JSON is chosen because the standard library reads it. Do not add a TOML or YAML dependency.
-- The default application id is a placeholder constant until CRP-003 supplies the real one. It is public, not a secret.
+- The default application id comes from ADR-0010 if CRP-003 has recorded one there. Otherwise use a constant clearly named as a placeholder. It is public, not a secret.
 - Durations in the file are strings such as `15m`, parsed by the standard library.
 
 ## Why this model and effort
