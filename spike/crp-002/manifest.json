@@ -1,0 +1,78 @@
+{
+  "manifest_version": "0.3",
+  "name": "crp002-spike",
+  "display_name": "CRP-002 spike (throwaway)",
+  "version": "0.0.1",
+  "description": "Logging prototype for the rich-presence project. Records how the app starts and stops this server. Uninstall after the spike.",
+  "author": {
+    "name": "Nick Wentz"
+  },
+  "server": {
+    "type": "binary",
+    "entry_point": "server/crp002-spike",
+    "mcp_config": {
+      "command": "${__dirname}/server/crp002-spike",
+      "args": ["mcp", "--number=${user_config.sample_number}", "--privacy=${user_config.privacy}"],
+      "env": {
+        "SPIKE_PRIVACY": "${user_config.privacy}",
+        "SPIKE_DISCORD_CLIENT_ID": "${user_config.discord_client_id}",
+        "SPIKE_EXPOSE_TOOL": "${user_config.expose_tool}",
+        "SPIKE_SAMPLE_NUMBER": "${user_config.sample_number}",
+        "SPIKE_SAMPLE_SECRET": "${user_config.sample_secret}",
+        "SPIKE_LINGER": "${user_config.linger}",
+        "SPIKE_BUNDLE_DIR": "${__dirname}"
+      },
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}/server/crp002-spike.exe"
+        },
+        "darwin": {
+          "command": "${__dirname}/server/crp002-spike-darwin"
+        }
+      }
+    }
+  },
+  "user_config": {
+    "privacy": {
+      "type": "string",
+      "title": "Privacy level",
+      "description": "A string with a default. Stands in for the real privacy setting.",
+      "default": "minimal",
+      "required": false
+    },
+    "discord_client_id": {
+      "type": "string",
+      "title": "Discord application id",
+      "description": "Optional, no default. If set, the server sends one handshake to Discord and logs the reply type.",
+      "required": false
+    },
+    "expose_tool": {
+      "type": "boolean",
+      "title": "Expose the diagnostic tool",
+      "description": "Off means the server lists no tools at all.",
+      "default": true
+    },
+    "sample_number": {
+      "type": "number",
+      "title": "Sample number",
+      "description": "Only here to see how a number arrives.",
+      "default": 42
+    },
+    "sample_secret": {
+      "type": "string",
+      "title": "Sample secret",
+      "description": "Optional. Type anything. Only its length is logged.",
+      "sensitive": true,
+      "required": false
+    },
+    "linger": {
+      "type": "boolean",
+      "title": "Linger after the app closes the connection",
+      "description": "On means the server stays alive for 90 seconds after its input closes, to see whether something else ends it.",
+      "default": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["win32", "darwin"]
+  }
+}
