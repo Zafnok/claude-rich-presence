@@ -86,6 +86,22 @@ This is the fallback (CRP-044). Know these before designing it:
 - `SessionEnd` hooks share a budget of about a second and a half.
 - A hook process inherits the environment, plus `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_ROOT`, `CLAUDE_PLUGIN_DATA` and `CLAUDE_PLUGIN_OPTION_<KEY>` for each user option.
 
+## Model-initiated tool calls
+
+Used by the opt-in activity summary (ADR-0011). Everything here is to be confirmed by CRP-046.
+
+| Fact | Basis |
+|---|---|
+| A plugin server's tool is callable by the model as `mcp__plugin_<plugin-name>_<server-name>__<tool-name>` | Docs |
+| Tool search is on by default, so MCP tool definitions are deferred and the model sees only names until it searches. A server or tool can be marked to always load | Docs |
+| Claude Code passes an MCP server's `instructions` to the model | Observed in a live session. Not in the MCP documentation page |
+| Text returned by a `UserPromptSubmit` or `SessionStart` hook is added to Claude's context, capped at 10,000 characters. For most other events hook output goes only to the debug log | Docs |
+| Whether a model-initiated call to a plugin's tool raises a permission prompt the first time | Not documented |
+| `prompt` and `agent` hooks run a model and return a decision. They are not a way to extract text. Agent hooks are experimental | Docs |
+| The session title is exposed only in `SessionStart`, and only when a custom one was set | Docs |
+
+A summary is model-written and therefore untrusted. It is sanitised in the adapter and never logged.
+
 ## Plugin and marketplace
 
 | Fact | Consequence |
@@ -136,6 +152,7 @@ We implement the minimum (ADR-0004, CRP-040): `initialize`, the `initialized` no
 
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/plugins-reference
+- https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/plugin-marketplaces
 - https://code.claude.com/docs/llms.txt, the documentation index
 - https://claude.com/docs/connectors/building/mcpb
@@ -144,6 +161,6 @@ We implement the minimum (ADR-0004, CRP-040): `initialize`, the `initialized` no
 
 ## In this repository
 
-- Decisions: `docs/architecture/adr/0007-integration-and-distribution.md`, `0008-privacy-and-safety-by-default.md`, `0010-naming-and-branding.md`
+- Decisions: `docs/architecture/adr/0007-integration-and-distribution.md`, `0008-privacy-and-safety-by-default.md`, `0010-naming-and-branding.md`, `0011-model-authored-activity-summary.md`
 - Event table: `docs/architecture/README.md`, section "Where the events come from"
-- Tickets: CRP-001, CRP-002, CRP-040, CRP-041, CRP-042, CRP-050, CRP-051
+- Tickets: CRP-001, CRP-002, CRP-040, CRP-041, CRP-042, CRP-046, CRP-047, CRP-050, CRP-051, CRP-053

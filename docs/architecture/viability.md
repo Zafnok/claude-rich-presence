@@ -17,7 +17,7 @@ The two routes are not really alternatives. A plugin is the best way to *deliver
 
 Two limits are permanent under the constraint of using documented interfaces only, and the owner should accept them before work starts:
 
-1. **Claude Desktop Chat shows only "Claude is open".** Chat gives a local extension no signal about conversations, messages or models.
+1. **Claude Desktop Chat shows only "Claude is open", unless the model itself tells us more.** Chat gives a local extension no signal about conversations, messages or models. The one exception is a tool call made by the model, which [ADR-0011](adr/0011-model-authored-activity-summary.md) proposes to use for an opt-in summary.
 2. **Cloud and web sessions are out of reach.** Discord Rich Presence is a local connection to the Discord client on the same machine.
 
 ## What Discord Rich Presence requires
@@ -108,11 +108,25 @@ If the spike fails, the fallback is the pattern every existing project uses: com
 | Claude Code, terminal | Yes | Plugin | Session open, working, running tools, waiting for input, compacting, idle, elapsed time, subagent count. Model once known. Project name if enabled |
 | Claude Desktop, Code tab, local session | Yes | Same plugin | Same |
 | VS Code and JetBrains extensions | Expected | Same plugin | Same. **Unverified**, owned by CRP-001 |
-| Claude Desktop, Chat | Partial | Desktop extension | App open, elapsed time |
+| Claude Desktop, Chat | Partial | Desktop extension | App open, elapsed time. A summary phrase if the user opts in and ADR-0011 is accepted |
 | Claude Desktop, Cowork | Not in the first release | | **Unverified** whether its extensions run on the host or in a sandbox |
 | Claude Code on the web, cloud sessions | No | | Hooks run remotely |
 | SSH, containers, WSL, where Discord runs on a different operating system instance | No | | The Discord pipe is not reachable |
 | claude.ai in a browser, mobile apps | No | | No local extension point |
+
+## Can presence say what the user is working on?
+
+Yes, with one mechanism, and it is opt-in. Assessed 2026-10-02.
+
+| Approach | Verdict | Basis |
+|---|---|---|
+| Read a summary from a hook event | No. No event carries one | Docs |
+| Use the session title | No. Only a custom title is exposed, and only at session start | Docs |
+| Use a `prompt` or `agent` hook to produce one | Poor fit. They return decisions, cost a model call each time, and agent hooks are experimental | Docs |
+| Summarise the prompt in our binary | No. It would need a network call, a key and per-prompt cost | Design |
+| **Have the session's Claude call a tool with a short phrase** | **Yes.** Costs a few dozen output tokens per task. Works in Claude Code and in Claude Desktop Chat | Docs for the tool mechanism. Reliability is **Unverified**, owned by [CRP-046](../tickets/M4-claude-code/CRP-046-spike-activity-summary.md) |
+
+The design, its safeguards and its acceptance criteria are in [ADR-0011](adr/0011-model-authored-activity-summary.md). The open questions are behavioural: how reliably each model makes the call, whether a permission prompt appears, and what untrusted text in a project can make the phrase say.
 
 ## Prior art
 

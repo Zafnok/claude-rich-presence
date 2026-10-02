@@ -14,11 +14,12 @@ The repository is in its architecture phase. Until [CRP-004](docs/tickets/M0-fou
 
 1. **Presence must never impair Claude.** Anything Claude waits on (an MCP tool call made by a hook) returns immediately and never performs I/O on the calling path. See [ADR-0008](docs/architecture/adr/0008-privacy-and-safety-by-default.md).
 2. **Data is minimised at the edge.** Adapters read only an allowlist of hook fields. Prompt text, tool inputs, tool outputs, assistant messages, file paths and transcript paths are never parsed, stored, logged or forwarded.
-3. **Documented interfaces only.** Do not read `~/.claude/sessions`, transcripts, Claude Desktop logs or window titles, even though they exist and other projects use them.
-4. **No new runtime dependency without an ADR.** Pre-approved: the Go standard library and `golang.org/x/*`. See [ADR-0003](docs/architecture/adr/0003-license-and-dependency-policy.md) and the `add-dependency` skill.
-5. **100% statement coverage, no exclusions.** If a line cannot be tested, redesign it so it can. See [quality-strategy.md](docs/architecture/quality-strategy.md) and the `tdd-full-coverage` skill.
-6. **Do not use the names "claude", "anthropic" or their logos in the plugin name, binary name or Discord assets.** See [ADR-0010](docs/architecture/adr/0010-naming-and-branding.md).
-7. **Platform facts go stale.** Claude Code hooks, plugin manifests, MCPB and Discord IPC all change. Before relying on a detail, re-check it against the live docs listed in the `claude-surfaces` and `discord-ipc` skills, and record what you verified.
+3. **The activity summary is the one piece of work content that may be published**, and only as [ADR-0011](docs/architecture/adr/0011-model-authored-activity-summary.md) allows: opt-in, written by the model through a tool call, sanitised in the adapter, never logged.
+4. **Documented interfaces only.** Do not read `~/.claude/sessions`, transcripts, Claude Desktop logs or window titles, even though they exist and other projects use them.
+5. **No new runtime dependency without an ADR.** Pre-approved: the Go standard library and `golang.org/x/*`. See [ADR-0003](docs/architecture/adr/0003-license-and-dependency-policy.md) and the `add-dependency` skill.
+6. **100% statement coverage, no exclusions.** If a line cannot be tested, redesign it so it can. See [quality-strategy.md](docs/architecture/quality-strategy.md) and the `tdd-full-coverage` skill.
+7. **Do not use the names "claude", "anthropic" or their logos in the plugin name, binary name or Discord assets.** See [ADR-0010](docs/architecture/adr/0010-naming-and-branding.md).
+8. **Platform facts go stale.** Claude Code hooks, plugin manifests, MCPB and Discord IPC all change. Before relying on a detail, re-check it against the live docs listed in the `claude-surfaces` and `discord-ipc` skills, and record what you verified.
 
 ## Working on a ticket
 

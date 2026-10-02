@@ -47,4 +47,4 @@ Facts established during assessment:
 | Python | Simple | Needs an interpreter on the user's machine |
 | C or C++ | No runtime | Memory safety, per-platform build complexity, and no gain over Go for this workload |
 
-The existing Rust toolchain on the development machine was weighed as a signal of preference. It did not outweigh the dependency and tooling costs above. If the owner prefers Rust regardless, the architecture is unchanged and only this ADR and the toolchain tickets need revising.
+The existing Rust toolchain on the development machine was weighed as a signal of preference. It did not outweigh the dependency and tooling costs above. The owner confirmed on 2026-10-02 that installed tooling is not a constraint and that the language should be chosen on fitness alone, so the choice of Go stands.

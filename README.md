@@ -8,14 +8,14 @@ Discord Rich Presence for Claude Code and Claude Desktop.
 
 ## What it will do
 
-Show what you are doing with Claude in your Discord profile: that a session is open, whether Claude is working, waiting for you, or idle, and for how long. Optionally the model and the project name.
+Show what you are doing with Claude in your Discord profile: that a session is open, whether Claude is working, waiting for you, or idle, and for how long. Optionally the model and the project name. And, if you opt in, a short phrase written by Claude about what you are working on, such as "Building the battle system".
 
 | Surface | Support | Detail shown |
 |---|---|---|
 | Claude Code in a terminal | Yes | Working, waiting, idle, elapsed time, optional model and project |
 | Claude Desktop, Code tab (local sessions) | Yes | Same as above |
 | Claude Code in VS Code or JetBrains | Expected, to be verified | Same as above |
-| Claude Desktop, Chat | Partial | "Claude is open" and elapsed time only |
+| Claude Desktop, Chat | Partial | "Claude is open" and elapsed time. A summary phrase is proposed as an opt-in |
 | Claude Code on the web, cloud sessions, claude.ai in a browser, mobile | No | Discord's interface is local to your machine |
 
 Why Chat is partial and the web is unsupported is explained in the [viability assessment](docs/architecture/viability.md).
@@ -41,7 +41,7 @@ One small native program, `rich-presence`, is started by Claude itself as a loca
 
 - **Never get in Claude's way.** Presence is cosmetic. It must not slow, block or break a session.
 - **Documented interfaces only.** No transcript reading, log scraping, window inspection or private files.
-- **Private by default.** No prompts, file paths or tool inputs, ever. Project names are opt-in. No telemetry, no network access.
+- **Private by default.** No prompts, file paths or tool inputs, ever. Project names and the activity summary are opt-in. No telemetry, no network access.
 - **No third-party runtime dependencies** unless an ADR justifies one.
 - **Every line tested.** 100% statement coverage, enforced in CI.
 

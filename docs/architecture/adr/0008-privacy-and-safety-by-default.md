@@ -42,6 +42,8 @@ We use hook events, the plugin manifest, MCP, MCPB and Discord IPC as documented
 
 The default never reveals what the user is working on.
 
+[ADR-0011](0011-model-authored-activity-summary.md) proposes a fourth level, `summary`, which is opt-in and publishes one short phrase that Claude writes for a public audience. It does not change anything above for users who do not enable it, and it does not read prompts: the phrase is volunteered by the model through a tool call and sanitised in the adapter.
+
 ### 5. No network, no telemetry
 
 The program opens exactly two kinds of connection: the local Discord pipe and the local control socket. It makes no network requests, checks for no updates, and collects no usage data.

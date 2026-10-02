@@ -19,12 +19,14 @@ Ordered by how much damage each could do to the plan. "Retired by" names the tic
 | R13 | The fine-grained status is invisible in practice because updates are limited to one per 15 seconds | High | Low | Design for it: the scheduler always sends the latest state, and status vocabulary is coarse | CRP-013 |
 | R14 | SonarQube Cloud's free plan does not allow a custom quality gate | Medium | Low | The binding coverage gate is our own check in CI | CRP-006 |
 | R15 | The plugin's URL-referenced bundle is fetched over HTTPS with no checksum field | Low | Medium | Same trust root as the repository itself. Releases carry checksums and a provenance attestation for anyone who wants to verify | CRP-060 |
+| R16 | The activity summary publishes something the user did not want public, or untrusted content in a project steers what it says | Medium for opted-in users | Medium | Opt-in only, limited to chosen project directories, sanitised to one short line of plain text with no links or mentions, never logged. Documented as model-written | CRP-046, CRP-047 |
+| R17 | Claude does not call the summary tool reliably, or a permission prompt interrupts the user | Medium | Low: the feature is dropped or marked experimental | Spike with explicit pass criteria before any code. A hook-delivered reminder as the fallback nudge | CRP-046 |
 
 ## Accepted limitations
 
 These are not risks. They are known and will not be fixed without a change on a vendor's side.
 
-- Claude Desktop Chat shows only that the app is open.
+- Claude Desktop Chat shows only that the app is open, unless the opt-in summary of ADR-0011 is accepted and enabled.
 - No presence for cloud sessions, the web, mobile, or setups where Discord runs on a different operating system instance than Claude, including WSL and remote development.
 - Linux on Arm is not in the bundle.
 - A failover between hosts causes a brief gap in presence.

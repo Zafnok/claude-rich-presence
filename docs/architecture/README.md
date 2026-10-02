@@ -157,8 +157,13 @@ Privacy levels, set per adapter and enforced before anything is sent to the host
 | `minimal` | That Claude is in use, and for how long |
 | `standard`, the default | Plus status, model family, session count |
 | `full` | Plus the project name, which is the last element of the working directory |
+| `summary`, opt-in, proposed | Plus one short phrase describing the work, written by Claude |
 
 Exact strings, truncation to Discord's limits and the tool-kind vocabulary are specified in [CRP-011](../tickets/M1-core/CRP-011-presence-renderer.md).
+
+### The activity summary
+
+Nothing in a hook event says what the user is working on. The session's own Claude knows, so at the `summary` level the adapter exposes one more tool, `presence_summary`, and asks Claude to call it with a short phrase when a task begins or changes: "Building the battle system", with the project named beside it. The phrase is sanitised in the adapter, can be limited to chosen project directories, and is never logged. The same tool can give Claude Desktop Chat a real activity line. This is proposed in [ADR-0011](adr/0011-model-authored-activity-summary.md) and depends on a spike, [CRP-046](../tickets/M4-claude-code/CRP-046-spike-activity-summary.md), because it rests on how reliably the model makes the call.
 
 ## Talking to Discord
 
@@ -200,7 +205,7 @@ The adapter tells the surfaces apart from the client name in the MCP `initialize
 
 ## Not in the first release
 
-- Activity detail in Claude Desktop Chat.
+- The activity summary, in Claude Code and in Claude Desktop Chat. It is planned and ticketed, and ships when its spike and tickets are done, without holding the first release.
 - Cowork, cloud sessions, remote and WSL setups.
 - A separate Discord application per surface.
 - Buttons, external image URLs, user-defined text templates beyond the three privacy levels.

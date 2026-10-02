@@ -6,7 +6,7 @@ type: spike
 status: todo
 priority: P0
 blocked_by: []
-blocks: [CRP-041, CRP-042, CRP-044, CRP-051]
+blocks: [CRP-041, CRP-042, CRP-044, CRP-046, CRP-051]
 model: claude-opus-5-5
 effort: high
 size: M
