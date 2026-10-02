@@ -3,7 +3,7 @@ id: CRP-002
 title: "Spike: Claude Desktop extension lifecycle"
 milestone: M0 Foundation
 type: spike
-status: todo
+status: in-progress
 priority: P0
 blocked_by: []
 blocks: [CRP-044, CRP-050, CRP-052, CRP-063]
