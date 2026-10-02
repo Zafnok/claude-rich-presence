@@ -62,7 +62,16 @@ No OAuth step is used. Discord's own library sends only the handshake and then s
 
 Omit a field rather than send it empty. A text field shorter than 2 characters is rejected.
 
-Fields that exist and we do not use in the first release: buttons (at most two), party, secrets, link fields for the text lines and images, and the display-type field.
+Planned for the repository link (ADR-0012, CRP-048):
+
+| Field | Notes |
+|---|---|
+| `buttons` | At most two. Each has a label of 1 to 32 characters and a URL of up to 512. How they appear to other users, and whether the user sees their own, is unverified and settled in CRP-048 |
+| URL fields for the text lines | A newer alternative that makes a line clickable. The fallback if buttons are not visible where it matters |
+
+A URL placed in an activity comes only from the user's configuration, validated. Never from model-written text.
+
+Fields that exist and we do not use: party, secrets, image URL fields, and the display-type field.
 
 The title Discord shows is the **application's name**, set in the Developer Portal, not anything in the payload. Asset keys are lower-cased by Discord.
 
@@ -107,5 +116,5 @@ Two official figures exist: five updates per 20 seconds, and one update per 15 s
 ## In this repository
 
 - Decision to implement in-house: `docs/architecture/adr/0004-in-house-protocol-implementations.md`
-- Tickets: CRP-013, CRP-020, CRP-021, CRP-022, CRP-023
+- Tickets: CRP-013, CRP-020, CRP-021, CRP-022, CRP-023, CRP-048
 - Application id and artwork: CRP-003

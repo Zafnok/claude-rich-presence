@@ -165,6 +165,12 @@ Exact strings, truncation to Discord's limits and the tool-kind vocabulary are s
 
 Nothing in a hook event says what the user is working on. The session's own Claude knows, so at the `summary` level the adapter exposes one more tool, `presence_summary`, and asks Claude to call it with a short phrase when a task begins or changes: "Building the battle system", with the project named beside it. The phrase is sanitised in the adapter, can be limited to chosen project directories, and is never logged. The same tool can give Claude Desktop Chat a real activity line. This is proposed in [ADR-0011](adr/0011-model-authored-activity-summary.md) and depends on a spike, [CRP-046](../tickets/M4-claude-code/CRP-046-spike-activity-summary.md), because it rests on how reliably the model makes the call.
 
+### Project profiles and the repository link
+
+Privacy is not one setting for everything. The configuration file can hold a profile per project directory, giving that project its own privacy level, a display name, and optionally a link to its repository. So a user can stay at `minimal` everywhere and opt one project in to a summary and a link, shown as a button on the activity.
+
+The link comes only from the user's configuration. It is never detected automatically, never taken from the model, and is validated strictly: `https`, an allowed host, no credentials, no query. The binary does not check that a repository is public, because that would need a network request. A plugin skill does the setup inside a Claude Code session, checks visibility with the user's own GitHub CLI, shows what will be published, and writes the profile once the user approves the edit. Proposed in [ADR-0012](adr/0012-project-profiles-and-repository-link.md).
+
 ## Talking to Discord
 
 - The Discord codec and transport are written in-house against the documented protocol. See [ADR-0004](adr/0004-in-house-protocol-implementations.md).
@@ -205,10 +211,10 @@ The adapter tells the surfaces apart from the client name in the MCP `initialize
 
 ## Not in the first release
 
-- The activity summary, in Claude Code and in Claude Desktop Chat. It is planned and ticketed, and ships when its spike and tickets are done, without holding the first release.
+- Project profiles, the activity summary and the repository link. They are planned and ticketed, and ship when their tickets are done, without holding the first release.
 - Cowork, cloud sessions, remote and WSL setups.
 - A separate Discord application per surface.
-- Buttons, external image URLs, user-defined text templates beyond the three privacy levels.
+- A second button, external image URLs, user-defined text templates beyond the privacy levels.
 - Signed and notarised binaries. See [risks.md](risks.md).
 
 ## Related documents

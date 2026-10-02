@@ -5,7 +5,7 @@ milestone: M4 Claude Code
 type: feature
 status: todo
 priority: P1
-blocked_by: [CRP-042, CRP-046]
+blocked_by: [CRP-014, CRP-042, CRP-046]
 blocks: [CRP-053]
 model: claude-sonnet-5-5
 effort: high
@@ -28,9 +28,9 @@ This is the first feature that publishes anything about the content of the user'
 
 - **Configuration** (`internal/config`):
   - privacy level `summary`, above `full`;
-  - `summary_projects`, an optional list of directories. When set, the level applies only to sessions whose working directory is inside one of them; elsewhere the session behaves as `full`;
+  - settable globally or per project, through the project profiles of CRP-014;
   - `summary_style`, an optional short free-text hint.
-- **Domain** (`internal/domain`): a session carries an optional activity phrase and an optional project display name. A new event kind sets them. They are cleared when the session id rebinds.
+- **Domain** (`internal/domain`): a session carries an optional activity phrase and an optional project display name. A new event kind sets them. A display name from the project's profile takes precedence over one the model supplies. They are cleared when the session id rebinds.
 - **Sanitiser**, a pure function in `internal/adapter/code`: one line; a hard length cap; control characters removed; links, mentions, invite codes and markup stripped; whitespace collapsed; an empty result is rejected.
 - **Tool** `presence_summary`:
   - listed only when the level is `summary` for this session;
@@ -50,7 +50,7 @@ This is the first feature that publishes anything about the content of the user'
 ## Acceptance criteria
 
 - [ ] At every level other than `summary`, `tools/list` does not include `presence_summary`, and no instruction mentions it.
-- [ ] With `summary_projects` set, a session outside those directories does not list the tool. Tested for nested directories, both separator styles, and paths differing only in case on Windows.
+- [ ] With the level set only in a project profile, a session outside that project does not list the tool, and a session inside it does.
 - [ ] The sanitiser has a table test covering: over-long input, multiple lines, control characters, links with and without a scheme, mentions, invite codes, markup characters, and input that is empty after cleaning.
 - [ ] A fuzz test shows the sanitiser's output never exceeds the cap, never contains a newline, and never contains a link.
 - [ ] The summary text appears in no log line. A leak test seeds a marker as the summary and searches the log.
@@ -64,7 +64,6 @@ This is the first feature that publishes anything about the content of the user'
 
 ## Notes for the implementer
 
-- Compare directories after cleaning and resolving them the same way on both sides. Do not follow symbolic links to decide membership without stating so.
 - The length cap should suit what Discord displays in the member list, which is much shorter than its protocol limit. Take the number from CRP-046's examples.
 - Stripping links must also catch bare domains, or a phrase could still advertise one.
 - Keep the instruction text in one place, so the plugin skill, the tool description and the tests cannot drift apart.

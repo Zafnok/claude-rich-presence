@@ -15,6 +15,7 @@ An ADR records one decision, why it was made, and what it costs. Accepted ADRs a
 | [0009](0009-quality-gates.md) | 100% statement coverage and SonarQube Cloud, enforced in CI | Accepted |
 | [0010](0010-naming-and-branding.md) | Neutral product names, no Anthropic or Discord marks | Proposed, pending CRP-003 |
 | [0011](0011-model-authored-activity-summary.md) | An opt-in activity summary written by Claude, through a tool call | Proposed, pending CRP-046 |
+| [0012](0012-project-profiles-and-repository-link.md) | Per-project profiles, and an opt-in repository link from the user's configuration only | Proposed, pending CRP-048 |
 
 ## Format
 

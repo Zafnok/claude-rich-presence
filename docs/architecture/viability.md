@@ -126,6 +126,8 @@ Yes, with one mechanism, and it is opt-in. Assessed 2026-10-02.
 | Summarise the prompt in our binary | No. It would need a network call, a key and per-prompt cost | Design |
 | **Have the session's Claude call a tool with a short phrase** | **Yes.** Costs a few dozen output tokens per task. Works in Claude Code and in Claude Desktop Chat | Docs for the tool mechanism. Reliability is **Unverified**, owned by [CRP-046](../tickets/M4-claude-code/CRP-046-spike-activity-summary.md) |
 
+A link to the project's repository can be shown as well, as a button, for projects the user opts in one by one. It comes from the user's configuration, not from the model, and the binary cannot check that the repository is public without a network request, so a setup skill does that check inside a Claude Code session. See [ADR-0012](adr/0012-project-profiles-and-repository-link.md).
+
 The design, its safeguards and its acceptance criteria are in [ADR-0011](adr/0011-model-authored-activity-summary.md). The open questions are behavioural: how reliably each model makes the call, whether a permission prompt appears, and what untrusted text in a project can make the phrase say.
 
 ## Prior art

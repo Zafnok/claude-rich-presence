@@ -8,7 +8,7 @@ Discord Rich Presence for Claude Code and Claude Desktop.
 
 ## What it will do
 
-Show what you are doing with Claude in your Discord profile: that a session is open, whether Claude is working, waiting for you, or idle, and for how long. Optionally the model and the project name. And, if you opt in, a short phrase written by Claude about what you are working on, such as "Building the battle system".
+Show what you are doing with Claude in your Discord profile: that a session is open, whether Claude is working, waiting for you, or idle, and for how long. Optionally the model and the project name. And, if you opt in, a short phrase written by Claude about what you are working on, such as "Building the battle system", and for projects you choose, a link to the repository.
 
 | Surface | Support | Detail shown |
 |---|---|---|
@@ -41,7 +41,7 @@ One small native program, `rich-presence`, is started by Claude itself as a loca
 
 - **Never get in Claude's way.** Presence is cosmetic. It must not slow, block or break a session.
 - **Documented interfaces only.** No transcript reading, log scraping, window inspection or private files.
-- **Private by default.** No prompts, file paths or tool inputs, ever. Project names and the activity summary are opt-in. No telemetry, no network access.
+- **Private by default.** No prompts, file paths or tool inputs, ever. Project names, the activity summary and repository links are opt-in, per project. No telemetry, no network access.
 - **No third-party runtime dependencies** unless an ADR justifies one.
 - **Every line tested.** 100% statement coverage, enforced in CI.
 

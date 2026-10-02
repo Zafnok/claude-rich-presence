@@ -44,6 +44,8 @@ The default never reveals what the user is working on.
 
 [ADR-0011](0011-model-authored-activity-summary.md) proposes a fourth level, `summary`, which is opt-in and publishes one short phrase that Claude writes for a public audience. It does not change anything above for users who do not enable it, and it does not read prompts: the phrase is volunteered by the model through a tool call and sanitised in the adapter.
 
+[ADR-0012](0012-project-profiles-and-repository-link.md) proposes per-project profiles, so a level can be set for one project without changing the default, and an opt-in repository link that comes only from the user's own configuration.
+
 ### 5. No network, no telemetry
 
 The program opens exactly two kinds of connection: the local Discord pipe and the local control socket. It makes no network requests, checks for no updates, and collects no usage data.

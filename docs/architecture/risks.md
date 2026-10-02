@@ -21,6 +21,8 @@ Ordered by how much damage each could do to the plan. "Retired by" names the tic
 | R15 | The plugin's URL-referenced bundle is fetched over HTTPS with no checksum field | Low | Medium | Same trust root as the repository itself. Releases carry checksums and a provenance attestation for anyone who wants to verify | CRP-060 |
 | R16 | The activity summary publishes something the user did not want public, or untrusted content in a project steers what it says | Medium for opted-in users | Medium | Opt-in only, limited to chosen project directories, sanitised to one short line of plain text with no links or mentions, never logged. Documented as model-written | CRP-046, CRP-047 |
 | R17 | Claude does not call the summary tool reliably, or a permission prompt interrupts the user | Medium | Low: the feature is dropped or marked experimental | Spike with explicit pass criteria before any code. A hook-delivered reminder as the fallback nudge | CRP-046 |
+| R18 | A published repository link points at a private repository, or a repository is made private later | Low | Low: the owner and name are revealed and the link leads nowhere | Per-project opt-in only. The setup skill checks visibility with the user's GitHub CLI. Documented | CRP-048 |
+| R19 | In a permission mode without prompts, text in a repository talks Claude into opting that project in by editing the configuration file | Low | Low: a link and phrase for that project are published | No tool can write profiles. The edit is visible and prompted in default modes. The link is validated. Documented | CRP-048, CRP-062 |
 
 ## Accepted limitations
 

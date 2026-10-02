@@ -100,7 +100,7 @@ Used by the opt-in activity summary (ADR-0011). Everything here is to be confirm
 | `prompt` and `agent` hooks run a model and return a decision. They are not a way to extract text. Agent hooks are experimental | Docs |
 | The session title is exposed only in `SessionStart`, and only when a custom one was set | Docs |
 
-A summary is model-written and therefore untrusted. It is sanitised in the adapter and never logged.
+A summary is model-written and therefore untrusted. It is sanitised in the adapter and never logged. Links are stripped from it: a published link comes only from a project profile in the user's configuration (ADR-0012).
 
 ## Plugin and marketplace
 

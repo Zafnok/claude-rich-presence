@@ -50,7 +50,7 @@ Facts this depends on:
 The summary is model-written text published under the user's name. It is treated as untrusted.
 
 1. **Opt-in only.** A fourth privacy level, `summary`, above `full`. Never the default.
-2. **Per-project scope.** An optional allowlist of project directories. When set, the level applies only inside them. A user can enable summaries for personal projects and not for work.
+2. **Per-project scope.** The level can be set for individual projects through the project profiles of [ADR-0012](0012-project-profiles-and-repository-link.md). A user can enable summaries for personal projects and not for work.
 3. **Sanitised in the adapter**, before the control channel, by a pure function: one line, a hard length cap, control characters removed, and links, mentions, invite codes and markup stripped. A phrase that is empty after cleaning is discarded.
 4. **Never logged.** The summary is content. Logs record only that one was set and its length.
 5. **Never impairs Claude.** The tool returns immediately with an empty result, like `presence_event`. If a permission prompt cannot be avoided for model-initiated calls, the feature must not ship in a form that interrupts the user more than once.
@@ -88,7 +88,7 @@ If S1 and S2 both fail, or S6 fails, the feature is not built in this form and t
 - The quality of the summary is the model's. It will sometimes be bland or slightly wrong. It cannot be made deterministic.
 - An opted-in session carries one more tool definition and a few lines of instructions in context.
 - Untrusted content the model reads, such as a web page or a file in a cloned repository, can influence the phrase. The sanitiser bounds the damage to a short line of plain text. It cannot stop the phrase being wrong or embarrassing. The documentation must say so.
-- The allowlist depends on the working directory, which the adapter already receives.
+- Per-project scope depends on the working directory, which the adapter already receives.
 - ADR-0008's guarantee changes shape for opted-in users: from "nothing about your work is published" to "one short phrase that Claude wrote for a public audience is published". For everyone else it is unchanged.
 
 ## Alternatives considered

@@ -50,6 +50,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-011](M1-core/CRP-011-presence-renderer.md) | Presence renderer | 010 | Sonnet 5.5 | medium | M | todo |
 | [CRP-012](M1-core/CRP-012-configuration.md) | Configuration | 004 | Sonnet 5.5 | medium | M | todo |
 | [CRP-013](M1-core/CRP-013-update-scheduler.md) | Update scheduler | 004 | Sonnet 5.5 | high | S | todo |
+| [CRP-014](M1-core/CRP-014-project-profiles.md) | Project profiles in configuration | 012 | Sonnet 5.5 | medium | M | todo |
 | [CRP-020](M2-discord/CRP-020-discord-codec.md) | Discord IPC codec | 004 | Sonnet 5.5 | medium | S | todo |
 | [CRP-021](M2-discord/CRP-021-discord-transport.md) | Discord transport: pipe and socket dialers | 004, 022 | Opus 5.5 | high | M | todo |
 | [CRP-022](M2-discord/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004 | Sonnet 5.5 | high | M | todo |
@@ -66,7 +67,8 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-044](M4-claude-code/CRP-044-fallback-command-hooks.md) | Fallback: command hooks and standalone host | 001, 032 | Opus 5.5 | high | L | conditional |
 | [CRP-045](M4-claude-code/CRP-045-spike-initial-model.md) | Spike: model name at session launch | 042 | Sonnet 5.5 | medium | S | todo |
 | [CRP-046](M4-claude-code/CRP-046-spike-activity-summary.md) | Spike: activity summary written by Claude | 001 | Sonnet 5.5 | high | M | todo |
-| [CRP-047](M4-claude-code/CRP-047-activity-summary.md) | Activity summary in Claude Code | 042, 046 | Sonnet 5.5 | high | M | todo |
+| [CRP-047](M4-claude-code/CRP-047-activity-summary.md) | Activity summary in Claude Code | 014, 042, 046 | Sonnet 5.5 | high | M | todo |
+| [CRP-048](M4-claude-code/CRP-048-repository-link.md) | Repository link for opted-in projects | 014, 042 | Sonnet 5.5 | high | M | todo |
 | [CRP-050](M5-claude-desktop/CRP-050-desktop-adapter.md) | Claude Desktop adapter | 002, 033 | Sonnet 5.5 | medium | S | todo |
 | [CRP-051](M5-claude-desktop/CRP-051-mcpb-bundle.md) | MCPB bundle | 001, 033 | Sonnet 5.5 | medium | S | todo |
 | [CRP-052](M5-claude-desktop/CRP-052-desktop-validation.md) | Desktop validation on real machines | 002, 050, 051 | Owner, with Sonnet 5.5 | low | S | todo |
@@ -132,6 +134,9 @@ flowchart TD
     C042 --> C045["045 spike: model"]
     C001 --> C046["046 spike: summary"] --> C047["047 summary, Code"]
     C042 --> C047
+    C012 --> C014["014 project profiles"] --> C047
+    C014 --> C048["048 repository link"]
+    C042 --> C048
     C047 --> C053["053 summary, Desktop"]
     C050 --> C053
     C003 --> C060["060 release"]
@@ -157,16 +162,16 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 |---|---|
 | 0 | 001, 002, 003, 004 |
 | 1 | 005, 010, 012, 013, 020, 022, 031, 040, 046 |
-| 2 | 006, 007, 011, 021, 030, 034, 041 |
+| 2 | 006, 007, 011, 014, 021, 030, 034, 041 |
 | 3 | 023 |
 | 4 | 032 |
 | 5 | 033, and 044 only if CRP-001 failed |
 | 6 | 043, 050, 051 |
 | 7 | 042, 052, 062 |
-| 8 | 060, 061, 045, 047 |
+| 8 | 060, 061, 045, 047, 048 |
 | 9 | 063, 064, 053 |
 
-The critical path is 004, 022, 021, 023, 032, 033, 051, 042, 060. The activity summary (046, 047, 053) is deliberately off it: the first release does not wait for it. The two spikes and the owner task in wave 0 have the longest lead time and involve people, so start them first.
+The critical path is 004, 022, 021, 023, 032, 033, 051, 042, 060. The visibility features, which are project profiles, the activity summary and the repository link (014, 046, 047, 048, 053), are deliberately off it: the first release does not wait for them. The two spikes and the owner task in wave 0 have the longest lead time and involve people, so start them first.
 
 ## Choosing a model and effort
 
@@ -197,7 +202,7 @@ Rules for keeping cost down without losing quality:
 4. **Review is cheaper than rework.** Run `/code-review` on every pull request. For the Opus tickets, review with Opus as well.
 5. **Spikes are time-boxed.** A spike that has not answered its questions in its box stops and reports what it found.
 
-By this plan twenty-three tickets run on Sonnet 5.5, nine on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
+By this plan twenty-five tickets run on Sonnet 5.5, nine on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
 
 ## Owner actions
 

@@ -6,7 +6,7 @@ type: feature
 status: todo
 priority: P0
 blocked_by: [CRP-004]
-blocks: [CRP-033, CRP-034, CRP-041]
+blocks: [CRP-014, CRP-033, CRP-034, CRP-041]
 model: claude-sonnet-5-5
 effort: medium
 size: M
