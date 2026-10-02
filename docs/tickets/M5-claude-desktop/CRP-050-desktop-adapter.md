@@ -5,7 +5,7 @@ milestone: M5 Claude Desktop
 type: feature
 status: todo
 priority: P1
-blocked_by: [CRP-002, CRP-033]
+blocked_by: [CRP-002, CRP-033, CRP-043]
 blocks: [CRP-052, CRP-053]
 model: claude-sonnet-5-5
 effort: medium

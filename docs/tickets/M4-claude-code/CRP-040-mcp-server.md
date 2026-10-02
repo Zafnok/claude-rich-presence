@@ -5,7 +5,7 @@ milestone: M4 Claude Code
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004]
+blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-041]
 model: claude-sonnet-5-5
 effort: high

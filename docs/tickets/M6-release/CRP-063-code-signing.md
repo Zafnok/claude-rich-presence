@@ -5,7 +5,7 @@ milestone: M6 Release
 type: owner-task
 status: todo
 priority: P2
-blocked_by: [CRP-060]
+blocked_by: [CRP-002, CRP-052, CRP-060]
 blocks: []
 model: owner
 effort: low

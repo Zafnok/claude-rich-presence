@@ -5,7 +5,7 @@ milestone: M1 Core
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004]
+blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-023]
 model: claude-sonnet-5-5
 effort: high
@@ -33,6 +33,7 @@ Package `internal/schedule`, plus a fake clock in `internal/testutil/fakeclock`:
 - "Show nothing" is an update like any other and obeys the same rule.
 - A reset operation, used after a Discord reconnect, that forgets the last emitted value so the current one is sent again, while still respecting the interval.
 - The clock and timers come from an injected interface.
+- The scheduler is generic over any comparable value. It does not import the domain package, so it does not depend on CRP-010.
 
 ## Out of scope
 

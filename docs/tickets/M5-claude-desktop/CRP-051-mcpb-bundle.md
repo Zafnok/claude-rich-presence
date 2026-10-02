@@ -31,12 +31,12 @@ The MCPB manifest selects by operating system, not by CPU architecture. That is 
   - server type `binary`, running the `mcp` command;
   - per-operating-system overrides selecting the Windows, Mac and Linux binaries;
   - `user_config` for the privacy level and an optional Discord application id, passed to the server as the environment variables CRP-012 reads;
-  - the tools the server exposes, declared as CRP-041 and CRP-050 define them;
+  - tools marked as generated at run time, not listed one by one, so that a later ticket which adds or removes a tool does not have to touch the manifest;
   - compatibility limited to the three supported operating systems.
 - A build step, as a Go program under `tools/` or documented commands, that assembles the bundle from built binaries, the manifest and the icon. The bundle is a zip archive with a fixed layout.
 - The Mac universal binary: produced by merging the two architecture builds on a Mac runner.
 - A CI job that builds the bundle on every pull request and checks its contents: manifest valid, every referenced file present, executable permission set on the Unix binaries.
-- The icon, a placeholder until CRP-003 supplies the final artwork.
+- The icon: `assets/icon.png` if CRP-003 has supplied it, otherwise a placeholder.
 
 ## Out of scope
 

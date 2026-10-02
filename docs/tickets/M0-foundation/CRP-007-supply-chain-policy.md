@@ -6,7 +6,7 @@ type: chore
 status: todo
 priority: P1
 blocked_by: [CRP-005]
-blocks: []
+blocks: [CRP-060]
 model: claude-sonnet-5-5
 effort: low
 size: S

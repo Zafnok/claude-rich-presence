@@ -5,7 +5,7 @@ milestone: M3 Host
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004]
+blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-032]
 model: claude-opus-5-5
 effort: high
@@ -22,7 +22,7 @@ The operating-system pieces under the control channel: where the socket and lock
 
 [ADR-0005](../../architecture/adr/0005-presence-host-election.md) elects the host with a lock, and [ADR-0006](../../architecture/adr/0006-control-channel.md) fixes the transport and the directory rules. The lock is what makes stale-socket cleanup safe.
 
-CRP-002 may change the Windows location. The location is one function, so start without waiting and revise if needed.
+This ticket does not wait for CRP-002. If that spike's findings are already in `docs/research/`, follow them for the Windows location. If not, use the default in ADR-0006. A later change is confined to one function.
 
 ## Scope
 

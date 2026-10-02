@@ -5,8 +5,8 @@ milestone: M5 Claude Desktop
 type: owner-task
 status: todo
 priority: P1
-blocked_by: [CRP-002, CRP-050, CRP-051]
-blocks: [CRP-061]
+blocked_by: [CRP-002, CRP-042, CRP-050, CRP-051]
+blocks: [CRP-061, CRP-063]
 model: owner
 effort: low
 size: S

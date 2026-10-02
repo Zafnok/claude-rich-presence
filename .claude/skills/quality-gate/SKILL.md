@@ -20,7 +20,7 @@ Run these before opening a pull request. They mirror CI, so passing here means C
 | 7 | Coverage, after CRP-005 | The gate tool reports 100.0% and lists no uncovered block |
 | 8 | Dependencies | `go.mod` has no new module, or an accepted ADR covers it |
 | 9 | Plugin, after CRP-042 | `claude plugin validate --strict` passes, if you touched `plugin/` or the marketplace file |
-| 10 | Documents | Links in Markdown you changed resolve. Ticket status and index row updated |
+| 10 | Documents | Links in Markdown you changed resolve. Ticket status updated in its own file |
 
 Then, for the change itself:
 

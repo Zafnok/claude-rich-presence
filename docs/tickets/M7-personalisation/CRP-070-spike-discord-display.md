@@ -60,12 +60,13 @@ Questions:
 - [ ] `docs/research/crp-070-discord-display.md` answers D1 to D10 with screenshots, the Discord client versions, and the exact activity payload used for each.
 - [ ] The visible width of each line in each view is given as a number the renderer can use.
 - [ ] ADR-0013's slot table is corrected against the findings, and the ADR is marked Accepted or revised.
-- [ ] The answer to D5 is recorded in [ADR-0012](../../architecture/adr/0012-project-profiles-and-repository-link.md) and CRP-048, which depend on it.
+- [ ] The answer to D5 is recorded in the findings and in [ADR-0012](../../architecture/adr/0012-project-profiles-and-repository-link.md). CRP-048 reads it from there. This ticket does not edit CRP-048.
 - [ ] The `discord-ipc` skill is updated with whatever was learned about fields.
-- [ ] No prototype code is merged.
+- [ ] The throwaway script is pushed to a branch named `spike/crp-070`, linked from the findings, and never merged.
 
 ## Notes for the implementer
 
+- Go must be installed first. If CRP-004 has not landed, install it for the spike only.
 - A model can write the throwaway script and prepare the list of payloads. The looking has to be done by the owner, with a second account or a friend's.
 - Use a test Discord application, not the project's final one, so experiments do not appear under its name.
 - Test strings should make counting easy: numbered blocks of ten characters, and a second set with wide and narrow letters to tell character limits from width limits.
