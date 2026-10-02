@@ -30,7 +30,8 @@ Facts:
    | Field | Meaning |
    |---|---|
    | `path` | The project's root directory |
-   | `privacy` | A privacy level for this project, overriding the global one in either direction |
+   | `privacy` | A privacy level for this project, overriding the global one in either direction. This includes `off`, which keeps the project off Discord entirely |
+   | `personality` | A personality for this project. See [ADR-0014](0014-personalities.md) |
    | `name` | A display name, such as "Visions of Shuyi", used in place of the directory name |
    | `areas` | An optional list of the project's main parts, such as "battle engine" or "story". Claude chooses from it when labelling a task, which is what lets several sessions roll up to a shared line. See [ADR-0011](0011-model-authored-activity-summary.md) |
    | `link` | A repository URL to publish |
@@ -60,6 +61,14 @@ This replaces the separate allowlist in ADR-0011: enabling the summary for chose
    - the plugin provides a skill, `share-project`, that performs the setup inside a Claude Code session: it reads the remote, checks visibility with the user's own GitHub CLI when available, shows exactly what would be published, and on confirmation writes the profile by editing the configuration file, which goes through Claude Code's normal permission prompt;
    - the documentation says plainly that a link to a private repository reveals its owner and name and leads nowhere.
 6. There is **no tool that lets the model change configuration**. A profile is written by the user, or by an edit the user approves.
+
+### Hiding and pausing
+
+1. **Hiding** is the privacy level `off`, set globally or in a profile. A hidden session is not sent to the presence host at all, so it is not counted and cannot be shown.
+2. **Pausing** switches the whole presence off for a period or until resumed, without changing any setting. It is held by the presence host and survives a change of host.
+3. Pausing is done through a tool the model calls when the user asks. That is acceptable where a tool that writes profiles is not, because a pause can only reduce what is published.
+
+Ticketed as [CRP-073](../../tickets/M7-personalisation/CRP-073-hide-pause-preview.md).
 
 ### Not for Claude Desktop Chat
 

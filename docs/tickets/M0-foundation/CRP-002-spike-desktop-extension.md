@@ -42,6 +42,7 @@ Install a logging prototype as a desktop extension, server type `binary`, and an
 | B10 | On Windows, does an unsigned binary inside the bundle run without a SmartScreen or antivirus prompt? |
 | B11 | Is a desktop extension also attached to sessions in the Desktop Code tab? If the plugin is installed too, would one Code-tab session have two adapters? |
 | B12 | Can the server connect to the real Discord pipe from inside Claude Desktop's process tree? |
+| B13 | On Windows, does a console window appear or flash when Claude Desktop starts the binary? |
 
 Optional, if time allows: does Cowork run an extension's server on the host or in a sandbox?
 
@@ -52,7 +53,7 @@ Optional, if time allows: does Cowork run an extension's server on the host or i
 
 ## Acceptance criteria
 
-- [ ] `docs/research/crp-002-desktop-extension.md` exists and answers B1 to B12 with what was run, on which operating system and app version, and what was observed.
+- [ ] `docs/research/crp-002-desktop-extension.md` exists and answers B1 to B13 with what was run, on which operating system and app version, and what was observed.
 - [ ] Windows is covered. macOS is covered, or listed as untested with B9 left open and flagged in [risks.md](../../architecture/risks.md).
 - [ ] If B7 fails on any platform, [ADR-0006](../../architecture/adr/0006-control-channel.md) is amended with the corrected location or transport, and CRP-031 is updated to match.
 - [ ] If B1 to B3 show the lifetime assumption is false, the Desktop section of ADR-0007 is revised and CRP-050 and CRP-052 are amended, or set to `not-needed` with the reason.

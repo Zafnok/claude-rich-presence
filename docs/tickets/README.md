@@ -32,6 +32,7 @@ New tickets follow [TEMPLATE.md](TEMPLATE.md) and the `write-ticket` skill. Ids 
 | [M4 Claude Code](M4-claude-code/) | The plugin works end to end in Claude Code |
 | [M5 Claude Desktop](M5-claude-desktop/) | The extension works in Claude Desktop |
 | [M6 Release](M6-release/) | A published, documented, reviewed first release |
+| [M7 Personalisation](M7-personalisation/) | The card is laid out around the summary, speaks in a chosen personality, and carries optional extras |
 
 ## Index
 
@@ -65,7 +66,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-042](M4-claude-code/CRP-042-plugin-packaging.md) | Plugin and marketplace packaging | 001, 033, 051 | Sonnet 5.5 | medium | S | todo |
 | [CRP-043](M4-claude-code/CRP-043-end-to-end-tests.md) | End-to-end tests | 022, 033 | Opus 5.5 | high | L | todo |
 | [CRP-044](M4-claude-code/CRP-044-fallback-command-hooks.md) | Fallback: command hooks and standalone host | 001, 032 | Opus 5.5 | high | L | conditional |
-| [CRP-045](M4-claude-code/CRP-045-spike-initial-model.md) | Spike: model name at session launch | 042 | Sonnet 5.5 | medium | S | todo |
+| [CRP-045](M4-claude-code/CRP-045-spike-initial-model.md) | Spike: status line bridge and the model at launch | 042 | Sonnet 5.5 | medium | M | todo |
 | [CRP-046](M4-claude-code/CRP-046-spike-activity-summary.md) | Spike: activity summary written by Claude | 001 | Sonnet 5.5 | high | M | todo |
 | [CRP-047](M4-claude-code/CRP-047-activity-summary.md) | Activity summary in Claude Code | 014, 042, 046 | Sonnet 5.5 | high | M | todo |
 | [CRP-048](M4-claude-code/CRP-048-repository-link.md) | Repository link for opted-in projects | 014, 042 | Sonnet 5.5 | high | M | todo |
@@ -79,6 +80,13 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-062](M6-release/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S | todo |
 | [CRP-063](M6-release/CRP-063-code-signing.md) | Code signing and notarisation | 060 | Owner, with Sonnet 5.5 | low | S | todo |
 | [CRP-064](M6-release/CRP-064-directory-submission.md) | Directory submission | 003, 060, 061 | Owner, with Haiku 4.5 | n/a | S | todo |
+| [CRP-070](M7-personalisation/CRP-070-spike-discord-display.md) | Spike: how Discord displays an activity | none | Sonnet 5.5 | medium | S | todo |
+| [CRP-071](M7-personalisation/CRP-071-summary-first-layout.md) | Summary-first card layout | 047, 070 | Sonnet 5.5 | high | M | todo |
+| [CRP-072](M7-personalisation/CRP-072-personalities.md) | Personalities | 047 | Sonnet 5.5 | medium | M | todo |
+| [CRP-073](M7-personalisation/CRP-073-hide-pause-preview.md) | Hide, pause and preview | 014, 042 | Sonnet 5.5 | medium | S | todo |
+| [CRP-074](M7-personalisation/CRP-074-status-line-bridge.md) | Status line bridge | 045, 071 | Sonnet 5.5 | high | M | todo |
+| [CRP-075](M7-personalisation/CRP-075-moments.md) | Moments: just shipped | 042 | Sonnet 5.5 | medium | S | todo |
+| [CRP-076](M7-personalisation/CRP-076-spike-wsl.md) | Spike: Claude Code in WSL with Discord on Windows | 033 | Opus 5.5 | high | M | todo |
 
 ## Dependency graph
 
@@ -132,7 +140,7 @@ flowchart TD
     C051 --> C052
     C001 -.-> C044["044 fallback, conditional"]
     C032 -.-> C044
-    C042 --> C045["045 spike: model"]
+    C042 --> C045["045 spike: status line"]
     C001 --> C046["046 spike: summary"] --> C047["047 summary, Code"]
     C042 --> C047
     C012 --> C014["014 project profiles"] --> C047
@@ -141,6 +149,15 @@ flowchart TD
     C047 --> C049["049 shared-area roll-up"]
     C047 --> C053["053 summary, Desktop"]
     C050 --> C053
+    C070["070 spike: Discord display"] --> C071["071 summary-first layout"]
+    C047 --> C071
+    C047 --> C072["072 personalities"]
+    C014 --> C073["073 hide, pause, preview"]
+    C042 --> C073
+    C045 --> C074["074 status line bridge"]
+    C071 --> C074
+    C042 --> C075["075 moments"]
+    C033 --> C076["076 spike: WSL"]
     C003 --> C060["060 release"]
     C005 --> C060
     C042 --> C060
@@ -162,18 +179,19 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 
 | Wave | Tickets |
 |---|---|
-| 0 | 001, 002, 003, 004 |
+| 0 | 001, 002, 003, 004, 070 |
 | 1 | 005, 010, 012, 013, 020, 022, 031, 040, 046 |
 | 2 | 006, 007, 011, 014, 021, 030, 034, 041 |
 | 3 | 023 |
 | 4 | 032 |
 | 5 | 033, and 044 only if CRP-001 failed |
-| 6 | 043, 050, 051 |
+| 6 | 043, 050, 051, 076 |
 | 7 | 042, 052, 062 |
-| 8 | 060, 061, 045, 047, 048 |
-| 9 | 063, 064, 049, 053 |
+| 8 | 060, 061, 045, 047, 048, 073, 075 |
+| 9 | 063, 064, 049, 053, 071, 072 |
+| 10 | 074 |
 
-The critical path is 004, 022, 021, 023, 032, 033, 051, 042, 060. The visibility features, which are project profiles, the activity summary and the repository link (014, 046, 047, 048, 049, 053), are deliberately off it: the first release does not wait for them. The two spikes and the owner task in wave 0 have the longest lead time and involve people, so start them first.
+The critical path is 004, 022, 021, 023, 032, 033, 051, 042, 060. The visibility features, which are project profiles, the activity summary and the repository link (014, 046, 047, 048, 049, 053), are deliberately off it: the first release does not wait for them. Nor does anything in M7. The two spikes and the owner task in wave 0 have the longest lead time and involve people, so start them first.
 
 ## Choosing a model and effort
 
@@ -204,7 +222,7 @@ Rules for keeping cost down without losing quality:
 4. **Review is cheaper than rework.** Run `/code-review` on every pull request. For the Opus tickets, review with Opus as well.
 5. **Spikes are time-boxed.** A spike that has not answered its questions in its box stops and reports what it found.
 
-By this plan twenty-six tickets run on Sonnet 5.5, nine on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
+By this plan thirty-two tickets run on Sonnet 5.5, ten on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
 
 ## Owner actions
 
@@ -216,5 +234,7 @@ These need a person with the owner's accounts. Nothing else in the plan does.
 | Create the SonarQube Cloud organisation and project; add the `SONAR_TOKEN` secret | CRP-006 |
 | Run the spike prototypes inside real Claude Code and Claude Desktop on Windows, and on a Mac if one is available | CRP-001, CRP-002 |
 | Confirm presence in a real Discord client on real machines | CRP-052 |
+| Look at test activities from a second Discord account and record what is visible | CRP-070 |
+| Approve the built-in personalities and their wording | CRP-072 |
 | Decide whether to pay for signing and notarisation | CRP-063 |
 | Submit to directories | CRP-064 |

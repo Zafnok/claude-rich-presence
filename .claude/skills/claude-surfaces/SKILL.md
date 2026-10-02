@@ -53,6 +53,10 @@ Documented behaviour to design around:
 
 Not documented, to be settled by CRP-001: what happens when a `${path}` is absent from the event.
 
+### The `if` filter
+
+A hook handler may carry `if`, written in permission-rule syntax such as a pattern for a shell command. It is evaluated only on tool events: `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied`. On other events a hook with `if` never runs. For shell commands, each sub-command of a compound command is checked, and when Claude Code cannot tell what will run, it runs the hook regardless. `PostToolUse` fires only after a tool call succeeds. This is how moments are detected without reading the command (CRP-075). Whether it works on `mcp_tool` hooks is confirmed by CRP-001.
+
 ### Events we use, and the fields we read
 
 Every event carries `session_id`, `cwd`, `hook_event_name`, and inside a subagent `agent_id` and `agent_type`. We read `session_id` always, and `cwd` only to take its last element at the `full` privacy level.
@@ -117,6 +121,22 @@ A summary is model-written and therefore untrusted. It is sanitised in the adapt
 | A marketplace is a repository with `.claude-plugin/marketplace.json`; a plugin entry's `source` may be a relative path | This repository is its own marketplace, with the plugin in `plugin/` |
 | The `version` in the plugin manifest pins users to it until it changes | The release pipeline bumps it |
 
+## Status line
+
+Used by the opt-in bridge (ADR-0015). To be confirmed by CRP-045.
+
+| Fact | Basis |
+|---|---|
+| The status line is a `statusLine` setting in user or project settings, running one command that receives session data as JSON on standard input | Docs |
+| The data includes model id and display name, effort level, fast mode, context window percentage, session cost, 5-hour and 7-day usage percentages with reset times, an open pull request for the branch, repository identity, and the session name including an automatically generated title | Docs |
+| Usage percentages appear only for some subscription plans, and only after the first response | Docs |
+| It runs at session start, after each assistant message and on a few other changes, debounced. A running command is cancelled when a new update arrives | Docs |
+| It runs through Git Bash on Windows when present, otherwise PowerShell | Docs |
+| A plugin cannot set the main status line. It can supply one for subagent rows only | Docs |
+| Whether it runs in the Claude Desktop Code tab and the IDE extensions | Not documented |
+
+We read an allowlist only, and never the transcript path, directories, repository identity or session name. We never read Claude's stored credentials and never call Anthropic's endpoints: the terms for Claude Code do not allow third-party tools to collect or use those credentials.
+
 ## MCPB bundle
 
 A zip archive with a `manifest.json`.
@@ -153,6 +173,8 @@ We implement the minimum (ADR-0004, CRP-040): `initialize`, the `initialized` no
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/plugins-reference
 - https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/statusline
+- https://code.claude.com/docs/en/legal-and-compliance
 - https://code.claude.com/docs/en/plugin-marketplaces
 - https://code.claude.com/docs/llms.txt, the documentation index
 - https://claude.com/docs/connectors/building/mcpb
@@ -161,6 +183,6 @@ We implement the minimum (ADR-0004, CRP-040): `initialize`, the `initialized` no
 
 ## In this repository
 
-- Decisions: `docs/architecture/adr/0007-integration-and-distribution.md`, `0008-privacy-and-safety-by-default.md`, `0010-naming-and-branding.md`, `0011-model-authored-activity-summary.md`
+- Decisions: `docs/architecture/adr/0007-integration-and-distribution.md`, `0008-privacy-and-safety-by-default.md`, `0010-naming-and-branding.md`, `0011-model-authored-activity-summary.md`, `0014-personalities.md`, `0015-status-line-bridge.md`
 - Event table: `docs/architecture/README.md`, section "Where the events come from"
-- Tickets: CRP-001, CRP-002, CRP-040, CRP-041, CRP-042, CRP-046, CRP-047, CRP-050, CRP-051, CRP-053
+- Tickets: CRP-001, CRP-002, CRP-040, CRP-041, CRP-042, CRP-045, CRP-046, CRP-047, CRP-050, CRP-051, CRP-053, CRP-072, CRP-074, CRP-075

@@ -37,6 +37,8 @@ Only the owner can do this. It needs the owner's Discord account and the owner's
    | `waiting` | Small image while Claude is waiting for the user |
    | `idle` | Small image while idle |
 
+   The personalisation features in M7 need further keys if they are built: one for the shipped moment (CRP-075), a few usage gauge images (CRP-074), and any artwork a personality names (CRP-072). Those tickets list them.
+
 4. **Decide the repository name**: keep `claude-rich-presence` as a descriptive slug, or rename. Renaming is cheap before the first release.
 5. **Approve the unaffiliated notice** used in the README, plugin description and extension description.
 6. **Decide whether to ask Anthropic** for permission to use the Claude name or logo. Optional.
@@ -55,6 +57,7 @@ Only the owner can do this. It needs the owner's Discord account and the owner's
 
 ## Notes for the implementer
 
+- Discord does not report a missing or misspelled image key. The image is simply absent. After uploading, set a test activity that uses every key and check each by eye. Two other projects had icons silently missing for this reason.
 - A model can help by drafting name candidates, the notice text, and a checklist for the portal. Haiku 4.5 is enough for that.
 - Do not ask a model to create the Discord application or accounts. That is the owner's action.
 - If the portal accepts no acceptable neutral name, record what was tried and choose the least bad option. Do not use look-alike characters.

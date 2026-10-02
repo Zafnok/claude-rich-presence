@@ -6,7 +6,7 @@ type: feature
 status: todo
 priority: P1
 blocked_by: [CRP-014, CRP-042, CRP-046]
-blocks: [CRP-049, CRP-053]
+blocks: [CRP-049, CRP-053, CRP-071, CRP-072]
 model: claude-sonnet-5-5
 effort: high
 size: M
@@ -29,13 +29,12 @@ This is the first feature that publishes anything about the content of the user'
 - **Configuration** (`internal/config`):
   - privacy level `summary`, above `full`;
   - settable globally or per project, through the project profiles of CRP-014;
-  - `summary_style`, an optional short free-text hint;
   - `summary_min_dwell`, a duration, five minutes by default, zero to disable.
 - **Domain** (`internal/domain`): a session carries an optional activity phrase, an optional area and an optional project display name. A new event kind sets them. A display name from the project's profile takes precedence over one the model supplies. They are cleared when the session id rebinds.
 - **Sanitiser**, a pure function in `internal/adapter/code`: one line; a hard length cap; control characters removed; links, mentions, invite codes and markup stripped; whitespace collapsed; an empty result is rejected.
 - **Tool** `presence_summary`:
   - listed only when the level is `summary` for this session;
-  - description and server instructions as recorded by CRP-046, with the style hint appended, and with the profile's `areas` list when there is one;
+  - description and server instructions as recorded by CRP-046, with the profile's `areas` list when there is one. The voice of the phrase is added later by the personalities of CRP-072;
   - marked to always load;
   - returns immediately in every case, with an empty result or the fixed acknowledgement CRP-046 chose.
 - **Stability**, in the adapter, with the injected clock:
@@ -75,7 +74,7 @@ This is the first feature that publishes anything about the content of the user'
 
 ## Notes for the implementer
 
-- The length cap should suit what Discord displays in the member list, which is much shorter than its protocol limit. Take the number from CRP-046's examples.
+- The length cap comes from the display measurements of CRP-070 if they are available, otherwise from CRP-046's examples. CRP-071 later lets a long phrase continue onto the second line.
 - Stripping links must also catch bare domains, or a phrase could still advertise one.
 - Keep the instruction text in one place, so the plugin skill, the tool description and the tests cannot drift apart.
 

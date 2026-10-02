@@ -153,11 +153,35 @@ What we take from them:
 
 We build rather than adopt because every reviewed project conflicts with at least one of our rules: a runtime prerequisite, reading undocumented files, a single-maintainer dependency, or no tests. All are MIT licensed, so their ideas are freely usable, and they are worth reading for behaviour on real machines.
 
+## Features considered from other projects
+
+Fourteen Claude presence projects and two mature editor integrations were surveyed on 2026-10-02 for features we lacked. The owner's decisions:
+
+| Feature | Seen in | Decision |
+|---|---|---|
+| Session and agent counts, effort level, plan mode | Seven and four projects | Taken, in hover text only, so they cost the summary no space. Effort and plan mode are off by default. [ADR-0013](adr/0013-summary-first-card-layout.md) |
+| Hide a project; pause | Five and three projects | Taken. [ADR-0012](adr/0012-project-profiles-and-repository-link.md) |
+| Themes and presets | Five projects | Taken as personalities that also shape Claude's summaries. [ADR-0014](adr/0014-personalities.md) |
+| Preview of the card | Five projects | Taken |
+| Model from the start, tokens, cost, context | Nine projects show the model | Taken through the status line, opt-in, pending a spike. [ADR-0015](adr/0015-status-line-bridge.md) |
+| Usage limits | Seven projects | Taken through the status line only. The route the others use, reading the login token and calling Anthropic's usage endpoint, is not permitted by Anthropic's terms and is rejected |
+| A "just shipped" moment | One project, by reading command text | Taken, using Claude Code's hook filter so the command is never read |
+| WSL | Two projects | A spike, CRP-076 |
+| Git branch | Six projects | Declined. The summary says the same thing better, and branch names can be sensitive |
+| Current file name | Three projects | Declined. It needs tool inputs, and one project removed it over leaks |
+| Statistics, streaks, leaderboards, dashboards, tray applications | Three projects | Declined. A different product, built on transcript scanning or network calls |
+| Claude Desktop detection through logs, window inspection or processor heuristics | Five projects | Declined. Undocumented and fragile. The opt-in summary tool is our route |
+| Other coding agents | Four projects | Not now. The adapter design allows it later |
+| Localisation | Three projects | Covered by custom personalities |
+
+Problems those projects hit that our plan did not yet check are now steps in existing tickets: console windows flashing on Windows (CRP-001, CRP-002), buttons that show only for some activity types (CRP-070, CRP-048), alternative Discord clients and displaced game activity (CRP-052), and silently missing artwork (CRP-003).
+
 ## Sources
 
 Claude Code and Claude Desktop:
 
 - Hooks reference: https://code.claude.com/docs/en/hooks
+- Status line reference: https://code.claude.com/docs/en/statusline
 - Plugin manifest reference: https://code.claude.com/docs/en/plugins-reference
 - Plugin marketplaces: https://code.claude.com/docs/en/plugin-marketplaces
 - MCPB bundles: https://claude.com/docs/connectors/building/mcpb

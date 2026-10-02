@@ -24,6 +24,10 @@ Ordered by how much damage each could do to the plan. "Retired by" names the tic
 | R18 | A published repository link points at a private repository, or a repository is made private later | Low | Low: the owner and name are revealed and the link leads nowhere | Per-project opt-in only. The setup skill checks visibility with the user's GitHub CLI. Documented | CRP-048 |
 | R19 | In a permission mode without prompts, text in a repository talks Claude into opting that project in by editing the configuration file | Low | Low: a link and phrase for that project are published | No tool can write profiles. The edit is visible and prompted in default modes. The link is validated. Documented | CRP-048, CRP-062 |
 | R20 | Sessions in one project label related work with different area names, so the shared line does not appear | Medium without a list of areas, low with one | Low: presence shows the focus session's own phrase instead | Areas listed in the project profile. Agreement measured in the spike before the roll-up is built | CRP-046, CRP-049 |
+| R21 | The status line does not run in the Claude Desktop Code tab or the IDE extensions, so the bridge works only in the terminal | Medium | Medium: no early model, cost or usage limits on those surfaces | Checked first in the spike. The feature is built for the surfaces where it works and documented as such | CRP-045 |
+| R22 | The bridge breaks or slows a user's own status line | Low | Medium | A strict pass-through contract with tests, and a skill that restores the original setting exactly | CRP-074 |
+| R23 | A moment appears when nothing was pushed, because Claude Code runs a filtered hook whenever it cannot tell what a command will do | Medium | Low: a brief wrong badge | Documented. Moments are short and can be turned off | CRP-001, CRP-075 |
+| R24 | Hover text is not shown on mobile, or Discord truncates by width in a way we mis-measure, so facts are unseen or the summary is cut | Medium | Low | Measured on real clients before the layout is built. Widths are settings | CRP-070 |
 
 ## Accepted limitations
 

@@ -68,6 +68,7 @@ Two things are not yet known and are settled here on a real Discord: how a butto
 
 ## Notes for the implementer
 
+- CRP-070 measures how buttons display for each activity type and to whom. If it has run, use its findings for the validation step here. One other project reports that buttons show only for one activity type.
 - Check the current Discord documentation for the button and URL fields before writing the codec change. The `discord-ipc` skill lists the sources.
 - The validation needs the owner's Discord and a second account to view the profile. Ask the owner to run it.
 - A skill is instructions for Claude, not code, so it is not measured for coverage. Keep it short and explicit, and keep every destructive or publishing step behind a confirmation.

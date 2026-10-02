@@ -47,7 +47,9 @@ Also record, because later tickets need them:
 - the server's working directory, parent process, and environment, in particular `CLAUDE_PLUGIN_ROOT`, `CLAUDE_PLUGIN_DATA`, `CLAUDE_CODE_REMOTE`, and how `userConfig` values arrive;
 - whether subagents share the session's server or start their own;
 - whether the same results hold in the terminal, the Claude Desktop Code tab, and the VS Code extension;
-- whether `claude plugin validate --strict` accepts the plugin as named.
+- whether `claude plugin validate --strict` accepts the plugin as named;
+- whether an `if` filter works on a hook of type `mcp_tool`, so that a `PostToolUse` hook fires only for a matching command such as a git push, and how often it fires when it should not. CRP-075 depends on this;
+- on Windows, whether a console window appears or flashes when Claude Code starts the binary. Three other projects had this problem.
 
 ## Out of scope
 

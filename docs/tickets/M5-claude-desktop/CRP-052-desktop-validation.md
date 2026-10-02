@@ -40,6 +40,8 @@ On Windows, and on a Mac if one is available, with the bundle built from `main`:
 | V10 | Ask Claude in Desktop Chat whether rich presence is working | Claude calls the status tool and reports correctly |
 | V11 | Change the privacy setting in the extension's settings and restart | The change takes effect |
 | V12 | Leave everything idle past the idle-clear period | Behaviour matches what CRP-050 decided |
+| V13 | If an alternative Discord client such as Vesktop is available, repeat V2 with it | Presence appears. If not, record it as a known limitation. One other project's card disappeared there |
+| V14 | With presence showing, start a game that Discord detects | Record which activity Discord shows first. One other project's users lost their game activity |
 
 ## Out of scope
 

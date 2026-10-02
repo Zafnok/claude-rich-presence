@@ -16,6 +16,9 @@ An ADR records one decision, why it was made, and what it costs. Accepted ADRs a
 | [0010](0010-naming-and-branding.md) | Neutral product names, no Anthropic or Discord marks | Proposed, pending CRP-003 |
 | [0011](0011-model-authored-activity-summary.md) | An opt-in activity summary written by Claude, through a tool call | Proposed, pending CRP-046 |
 | [0012](0012-project-profiles-and-repository-link.md) | Per-project profiles, and an opt-in repository link from the user's configuration only | Proposed, pending CRP-048 |
+| [0013](0013-summary-first-card-layout.md) | The summary owns the text lines; every other fact lives in hover text, images or buttons | Proposed, pending CRP-070 |
+| [0014](0014-personalities.md) | Personalities: a voice for Claude's summaries and a matching vocabulary for the fixed text | Proposed, pending CRP-046 and CRP-072 |
+| [0015](0015-status-line-bridge.md) | An opt-in status line bridge for model, context, cost and usage limits; never the login token | Proposed, pending CRP-045 |
 
 ## Format
 

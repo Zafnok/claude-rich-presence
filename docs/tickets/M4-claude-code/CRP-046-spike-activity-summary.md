@@ -46,7 +46,7 @@ Also record:
 - whether the tool is deferred behind tool search by default, and what marking makes it always load;
 - whether server instructions reach the model on each surface: terminal, Desktop Code tab, IDE;
 - the wording of description and instructions that worked best, verbatim;
-- whether a user style hint appended to the instructions changes the phrasing as intended;
+- whether a personality's voice instruction appended to the instructions changes the phrasing as intended, tried with at least a neutral, a casual and a dramatic voice, and whether any voice weakens the public-audience rules. ADR-0014 depends on this;
 - whether `TaskCreated` and `TaskCompleted` events carry the task's text, as a possible passive source.
 
 ## Out of scope

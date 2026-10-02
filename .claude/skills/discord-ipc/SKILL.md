@@ -71,7 +71,9 @@ Planned for the repository link (ADR-0012, CRP-048):
 
 A URL placed in an activity comes only from the user's configuration, validated. Never from model-written text.
 
-Fields that exist and we do not use: party, secrets, image URL fields, and the display-type field.
+Planned for the summary-first layout (ADR-0013, CRP-071): the two hover texts as the home for secondary facts, and the display-type field, which chooses whether the name or one of the text lines is shown in the member list. What a viewer actually sees of each field, and how many characters, is measured in CRP-070. Until then treat visible widths as unknown.
+
+Fields that exist and we do not use: party, secrets, and image URL fields.
 
 The title Discord shows is the **application's name**, set in the Developer Portal, not anything in the payload. Asset keys are lower-cased by Discord.
 
@@ -116,5 +118,5 @@ Two official figures exist: five updates per 20 seconds, and one update per 15 s
 ## In this repository
 
 - Decision to implement in-house: `docs/architecture/adr/0004-in-house-protocol-implementations.md`
-- Tickets: CRP-013, CRP-020, CRP-021, CRP-022, CRP-023, CRP-048
+- Tickets: CRP-013, CRP-020, CRP-021, CRP-022, CRP-023, CRP-048, CRP-070, CRP-071
 - Application id and artwork: CRP-003

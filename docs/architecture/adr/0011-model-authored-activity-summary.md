@@ -43,7 +43,7 @@ Facts this depends on:
    - write for a public audience: no names of people or customers, no file paths, no links, no secrets, nothing quoted from the user.
 4. The tool is marked to always load, so it is not hidden behind tool search.
 5. If the spike shows instructions alone are not reliable enough, the adapter adds a nudge: when a session at this level has no summary yet, the result of the `UserPromptSubmit` hook call carries a one-line reminder. This is the single exception to ADR-0007's rule that `presence_event` returns nothing. At every other level, and whenever a summary is set, the result stays empty. The reminder is never sent per turn or on a schedule.
-6. A user-supplied style hint, a short free-text setting, is appended to the instructions, so the phrasing can be made casual, terse, or anything else.
+6. The voice of the phrase comes from the user's chosen personality ([ADR-0014](0014-personalities.md)), whose instruction is appended to these. The rules about what a summary may contain are stated last and take precedence.
 
 ### Safety
 
@@ -84,7 +84,7 @@ Ticketed as [CRP-049](../../tickets/M4-claude-code/CRP-049-shared-area-rollup.md
 
 ### Rendering
 
-The first line becomes the activity phrase, or the shared area when several sessions in the project agree on one. The second line carries the project name, status and model. If no summary has been set yet, rendering falls back to the `full` level.
+The first line becomes the activity phrase, or the shared area when several sessions in the project agree on one. [ADR-0013](0013-summary-first-card-layout.md) then gives the summary both text lines when it needs them and moves everything else off them. The second line carries the project name, status and model. If no summary has been set yet, rendering falls back to the `full` level.
 
 ### Claude Desktop Chat
 

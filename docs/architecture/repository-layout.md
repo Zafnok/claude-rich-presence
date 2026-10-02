@@ -41,7 +41,8 @@ claude-rich-presence/
 │   ├── mcp/                          CRP-040  minimal stdio JSON-RPC server
 │   ├── adapter/
 │   │   ├── code/                     CRP-041  presence_event tool to domain events
-│   │   └── desktop/                  CRP-050  lifecycle only
+│   │   ├── desktop/                  CRP-050  lifecycle only
+│   │   └── statusline/               CRP-074  status line data to session facts
 │   ├── diag/                         CRP-034  logging, doctor checks
 │   ├── cli/                          CRP-033  command dispatch and the composition root
 │   └── testutil/

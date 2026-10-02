@@ -36,7 +36,7 @@ The roll-up is a fixed rule in the renderer. No model is involved, and no sessio
   | Two or more, with no area shared by the focus session | The focus session's phrase, with the session count |
 
 - Areas are compared after normalising case and spacing.
-- The roll-up line is a lead-in plus the area. The lead-in is a setting, `summary_rollup_lead`, "Working on" by default, so the phrasing can match the user's style hint.
+- The roll-up line is a lead-in plus the area. The lead-in is "Working on" by default, and is later supplied by the personality of CRP-072.
 - Sessions in different projects, or with no profile, are never grouped.
 - User documentation: how to list a project's areas in its profile, and why that makes the roll-up dependable.
 
