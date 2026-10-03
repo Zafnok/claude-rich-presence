@@ -1,0 +1,5 @@
+{"jsonrpc":"2.0","id":0,"result":{"protocolVersion":"2025-11-25","capabilities":{"tools":{}},"serverInfo":{"name":"golden-server","version":"0.0.1"}}}
+{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"Returns its arguments.","inputSchema":{"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}},{"name":"fail","description":"Always fails.","inputSchema":{"type":"object","additionalProperties":false}}]}}
+{"jsonrpc":"2.0","id":"call-1","result":{"content":[{"type":"text","text":"{\"text\":\"hello <world> & \\\"friends\\\"\"}"}]}}
+{"jsonrpc":"2.0","id":2,"result":{"content":[{"type":"text","text":"it failed"}],"isError":true}}
+{"jsonrpc":"2.0","id":3,"result":{}}

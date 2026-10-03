@@ -1,0 +1,6 @@
+{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{"roots":{"listChanged":true},"elicitation":{}},"clientInfo":{"name":"golden-client","title":"Golden Client","version":"1.2.3"}}}
+{"jsonrpc":"2.0","method":"notifications/initialized"}
+{"jsonrpc":"2.0","id":1,"method":"tools/list"}
+{"jsonrpc":"2.0","id":"call-1","method":"tools/call","params":{"name":"echo","arguments":{"text":"hello <world> & \"friends\""}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"fail","_meta":{"example/key":"value"}}}
+{"jsonrpc":"2.0","id":3,"method":"ping"}
