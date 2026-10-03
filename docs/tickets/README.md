@@ -71,20 +71,20 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-006](M0-foundation/CRP-006-sonarqube-cloud.md) | SonarQube Cloud integration | 005 | Sonnet 5.5 | low | S |
 | [CRP-007](M0-foundation/CRP-007-supply-chain-policy.md) | Supply-chain policy enforcement | 005 | Sonnet 5.5 | low | S |
 | [CRP-010](done/CRP-010-domain-model.md) | Domain model: events, sessions, registry | 004, 005 | Sonnet 5.5 | high | M |
-| [CRP-011](M1-core/CRP-011-presence-renderer.md) | Presence renderer | 010 | Sonnet 5.5 | medium | M |
+| [CRP-011](done/CRP-011-presence-renderer.md) | Presence renderer | 010 | Sonnet 5.5 | medium | M |
 | [CRP-012](done/CRP-012-configuration.md) | Configuration | 004, 005 | Sonnet 5.5 | medium | M |
-| [CRP-013](M1-core/CRP-013-update-scheduler.md) | Update scheduler | 004, 005 | Sonnet 5.5 | high | S |
+| [CRP-013](done/CRP-013-update-scheduler.md) | Update scheduler | 004, 005 | Sonnet 5.5 | high | S |
 | [CRP-014](M1-core/CRP-014-project-profiles.md) | Project profiles in configuration | 012 | Sonnet 5.5 | medium | M |
-| [CRP-020](M2-discord/CRP-020-discord-codec.md) | Discord IPC codec | 004, 005, 010 | Sonnet 5.5 | medium | S |
+| [CRP-020](done/CRP-020-discord-codec.md) | Discord IPC codec | 004, 005, 010 | Sonnet 5.5 | medium | S |
 | [CRP-021](M2-discord/CRP-021-discord-transport.md) | Discord transport: pipe and socket dialers | 004, 005, 022 | Opus 5.5 | high | M |
-| [CRP-022](M2-discord/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004, 005 | Sonnet 5.5 | high | M |
+| [CRP-022](done/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-023](M2-discord/CRP-023-discord-session-manager.md) | Discord session manager | 013, 020, 021, 022 | Opus 5.5 | high | M |
 | [CRP-030](M3-host/CRP-030-control-protocol.md) | Control protocol | 010 | Sonnet 5.5 | medium | S |
-| [CRP-031](M3-host/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
+| [CRP-031](done/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
 | [CRP-032](M3-host/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |
 | [CRP-033](M3-host/CRP-033-cli.md) | Command line and composition root | 012, 032, 034, 041 | Sonnet 5.5 | medium | M |
 | [CRP-034](M3-host/CRP-034-diagnostics.md) | Logging and diagnostics | 012 | Sonnet 5.5 | medium | S |
-| [CRP-040](M4-claude-code/CRP-040-mcp-server.md) | Minimal MCP stdio server | 004, 005 | Sonnet 5.5 | high | M |
+| [CRP-040](done/CRP-040-mcp-server.md) | Minimal MCP stdio server | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-041](M4-claude-code/CRP-041-code-adapter.md) | Claude Code adapter | 001, 010, 012, 040 | Sonnet 5.5 | high | M |
 | [CRP-042](M4-claude-code/CRP-042-plugin-packaging.md) | Plugin and marketplace packaging | 001, 033, 051 | Sonnet 5.5 | medium | S |
 | [CRP-043](M4-claude-code/CRP-043-end-to-end-tests.md) | End-to-end tests | 022, 033 | Opus 5.5 | high | L |

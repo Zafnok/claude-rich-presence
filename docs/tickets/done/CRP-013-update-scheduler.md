@@ -3,7 +3,7 @@ id: CRP-013
 title: Update scheduler
 milestone: M1 Core
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-023]
@@ -42,14 +42,14 @@ Package `internal/schedule`, plus a fake clock in `internal/testutil/fakeclock`:
 
 ## Acceptance criteria
 
-- [ ] The first submission after a quiet period is emitted with no delay.
-- [ ] A burst of submissions within the interval results in exactly two emissions: the first immediately and the last at the interval boundary.
-- [ ] Submitting the value already shown emits nothing.
-- [ ] Submitting A, then B, then A again within the interval emits nothing at the boundary, because the pending value equals the shown one.
-- [ ] After a reset, the current value is emitted again, no earlier than the interval allows.
-- [ ] Stopping the scheduler releases its timer and leaves no goroutine running, verified in a test.
-- [ ] All tests use the fake clock. None sleeps.
-- [ ] The tests pass under the race detector with submissions from several goroutines.
+- [x] The first submission after a quiet period is emitted with no delay.
+- [x] A burst of submissions within the interval results in exactly two emissions: the first immediately and the last at the interval boundary.
+- [x] Submitting the value already shown emits nothing.
+- [x] Submitting A, then B, then A again within the interval emits nothing at the boundary, because the pending value equals the shown one.
+- [x] After a reset, the current value is emitted again, no earlier than the interval allows.
+- [x] Stopping the scheduler releases its timer and leaves no goroutine running, verified in a test.
+- [x] All tests use the fake clock. None sleeps.
+- [x] The tests pass under the race detector with submissions from several goroutines.
 
 ## Notes for the implementer
 

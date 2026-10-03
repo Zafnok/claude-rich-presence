@@ -49,6 +49,21 @@ Write header and payload in one call. The official library caps a frame at 64 Ki
 
 No OAuth step is used. Discord's own library sends only the handshake and then sets the activity. The documentation text says commands need authentication; behaviour says otherwise for this command. This is a dependency on behaviour (risk R7).
 
+## Close and error codes
+
+A close frame carries `code` and `message`. An error answer to a command is a frame whose event is `ERROR`, with `code` and `message` in its data and the command's nonce. Checked against the documentation on 2026-10-03.
+
+| Where | Code | Meaning |
+|---|---|---|
+| Close | 4000 | Invalid client id |
+| Close | 4002 | Rate limited |
+| Close | 4004 | Invalid version |
+| Error | 1000 | Unknown error |
+| Error | 4000 | Invalid payload |
+| Error | 4002 | Invalid command |
+
+What Discord sends for a frame it cannot parse is not documented. The open reimplementation closes with code 1003, and the fake server (`internal/testutil/fakediscord`) does the same.
+
 ## Activity fields we use
 
 | Field | Notes |
@@ -108,6 +123,7 @@ Two official figures exist: five updates per 20 seconds, and one update per 15 s
 ## Sources
 
 - https://docs.discord.com/developers/topics/rpc
+- https://docs.discord.com/developers/topics/opcodes-and-status-codes
 - https://github.com/discord/discord-rpc/blob/master/documentation/hard-mode.md
 - https://github.com/discord/discord-rpc/blob/master/src/rpc_connection.h
 - https://github.com/discord/discord-api-docs/issues/668

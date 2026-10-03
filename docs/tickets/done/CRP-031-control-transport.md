@@ -3,7 +3,7 @@ id: CRP-031
 title: Control transport and the host lock
 milestone: M3 Host
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-032]
@@ -46,17 +46,17 @@ Package `internal/control/transport`:
 
 ## Acceptance criteria
 
-- [ ] The resolver is tested for all three operating systems on every operating system, including the override, each fallback, and a path at, one under and one over the length limit.
-- [ ] For a Windows environment, the resolver returns `%TEMP%\rich-presence`, and never a folder directly under `%LOCALAPPDATA%` or `%APPDATA%`.
-- [ ] Two processes contend for the lock and exactly one gets it. Tested with a real second process on each operating system.
-- [ ] When the lock holder is killed, a waiting process can take the lock. Tested with a real process on each operating system.
-- [ ] A leftover socket file from a dead process does not prevent a new holder from listening.
-- [ ] A process that does not hold the lock cannot remove the socket file through this package's API.
-- [ ] On Unix, a runtime directory with group or world access is refused with a clear error.
-- [ ] A dial with no listener returns the "no host" error within the timeout.
-- [ ] Listener and dialer exchange data on Linux, macOS and Windows in CI.
-- [ ] Only the standard library is used. If the Windows lock or socket cannot be done with it, stop and record why before reaching for `golang.org/x/sys`.
-- [ ] Platform files contain only the system call and its error mapping.
+- [x] The resolver is tested for all three operating systems on every operating system, including the override, each fallback, and a path at, one under and one over the length limit.
+- [x] For a Windows environment, the resolver returns `%TEMP%\rich-presence`, and never a folder directly under `%LOCALAPPDATA%` or `%APPDATA%`.
+- [x] Two processes contend for the lock and exactly one gets it. Tested with a real second process on each operating system.
+- [x] When the lock holder is killed, a waiting process can take the lock. Tested with a real process on each operating system.
+- [x] A leftover socket file from a dead process does not prevent a new holder from listening.
+- [x] A process that does not hold the lock cannot remove the socket file through this package's API.
+- [x] On Unix, a runtime directory with group or world access is refused with a clear error.
+- [x] A dial with no listener returns the "no host" error within the timeout.
+- [x] Listener and dialer exchange data on Linux, macOS and Windows in CI.
+- [x] Only the standard library is used. If the Windows lock or socket cannot be done with it, stop and record why before reaching for `golang.org/x/sys`.
+- [x] Platform files contain only the system call and its error mapping.
 
 ## Notes for the implementer
 
