@@ -3,7 +3,7 @@ id: CRP-004
 title: Repository scaffolding and toolchain
 milestone: M0 Foundation
 type: chore
-status: in-progress
+status: done
 priority: P0
 blocked_by: []
 blocks: [CRP-005, CRP-010, CRP-012, CRP-013, CRP-020, CRP-021, CRP-022, CRP-031, CRP-040]
@@ -41,13 +41,13 @@ The repository holds only Markdown. Go is not installed on the development machi
 
 ## Acceptance criteria
 
-- [ ] `go build ./...` and `go test -race ./...` succeed on Windows. They are expected to succeed on macOS and Linux and are confirmed there by CRP-005.
-- [ ] `go vet ./...` and `gofmt -l .` report nothing.
-- [ ] `rich-presence version` prints the version and exits 0. An unknown command prints usage to standard error and exits 2.
-- [ ] Statement coverage of the skeleton is 100.0%, with `Run` tested directly.
-- [ ] `go.mod` has no `require` entries.
-- [ ] `CGO_ENABLED=0 go build` succeeds for `windows/amd64`, `darwin/amd64`, `darwin/arm64` and `linux/amd64`.
-- [ ] The names of the product, binary, plugin and tools appear in exactly one Go file.
+- [x] `go build ./...` and `go test -race ./...` succeed on Windows. They are expected to succeed on macOS and Linux and are confirmed there by CRP-005.
+- [x] `go vet ./...` and `gofmt -l .` report nothing.
+- [x] `rich-presence version` prints the version and exits 0. An unknown command prints usage to standard error and exits 2.
+- [x] Statement coverage of the skeleton is 100.0%, with `Run` tested directly.
+- [x] `go.mod` has no `require` entries.
+- [x] `CGO_ENABLED=0 go build` succeeds for `windows/amd64`, `darwin/amd64`, `darwin/arm64` and `linux/amd64`.
+- [x] The names of the product, binary, plugin and tools appear in exactly one Go file.
 
 ## Notes for the implementer
 

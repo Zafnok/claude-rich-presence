@@ -57,11 +57,17 @@ The minimum is Go 1.26. Build with the current stable release.
 
 Check with `go version`.
 
-The race detector needs cgo and so a C compiler, for tests only. The shipped binary is always built with `CGO_ENABLED=0`. macOS has one after `xcode-select --install`, and Linux after installing `gcc`. On Windows install a mingw-w64 `gcc`:
+The race detector needs cgo and so a C compiler, for tests only. The shipped binary is always built with `CGO_ENABLED=0`. macOS has one after `xcode-select --install`, and Linux after installing `gcc`. On Windows, Go cannot use Microsoft's compiler; install the mingw-w64 `gcc` from [MSYS2](https://www.msys2.org/):
 
 ```bash
-winget install BrechtSanders.WinLibs.POSIX.UCRT
+winget install MSYS2.MSYS2
 ```
+
+```bash
+C:/msys64/usr/bin/bash.exe -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-gcc"
+```
+
+Then add `C:\msys64\ucrt64\bin` to your `PATH`, or prefix a single command with it: `PATH="/c/msys64/ucrt64/bin:$PATH"`.
 
 There is no `Makefile`. Every task is a plain `go` command, run from the repository root. The commands below are written for a POSIX shell, which on Windows is Git Bash.
 

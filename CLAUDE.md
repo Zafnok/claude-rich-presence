@@ -2,7 +2,7 @@
 
 Discord Rich Presence for Claude Code and Claude Desktop. Go, MIT, one static binary named `rich-presence`.
 
-The repository is in its architecture phase. Until [CRP-004](docs/tickets/M0-foundation/CRP-004-repo-scaffolding.md) lands there is no code and no toolchain configuration.
+The Go module and toolchain are in place ([CRP-004](docs/tickets/done/CRP-004-repo-scaffolding.md)): a skeleton with one package directory per component and a `version` command. Build, test and coverage commands are in the Development section of [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Source of truth
 
