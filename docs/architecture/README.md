@@ -182,7 +182,7 @@ Privacy levels, set per adapter and enforced before anything is sent to the host
 | `full` | Plus the project name, which is the last element of the working directory |
 | `summary`, opt-in, proposed | Plus one short phrase describing the work, written by Claude |
 
-Exact strings, truncation to Discord's limits and the tool-kind vocabulary are specified in [CRP-011](../tickets/M1-core/CRP-011-presence-renderer.md).
+Exact strings, truncation to Discord's limits and the tool-kind vocabulary are specified in [CRP-011](../tickets/done/CRP-011-presence-renderer.md).
 
 ### The activity summary
 

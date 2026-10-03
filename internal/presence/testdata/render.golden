@@ -1,0 +1,145 @@
+# surface/status/tool/privacy/sessions | details | state | large image | large text | small image | small text
+code/working/-/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/-/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/-/standard/1 | Claude Code | Thinking · Opus | logo | Claude Code | working | Thinking
+code/working/-/standard/3 | Claude Code | Thinking · Opus · 3 sessions | logo | Claude Code | working | Thinking
+code/working/-/full/1 | Claude Code · myproject | Thinking · Opus | logo | Claude Code | working | Thinking
+code/working/-/full/3 | Claude Code · myproject | Thinking · Opus · 3 sessions | logo | Claude Code | working | Thinking
+code/working/editing/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/editing/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/editing/standard/1 | Claude Code | Editing files · Opus | logo | Claude Code | working | Editing files
+code/working/editing/standard/3 | Claude Code | Editing files · Opus · 3 sessions | logo | Claude Code | working | Editing files
+code/working/editing/full/1 | Claude Code · myproject | Editing files · Opus | logo | Claude Code | working | Editing files
+code/working/editing/full/3 | Claude Code · myproject | Editing files · Opus · 3 sessions | logo | Claude Code | working | Editing files
+code/working/running/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/running/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/running/standard/1 | Claude Code | Running commands · Opus | logo | Claude Code | working | Running commands
+code/working/running/standard/3 | Claude Code | Running commands · Opus · 3 sessions | logo | Claude Code | working | Running commands
+code/working/running/full/1 | Claude Code · myproject | Running commands · Opus | logo | Claude Code | working | Running commands
+code/working/running/full/3 | Claude Code · myproject | Running commands · Opus · 3 sessions | logo | Claude Code | working | Running commands
+code/working/reading/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/reading/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/reading/standard/1 | Claude Code | Reading files · Opus | logo | Claude Code | working | Reading files
+code/working/reading/standard/3 | Claude Code | Reading files · Opus · 3 sessions | logo | Claude Code | working | Reading files
+code/working/reading/full/1 | Claude Code · myproject | Reading files · Opus | logo | Claude Code | working | Reading files
+code/working/reading/full/3 | Claude Code · myproject | Reading files · Opus · 3 sessions | logo | Claude Code | working | Reading files
+code/working/searching/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/searching/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/searching/standard/1 | Claude Code | Searching · Opus | logo | Claude Code | working | Searching
+code/working/searching/standard/3 | Claude Code | Searching · Opus · 3 sessions | logo | Claude Code | working | Searching
+code/working/searching/full/1 | Claude Code · myproject | Searching · Opus | logo | Claude Code | working | Searching
+code/working/searching/full/3 | Claude Code · myproject | Searching · Opus · 3 sessions | logo | Claude Code | working | Searching
+code/working/browsing/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/browsing/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/browsing/standard/1 | Claude Code | Browsing the web · Opus | logo | Claude Code | working | Browsing the web
+code/working/browsing/standard/3 | Claude Code | Browsing the web · Opus · 3 sessions | logo | Claude Code | working | Browsing the web
+code/working/browsing/full/1 | Claude Code · myproject | Browsing the web · Opus | logo | Claude Code | working | Browsing the web
+code/working/browsing/full/3 | Claude Code · myproject | Browsing the web · Opus · 3 sessions | logo | Claude Code | working | Browsing the web
+code/working/delegating/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/delegating/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/delegating/standard/1 | Claude Code | Delegating to subagents · Opus | logo | Claude Code | working | Delegating to subagents
+code/working/delegating/standard/3 | Claude Code | Delegating to subagents · Opus · 3 sessions | logo | Claude Code | working | Delegating to subagents
+code/working/delegating/full/1 | Claude Code · myproject | Delegating to subagents · Opus | logo | Claude Code | working | Delegating to subagents
+code/working/delegating/full/3 | Claude Code · myproject | Delegating to subagents · Opus · 3 sessions | logo | Claude Code | working | Delegating to subagents
+code/working/tools/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/tools/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/tools/standard/1 | Claude Code | Using tools · Opus | logo | Claude Code | working | Using tools
+code/working/tools/standard/3 | Claude Code | Using tools · Opus · 3 sessions | logo | Claude Code | working | Using tools
+code/working/tools/full/1 | Claude Code · myproject | Using tools · Opus | logo | Claude Code | working | Using tools
+code/working/tools/full/3 | Claude Code · myproject | Using tools · Opus · 3 sessions | logo | Claude Code | working | Using tools
+code/working/generic/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/working/generic/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/working/generic/standard/1 | Claude Code | Working · Opus | logo | Claude Code | working | Working
+code/working/generic/standard/3 | Claude Code | Working · Opus · 3 sessions | logo | Claude Code | working | Working
+code/working/generic/full/1 | Claude Code · myproject | Working · Opus | logo | Claude Code | working | Working
+code/working/generic/full/3 | Claude Code · myproject | Working · Opus · 3 sessions | logo | Claude Code | working | Working
+code/waiting/-/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/waiting/-/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/waiting/-/standard/1 | Claude Code | Waiting for input · Opus | logo | Claude Code | waiting | Waiting for input
+code/waiting/-/standard/3 | Claude Code | Waiting for input · Opus · 3 sessions | logo | Claude Code | waiting | Waiting for input
+code/waiting/-/full/1 | Claude Code · myproject | Waiting for input · Opus | logo | Claude Code | waiting | Waiting for input
+code/waiting/-/full/3 | Claude Code · myproject | Waiting for input · Opus · 3 sessions | logo | Claude Code | waiting | Waiting for input
+code/compacting/-/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/compacting/-/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/compacting/-/standard/1 | Claude Code | Compacting context · Opus | logo | Claude Code | working | Compacting context
+code/compacting/-/standard/3 | Claude Code | Compacting context · Opus · 3 sessions | logo | Claude Code | working | Compacting context
+code/compacting/-/full/1 | Claude Code · myproject | Compacting context · Opus | logo | Claude Code | working | Compacting context
+code/compacting/-/full/3 | Claude Code · myproject | Compacting context · Opus · 3 sessions | logo | Claude Code | working | Compacting context
+code/idle/-/minimal/1 | Claude Code | - | logo | Claude Code | - | -
+code/idle/-/minimal/3 | Claude Code | - | logo | Claude Code | - | -
+code/idle/-/standard/1 | Claude Code | Idle · Opus | logo | Claude Code | idle | Idle
+code/idle/-/standard/3 | Claude Code | Idle · Opus · 3 sessions | logo | Claude Code | idle | Idle
+code/idle/-/full/1 | Claude Code · myproject | Idle · Opus | logo | Claude Code | idle | Idle
+code/idle/-/full/3 | Claude Code · myproject | Idle · Opus · 3 sessions | logo | Claude Code | idle | Idle
+desktop/working/-/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/-/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/-/standard/1 | Claude Desktop | Thinking · Opus | logo | Claude Desktop | working | Thinking
+desktop/working/-/standard/3 | Claude Desktop | Thinking · Opus · 3 sessions | logo | Claude Desktop | working | Thinking
+desktop/working/-/full/1 | Claude Desktop · myproject | Thinking · Opus | logo | Claude Desktop | working | Thinking
+desktop/working/-/full/3 | Claude Desktop · myproject | Thinking · Opus · 3 sessions | logo | Claude Desktop | working | Thinking
+desktop/working/editing/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/editing/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/editing/standard/1 | Claude Desktop | Editing files · Opus | logo | Claude Desktop | working | Editing files
+desktop/working/editing/standard/3 | Claude Desktop | Editing files · Opus · 3 sessions | logo | Claude Desktop | working | Editing files
+desktop/working/editing/full/1 | Claude Desktop · myproject | Editing files · Opus | logo | Claude Desktop | working | Editing files
+desktop/working/editing/full/3 | Claude Desktop · myproject | Editing files · Opus · 3 sessions | logo | Claude Desktop | working | Editing files
+desktop/working/running/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/running/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/running/standard/1 | Claude Desktop | Running commands · Opus | logo | Claude Desktop | working | Running commands
+desktop/working/running/standard/3 | Claude Desktop | Running commands · Opus · 3 sessions | logo | Claude Desktop | working | Running commands
+desktop/working/running/full/1 | Claude Desktop · myproject | Running commands · Opus | logo | Claude Desktop | working | Running commands
+desktop/working/running/full/3 | Claude Desktop · myproject | Running commands · Opus · 3 sessions | logo | Claude Desktop | working | Running commands
+desktop/working/reading/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/reading/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/reading/standard/1 | Claude Desktop | Reading files · Opus | logo | Claude Desktop | working | Reading files
+desktop/working/reading/standard/3 | Claude Desktop | Reading files · Opus · 3 sessions | logo | Claude Desktop | working | Reading files
+desktop/working/reading/full/1 | Claude Desktop · myproject | Reading files · Opus | logo | Claude Desktop | working | Reading files
+desktop/working/reading/full/3 | Claude Desktop · myproject | Reading files · Opus · 3 sessions | logo | Claude Desktop | working | Reading files
+desktop/working/searching/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/searching/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/searching/standard/1 | Claude Desktop | Searching · Opus | logo | Claude Desktop | working | Searching
+desktop/working/searching/standard/3 | Claude Desktop | Searching · Opus · 3 sessions | logo | Claude Desktop | working | Searching
+desktop/working/searching/full/1 | Claude Desktop · myproject | Searching · Opus | logo | Claude Desktop | working | Searching
+desktop/working/searching/full/3 | Claude Desktop · myproject | Searching · Opus · 3 sessions | logo | Claude Desktop | working | Searching
+desktop/working/browsing/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/browsing/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/browsing/standard/1 | Claude Desktop | Browsing the web · Opus | logo | Claude Desktop | working | Browsing the web
+desktop/working/browsing/standard/3 | Claude Desktop | Browsing the web · Opus · 3 sessions | logo | Claude Desktop | working | Browsing the web
+desktop/working/browsing/full/1 | Claude Desktop · myproject | Browsing the web · Opus | logo | Claude Desktop | working | Browsing the web
+desktop/working/browsing/full/3 | Claude Desktop · myproject | Browsing the web · Opus · 3 sessions | logo | Claude Desktop | working | Browsing the web
+desktop/working/delegating/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/delegating/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/delegating/standard/1 | Claude Desktop | Delegating to subagents · Opus | logo | Claude Desktop | working | Delegating to subagents
+desktop/working/delegating/standard/3 | Claude Desktop | Delegating to subagents · Opus · 3 sessions | logo | Claude Desktop | working | Delegating to subagents
+desktop/working/delegating/full/1 | Claude Desktop · myproject | Delegating to subagents · Opus | logo | Claude Desktop | working | Delegating to subagents
+desktop/working/delegating/full/3 | Claude Desktop · myproject | Delegating to subagents · Opus · 3 sessions | logo | Claude Desktop | working | Delegating to subagents
+desktop/working/tools/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/tools/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/tools/standard/1 | Claude Desktop | Using tools · Opus | logo | Claude Desktop | working | Using tools
+desktop/working/tools/standard/3 | Claude Desktop | Using tools · Opus · 3 sessions | logo | Claude Desktop | working | Using tools
+desktop/working/tools/full/1 | Claude Desktop · myproject | Using tools · Opus | logo | Claude Desktop | working | Using tools
+desktop/working/tools/full/3 | Claude Desktop · myproject | Using tools · Opus · 3 sessions | logo | Claude Desktop | working | Using tools
+desktop/working/generic/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/generic/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/working/generic/standard/1 | Claude Desktop | Working · Opus | logo | Claude Desktop | working | Working
+desktop/working/generic/standard/3 | Claude Desktop | Working · Opus · 3 sessions | logo | Claude Desktop | working | Working
+desktop/working/generic/full/1 | Claude Desktop · myproject | Working · Opus | logo | Claude Desktop | working | Working
+desktop/working/generic/full/3 | Claude Desktop · myproject | Working · Opus · 3 sessions | logo | Claude Desktop | working | Working
+desktop/waiting/-/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/waiting/-/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/waiting/-/standard/1 | Claude Desktop | Waiting for input · Opus | logo | Claude Desktop | waiting | Waiting for input
+desktop/waiting/-/standard/3 | Claude Desktop | Waiting for input · Opus · 3 sessions | logo | Claude Desktop | waiting | Waiting for input
+desktop/waiting/-/full/1 | Claude Desktop · myproject | Waiting for input · Opus | logo | Claude Desktop | waiting | Waiting for input
+desktop/waiting/-/full/3 | Claude Desktop · myproject | Waiting for input · Opus · 3 sessions | logo | Claude Desktop | waiting | Waiting for input
+desktop/compacting/-/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/compacting/-/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/compacting/-/standard/1 | Claude Desktop | Compacting context · Opus | logo | Claude Desktop | working | Compacting context
+desktop/compacting/-/standard/3 | Claude Desktop | Compacting context · Opus · 3 sessions | logo | Claude Desktop | working | Compacting context
+desktop/compacting/-/full/1 | Claude Desktop · myproject | Compacting context · Opus | logo | Claude Desktop | working | Compacting context
+desktop/compacting/-/full/3 | Claude Desktop · myproject | Compacting context · Opus · 3 sessions | logo | Claude Desktop | working | Compacting context
+desktop/idle/-/minimal/1 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/idle/-/minimal/3 | Claude Desktop | - | logo | Claude Desktop | - | -
+desktop/idle/-/standard/1 | Claude Desktop | Idle · Opus | logo | Claude Desktop | idle | Idle
+desktop/idle/-/standard/3 | Claude Desktop | Idle · Opus · 3 sessions | logo | Claude Desktop | idle | Idle
+desktop/idle/-/full/1 | Claude Desktop · myproject | Idle · Opus | logo | Claude Desktop | idle | Idle
+desktop/idle/-/full/3 | Claude Desktop · myproject | Idle · Opus · 3 sessions | logo | Claude Desktop | idle | Idle
