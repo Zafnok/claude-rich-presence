@@ -4,6 +4,8 @@
 
 **Proposed.** Accepted or replaced by the outcome of [CRP-001](../../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) for Claude Code and [CRP-002](../../tickets/M0-foundation/CRP-002-spike-desktop-extension.md) for Claude Desktop. Until then, only the tickets that name this ADR depend on it. The core does not.
 
+CRP-002 has reported on Windows, and the Claude Desktop section below was revised on 2026-10-03 to match its [findings](../../research/crp-002-desktop-extension.md). The Desktop wiring holds there. macOS is untested, and CRP-001 is still to report.
+
 ## Context
 
 The binary has to reach the user's machine, be started by Claude, and receive events, on three operating systems, without requiring a shell or a language runtime.
@@ -64,7 +66,33 @@ An illustration of one hook entry, not a specification:
 
 ### Claude Desktop
 
-The user installs the same bundle as a desktop extension. The adapter recognises the client from the MCP `initialize` request and reports only that the app is open.
+The user installs the same bundle as a desktop extension.
+
+Observed in CRP-002, on Windows with Claude Desktop 2.9939.4:
+
+| Fact | Consequence |
+|---|---|
+| Claude Desktop starts **two** copies of the server at app launch, with no chat opened, and keeps both until it quits. One is initialised by a client named `claude-ai`, the other by a client named `local-agent-mode-` followed by the extension's display name | Two adapters, one app. Only one may report |
+| Closing the window to the tray stops nothing. Quitting closes the server's input. A force-killed app takes its servers with it at once | The server is alive exactly while the app is. This is the lifetime the design assumed |
+| A server still running two seconds after its input closes is ended | Exit promptly when input closes |
+| At launch, a copy is started and has its input closed before any `initialize`, and the `claude-ai` copy proper starts two seconds later | Do nothing that others can see before `initialize` |
+| Right after an install, the `claude-ai` copy ran in one test and did not in another. It ran after the next launch both times | Presence may need a restart of the app after installing |
+| New conversations and Code-tab sessions start no further copies | The server is a signal for the app, not for a conversation |
+| A server that exits by itself is not restarted until the extension is switched off and on, or the app is restarted | The adapter must not exit while its input is open |
+| Saving the extension's settings restarts the `claude-ai` copy only. The other keeps the old values until the app is restarted | Settings are trusted only in the `claude-ai` copy. This is why the other copy does not report: it could keep showing presence after the user turned it off |
+| The server is first started before the settings form is saved, and an optional setting left empty arrives as the literal text `${user_config.KEY}` | A placeholder is treated as unset |
+| The extension is not attached to Code-tab sessions | The plugin's adapter is the only one in a Code-tab session |
+
+Rules:
+
+1. The adapter recognises the client from the MCP `initialize` request. The names are kept in one table.
+2. The copy whose client is `claude-ai` reports that the app is open, and nothing more.
+3. A copy whose client name starts with `local-agent-mode-` reports no session and does not stand for host. It still answers `presence_status`.
+4. An adapter never exits while its input is open. Standing down as host ([ADR-0005](0005-presence-host-election.md)) releases the lock and keeps the process.
+5. A setting whose value still contains `${user_config.` is treated as not set.
+6. Before `initialize` arrives, an adapter does not take the host lock, connect to a host or publish anything. When its input closes it exits at once.
+
+Not observed: macOS, Cowork, and a tool call from a Chat conversation. CRP-052 checks the last on a real install.
 
 ### Tools
 

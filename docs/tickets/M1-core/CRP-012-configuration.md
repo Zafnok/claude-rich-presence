@@ -36,8 +36,9 @@ Package `internal/config`:
 | `log_level` | `error`, `warn`, `info`, `debug` | `warn` | Both |
 
 - Precedence, highest first: environment variables named `RICH_PRESENCE_` plus the upper-cased setting name, the file, defaults.
-- The file is JSON, named `config.json`, in a `rich-presence` directory under the operating system's user configuration directory.
-- A function that resolves the configuration and log directories for the current operating system, taking the environment as a parameter. The runtime directory for the control socket is not resolved here. CRP-031 owns it.
+- The file is JSON, named `config.json`. On macOS and Linux it is in a `rich-presence` directory under the operating system's user configuration directory. On Windows it is in `%USERPROFILE%\.rich-presence`, and the logs are in `%USERPROFILE%\.rich-presence\logs`, because Claude Desktop redirects new folders under `AppData` for every process it starts ([ADR-0016](../../architecture/adr/0016-windows-file-locations.md)).
+- A function that resolves the configuration and log directories for the current operating system, taking the environment as a parameter. On Windows it does not call the standard library's user configuration or user cache directory functions. The runtime directory for the control socket is not resolved here. CRP-031 owns it.
+- An environment value that still contains `${user_config.` is treated as not set, with no warning. Claude Desktop passes that literal text for an extension setting the user left empty, and on the first start after install.
 - Validation that reports every problem and then **falls back to the default for that setting**. A missing file is normal. A malformed file, an unknown key or an invalid value produces a warning and never an error exit.
 
 ## Out of scope
@@ -53,6 +54,8 @@ Package `internal/config`:
 - [ ] Unknown keys in the file yield a warning each and are otherwise ignored.
 - [ ] `min_update_interval` below the floor is raised to the floor with a warning.
 - [ ] Directory resolution is tested for Windows, macOS and Linux inputs on every operating system, by passing the environment in.
+- [ ] For a Windows environment, neither resolved directory is under `%APPDATA%` or `%LOCALAPPDATA%`.
+- [ ] An environment value of `${user_config.discord_application_id}` yields the default and no warning.
 - [ ] Reading the file goes through an interface, and read errors other than "not found" are covered.
 - [ ] A fuzz test shows no input can make loading panic.
 
@@ -69,4 +72,5 @@ Ordinary work with many small cases.
 ## References
 
 - [ADR-0008](../../architecture/adr/0008-privacy-and-safety-by-default.md)
+- [ADR-0016](../../architecture/adr/0016-windows-file-locations.md)
 - [ADR-0006](../../architecture/adr/0006-control-channel.md)

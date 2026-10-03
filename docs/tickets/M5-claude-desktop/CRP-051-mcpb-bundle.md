@@ -61,6 +61,14 @@ The MCPB manifest selects by operating system, not by CPU architecture. That is 
 - Zip archives do not always preserve Unix permissions. Set them explicitly when writing the archive, and test by extracting.
 - Go signs Mac binaries for Apple silicon ad hoc at link time, because the system refuses to run unsigned ones. Verify what survives the merge.
 - If CRP-001 showed that Claude Code's bundle loader differs from the specification in any way, follow what Claude Code actually does and note it.
+- What [CRP-002](../../research/crp-002-desktop-extension.md) saw Claude Desktop do with a bundle on Windows:
+  - A command written as `${__dirname}/server/name.exe` in a `win32` override runs. The specification's bare relative form was not tried.
+  - The server's working directory is `C:\Windows\system32`. Never rely on it.
+  - The server is started as soon as the extension is installed, before the user saves the settings form, so every setting must have a usable default.
+  - An optional setting left empty reaches the server as the literal text `${user_config.KEY}`. CRP-012 treats that as not set.
+  - Numbers and booleans arrive as text: `42`, `true`, `false`.
+  - Saving the settings restarts only one of the two copies Claude Desktop runs. See CRP-050.
+  - A setting marked sensitive still reaches the server in a plain environment variable.
 
 ## Why this model and effort
 
