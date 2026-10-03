@@ -60,7 +60,7 @@ D2 is the important one. A Claude Code hook is a process that runs for milliseco
 |---|---|---|
 | Local extensions | Desktop Extensions (MCPB bundles) run a local MCP server. Server type `binary` needs no runtime | Docs |
 | Signal about conversations | **None.** A server is told only when the model calls one of its tools | Docs |
-| Server lifetime | Two copies of the server are started when the extension is enabled and kept while it stays enabled. Neither is tied to a conversation | **Observed** on Windows, in the [CRP-002 findings](../research/crp-002-desktop-extension.md). Start at app launch and stop at quit are still **Unverified** |
+| Server lifetime | Two copies of the server are started at app launch and kept until the app quits, including while it sits in the tray. Neither is tied to a conversation | **Observed** on Windows, in the [CRP-002 findings](../research/crp-002-desktop-extension.md). **Unverified** on macOS |
 
 A server that lives exactly as long as the app is still useful: it is a reliable "Claude Desktop is open" signal with no polling and nothing installed at login.
 

@@ -2,32 +2,32 @@
 
 Ticket: [CRP-002](../tickets/M0-foundation/CRP-002-spike-desktop-extension.md). Prototype: branch [`spike/crp-002`](https://github.com/Zafnok/claude-rich-presence/tree/spike/crp-002/spike/crp-002), never merged.
 
-**Coverage.** Windows is covered except for the steps that need Claude Desktop to be quit and started again, which the owner deferred. macOS is untested. Both gaps are listed under [Not tested](#not-tested) and [Remaining steps](#remaining-steps).
+**Coverage.** Windows is covered, over two runs on one machine. macOS is untested. The gaps are listed under [Not tested](#not-tested).
 
 ## Answers
 
 | # | Question | Answer | Basis |
 |---|---|---|---|
-| B1 | When is the server started | As soon as the extension is installed and enabled, with no chat opened and no tool used. Whether it also starts at app launch is not tested | Observed |
-| B2 | One server per app, window or conversation | **Two per app.** Claude Desktop runs two copies of the server for as long as the extension is enabled, one for each of two internal clients. New chats, messages and a new Code-tab session started no others. A second window was not tried | Observed |
-| B3 | When is it stopped; is it restarted | Minimising does nothing. Uninstalling closes its input and ends the process within five seconds. **A server that exits by itself is not restarted**, with exit code 0 or 1, until the extension is switched off and on. Saving the extension's settings restarts one of the two copies only. Closing the window, the tray and quitting are not tested | Observed |
+| B1 | When is the server started | **At app launch**, within seconds, with no chat opened and no tool used. Also when the extension is installed, though on one of two installs only one of the two copies started until the app was next launched | Observed |
+| B2 | One server per app, window or conversation | **Two per app.** Claude Desktop runs two copies of the server, one for each of two internal clients. New chats, messages and a new Code-tab session started no others. The app offered no second window | Observed |
+| B3 | When is it stopped; is it restarted | It lives until the app quits. Minimising and closing the window to the tray do nothing. On quit and on uninstall the app closes the server's input, and ends a server that is still running about two seconds later. A force-killed app takes its servers with it at once. **A server that exits by itself is not restarted**, with exit code 0 or 1, until the extension is switched off and on or the app is restarted. Saving the extension's settings restarts one of the two copies only | Observed |
 | B4 | `clientInfo` | `claude-ai` version `0.1.0` for one copy, `local-agent-mode-` followed by the extension's display name, version `1.0.0`, for the other. Claude Code sends `claude-code`. All three are distinguishable | Observed |
-| B5 | A server with one diagnostic tool, or none | Both install and run with no warning beyond the standard notice that an extension can access everything on the computer. A successful tool call from Chat was not observed | Observed, with a gap |
+| B5 | A server with one diagnostic tool, or none | Both install and run with no warning beyond the standard notice that an extension can access everything on the computer. A tool call from Chat was never observed: on the one attempt, the copy that serves Chat was not running | Observed, with a gap |
 | B6 | How `user_config` reaches the server | Substituted into the arguments and environment named in the manifest, as strings. An optional value left empty arrives as the **literal text** `${user_config.KEY}`. The server is first started before the settings form is saved | Observed |
-| B7 | Shared host | **Fails at `%LOCALAPPDATA%\rich-presence`.** Works under `%TEMP%` and under a folder in the home directory. Named pipes also cross the boundary | Observed |
-| B8 | Job object | Yes. The server is in a job whose limits include kill-on-close. What happens when the app exits is not tested | Observed |
+| B7 | Shared host | **Fails at `%LOCALAPPDATA%\rich-presence`.** Works under `%TEMP%` and under a folder in the home directory, in both start orders. Named pipes also cross the boundary | Observed |
+| B8 | Job object | Yes. The server is in a job whose limits include kill-on-close, and when the app was force-killed both servers were gone within 70 ms | Observed |
 | B9 | macOS Gatekeeper | Not tested. Open, flagged in the risk register as R5 | |
 | B10 | Unsigned binary on Windows | No SmartScreen or antivirus prompt, with Defender's real-time protection on and the bundle marked as downloaded from the internet | Observed |
 | B11 | Extension in the Code tab | Not attached. A new Code-tab session saw no extension tool, and Claude Code started no copy of the server. No doubled adapter | Observed |
 | B12 | Discord pipe from inside | The server opened `\\.\pipe\discord-ipc-0` every time. A handshake sent from inside Claude Desktop's process tree got the expected reply. A handshake with a real application id was not sent | Observed, with a gap |
-| B13 | Console window | None seen at install. The process has a console window that is not visible. App launch is not tested | Observed |
+| B13 | Console window | None seen at install or at app launch. The process has a console window that is not visible | Observed |
 | | Cowork | Not tested | |
 
 ## Environment
 
 | Item | Value |
 |---|---|
-| Date | 2026-10-02. Times below are UTC |
+| Dates | 2026-10-02 and 2026-10-03. Times below are UTC |
 | Operating system | Windows 11 Pro 25H2, build 26200.9457 |
 | Claude Desktop | 2.9939.4.0, Store package family `Claude_pzs8sxrjxfjjc`, x64 |
 | Claude Code, as bundled with Claude Desktop | 2.1.284 |
@@ -50,21 +50,22 @@ Three kinds of process were compared:
 | Code-tab process | Started from a shell in a Desktop Code-tab session | `Claude.exe` → `claude.exe` (Claude Code) → `cmd.exe` → `powershell.exe` → prototype |
 | Outside process | No Claude ancestor | Windows Terminal → PowerShell → prototype, and in the pre-tests `WmiPrvSE.exe` → prototype |
 
-Two runs:
+Three runs:
 
-1. **Pre-tests**, by the agent, from a Code-tab session: the redirection probes, B7 in both orders between a Code-tab process and an outside process, the named pipe test, the `%APPDATA%` test, Claude Code's `clientInfo`, and a Discord handshake.
-2. **The runbook**, by the owner, from Windows Terminal, 06:14 to 06:31: `runbook.ps1` on the spike branch prompted each action in Claude Desktop and recorded it in the same log. The owner installed the bundle by the install dialog, kept the default settings, typed a sample secret, and left the Discord application id empty.
+1. **Pre-tests**, by the agent, from a Code-tab session, 2026-10-02: the redirection probes, B7 in both orders between a Code-tab process and an outside process, the named pipe test, the `%APPDATA%` test, Claude Code's `clientInfo`, and a Discord handshake.
+2. **First runbook**, by the owner, from Windows Terminal, 2026-10-02, 06:14 to 06:31: `runbook.ps1` on the spike branch prompted each action in Claude Desktop and recorded it in the same log. The owner installed the bundle by the install dialog, kept the default settings, typed a sample secret, and left the Discord application id empty.
+3. **Second runbook**, by the owner, 2026-10-03, 04:38 to 04:48: `runbook.ps1 -Later`, the steps that need the app to be quit. Install again, a tool request in Chat, close to the tray, quit, relaunch with a terminal copy already holding the locks, force-kill, relaunch, uninstall.
 
-Corrections the owner made to the run, applied here:
+Corrections the owner made to the first runbook, applied here:
 
-- The steps that said "close the window with X", "quit Claude Desktop" and "start Claude Desktop again" were **not performed**. Their recorded results are discarded.
+- The steps that said "close the window with X", "quit Claude Desktop" and "start Claude Desktop again" were **not performed** in that run. Their recorded results are discarded. The second runbook covers them.
 - Several steps that asked for a Chat conversation were done in the **Code tab** instead.
 
 ## Observations
 
 ### Start, number of servers and clients (B1, B2, B4)
 
-At 06:15:59, on completing the install dialog and before any chat was opened, two servers started within 8 ms of each other. Both are direct children of the Claude Desktop main process. They differ only in the client that initialised them:
+In the first runbook, at 06:15:59, on completing the install dialog and before any chat was opened, two servers started within 8 ms of each other. Both are direct children of the Claude Desktop main process. They differ only in the client that initialised them:
 
 | | First copy | Second copy |
 |---|---|---|
@@ -81,22 +82,40 @@ Between 06:17 and 06:22 the owner opened a new conversation, sent messages, open
 
 The three `roots/list_changed` notifications arrived within seconds of the owner sending a message or starting a session. The prototype logged the method name only. This is a signal about activity, which the project does not use ([ADR-0008](../architecture/adr/0008-privacy-and-safety-by-default.md)).
 
+**The second install behaved differently.** In the second runbook, completing the install dialog started only the `local-agent-mode` copy. It was closed nine seconds later and started again nine seconds after that. No `claude-ai` copy ran for the six minutes until the app was quit. In that time the owner saved the settings form, which restarted nothing, and asked Claude in a Chat conversation to call the tool; Claude answered that there was no such tool, although the extension was listed and enabled. Why the two installs differed is not known.
+
+**App launch**, observed twice in the second runbook, with no chat opened:
+
+| Time after the first server appears | What happened |
+|---|---|
+| 0 | The `local-agent-mode` copy starts and is initialised |
+| About 10 ms | Another copy starts. Its input is closed at once, before any `initialize` |
+| About 2 s | That copy is gone. It was set to stay alive after input closes, so the app ended it |
+| About 2.1 s | The `claude-ai` copy starts and is initialised |
+
+Both launches gave the same sequence, to within 50 ms. After a launch both copies had the saved settings, including the one changed while only the stale copy was running.
+
 ### Stop and restart (B3)
 
 | Event | What Claude Desktop did |
 |---|---|
 | Window minimised for 15 s | Nothing. Both servers kept running |
+| Window closed with X, app still in the tray, for 26 s | Nothing. The server kept running |
+| App quit from the tray | The server's input was closed. This server was not set to stay alive, and exited by itself 56 ms later. No app process was left |
+| App force-killed | Both servers were gone within 70 ms, with no input-closed event. They were set to stay alive after input closes, so they did not exit by themselves. No app process was left |
 | Both servers exited by themselves with code 0 | Not restarted in the 116 s before the owner intervened. The app showed "MCP server disconnected". A tool call in that time failed with "Tool execution failed"; it did not restart the server |
 | Extension switched off and on | Both copies started again |
 | Both servers exited by themselves with code 1 | The same: "server disconnected", no restart in 54 s, both started again when switched off and on |
 | Settings form saved, twice | The `claude-ai` copy had its input closed and a replacement started about 90 ms later with the new values. **The `local-agent-mode` copy was not restarted** and kept the old values |
-| Extension uninstalled | Both copies had their input closed in the same 20 ms. The copy set to stay alive after input closes wrote nothing after the first half second: its next heartbeat, due within five seconds, never came |
+| Extension uninstalled | Both copies had their input closed, in the first runbook within 20 ms of each other and in the second 2 s apart. A copy set to stay alive after input closes was ended by the app: the copy connected to it saw the connection drop 2.0 s after the input closed |
+
+A server that does not exit when its input closes is ended about two seconds later. That was timed three times: twice at launch and once at uninstall. Whether the same happens on a normal quit was not seen, because the server running at that quit exited by itself.
 
 ### Tools (B5)
 
 With one tool listed, the install dialog said only that the extension would have access to everything on the computer. With the `claude-ai` copy restarted to list no tools, the owner saw no warning.
 
-No tool call reached the server. The one request to call the tool from a Code-tab session was answered by Claude with "There is no spike_status tool in this session". A later request, made while both servers were down, was attempted by Claude and failed, which shows the tool was listed in that conversation; which mode that conversation was in is not recorded.
+No tool call reached a server in any run. In the second runbook the request was made from Chat, but the `claude-ai` copy was not running then, and Claude answered that there was no such tool. In the first runbook, the one request to call the tool from a Code-tab session was answered by Claude with "There is no spike_status tool in this session". A later request, made while both servers were down, was attempted by Claude and failed, which shows the tool was listed in that conversation; which mode that conversation was in is not recorded.
 
 ### Settings (B6)
 
@@ -147,6 +166,16 @@ Each process tried, in each candidate directory, to take the lock, and then eith
 
 **Code-tab process first, then an outside process** (pre-test): the same three results.
 
+**Outside process from a terminal first, then the app launched** (second runbook):
+
+| Candidate | Outside process | Extension servers | Result |
+|---|---|---|---|
+| `%LOCALAPPDATA%\rich-presence-crp002` | Took the lock at the real path and listened | Lock refused, correctly. `connect` failed: "An invalid argument was supplied" | **One host, unreachable from inside** |
+| `%TEMP%\rich-presence-crp002` | Took the lock and listened | Lock refused. Both copies connected to the terminal process | One host |
+| `%USERPROFILE%\.rich-presence-crp002` | The same | The same | One host |
+
+When the app was force-killed, the terminal process saw both connections close within 70 ms.
+
 **Outside process first, private copy deleted, then a Code-tab process** (pre-test):
 
 | Candidate | Outside process | Code-tab process | Result |
@@ -171,7 +200,7 @@ Failover was also seen under `%TEMP%` and the home directory: when the copy hold
 
 ### Unsigned binary and console window (B10, B13)
 
-The owner saw no SmartScreen prompt, no antivirus prompt and no console window during the install. The server reports that it has a console window and that the window is not visible.
+The owner saw no SmartScreen prompt, no antivirus prompt and no console window during the install, and no console window at app launch. The server reports that it has a console window and that the window is not visible.
 
 ### Code tab (B11)
 
@@ -179,25 +208,24 @@ The owner started a new Code-tab session and asked for tools with "spike" in the
 
 ### Discord (B12)
 
-All eight extension servers and both outside processes opened `\\.\pipe\discord-ipc-0` at the first attempt. With no application id configured, no handshake was sent from an extension server. A handshake sent from a Code-tab process with the deliberately invalid id `1` was answered by a close frame, opcode 2, code 4000, "Invalid Client ID". That is the reply the `discord-ipc` skill describes for a bad application id.
+Every extension server and outside process, in both runbooks, opened `\\.\pipe\discord-ipc-0` at the first attempt. With no application id configured, no handshake was sent from an extension server. A handshake sent from a Code-tab process with the deliberately invalid id `1` was answered by a close frame, opcode 2, code 4000, "Invalid Client ID". That is the reply the `discord-ipc` skill describes for a bad application id.
 
 ## Inferred, not observed
 
 - The redirection comes from the job or container Claude Desktop's children run in, not from package identity. It therefore reaches **every adapter started under Claude Desktop, including the Claude Code plugin's adapter in a Code-tab session**. The Code-tab results above are direct evidence for that case.
 - The `local-agent-mode` client serves Cowork or agent sessions. Its name and its `roots` capability suggest it. Nothing observed says which.
-- The extension server would be ended with the app, because its job has kill-on-close. Not observed.
+- The servers died with the force-killed app because of the kill-on-close job. The timing fits; the cause was not isolated.
+- The `claude-ai` copy is the one that serves Chat. On the one occasion it was not running, Chat had no tool.
 - A handshake with a valid application id would succeed from an extension server. The pipe opens there, and the protocol works from a Code-tab process.
 
 ## Not tested
 
 | What | Why | Where it stays open |
 |---|---|---|
-| Server start at app launch, with no chat opened | Needs the app to be quit and started. Deferred by the owner | Remaining steps |
-| Closing the window to the tray, and quitting | Deferred by the owner | Remaining steps |
-| Whether a server that ignores its input closing is ended at quit, and by what | Deferred by the owner | Remaining steps |
-| B7 with an outside process holding the lock **before** an extension server starts | Needs the app to be started second. The runbook's attempt is void: its clean-up deleted the socket files of a live host. The order was tested with a Code-tab process | Remaining steps |
-| A tool call from a Chat conversation | The tool steps were run in the Code tab | Remaining steps |
-| A second window | Not attempted | Remaining steps |
+| A tool call from a Chat conversation | Requested once from Chat, when the copy that serves Chat was not running | CRP-052, step V10 |
+| Why the second install started only one copy | Seen once. Not investigated | CRP-052, step V1 |
+| Whether a server that ignores its input closing is ended on a normal quit | The server running at the one quit exited by itself. It is ended in two seconds at launch and at uninstall | Not needed: our adapter exits when its input closes |
+| A second window | The app offered none | |
 | A Discord handshake with a real application id, from an extension server | No application id exists yet (CRP-003) | CRP-052, step V2 |
 | Cowork | Skipped | The first release does not cover Cowork |
 | Everything on macOS, including Gatekeeper (B9) and the socket location | No Mac was used | Risk register, R5 |
@@ -210,23 +238,13 @@ All eight extension servers and both outside processes opened `\\.\pipe\discord-
 |---|---|
 | B7 fails at `%LOCALAPPDATA%` | [ADR-0006](../architecture/adr/0006-control-channel.md): the Windows runtime directory is under `%TEMP%`. CRP-031 amended to match |
 | The same redirection would split the configuration file and the logs | New [ADR-0016](../architecture/adr/0016-windows-file-locations.md): on Windows nothing of ours lives directly under `AppData`. CRP-012 and CRP-034 amended |
+| After an install the `claude-ai` copy may not run until the app is restarted; at launch a copy is started and closed before the real one | ADR-0007, CRP-050 and CRP-052 |
 | Two servers per app, clients named as above, no restart after a self-exit | [ADR-0007](../architecture/adr/0007-integration-and-distribution.md), Desktop section revised. [ADR-0005](../architecture/adr/0005-presence-host-election.md) clarified. CRP-050 and CRP-052 amended |
 | Empty optional settings arrive as a placeholder; first start precedes the settings form; one copy keeps old settings | CRP-012, CRP-050 and CRP-051 amended |
 | No doubled adapter in the Code tab | Recorded in CRP-050 |
 | The directory no longer accepts MCPB submissions | CRP-064 amended |
 | R3, R4 and R5 | [Risk register](../architecture/risks.md) updated |
 | Facts others will look up | `claude-surfaces` skill updated |
-
-## Remaining steps
-
-These need about ten minutes at a time when Claude Desktop can be quit. `runbook.ps1 -Later` on the spike branch walks through them.
-
-1. Install the bundle again. In a **Chat** conversation, ask Claude to call `spike_status`.
-2. Open a second window, if the app offers one.
-3. Close the window with X. Check whether the servers keep running while the app is in the tray.
-4. With the linger setting on, quit the app. Watch whether the servers are ended, and how soon.
-5. Start a copy of the prototype from a terminal, then start the app without opening a chat. Check that the servers start, and that they connect to the terminal copy under `%TEMP%`.
-6. Uninstall.
 
 ## Live documentation checked on 2026-10-02
 

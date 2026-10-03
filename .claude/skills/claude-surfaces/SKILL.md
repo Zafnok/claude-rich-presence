@@ -158,8 +158,9 @@ Observed by CRP-002 on Windows with Claude Desktop 2.9939.4. Not documented anyw
 
 | Fact | Consequence |
 |---|---|
-| Two copies of the server run while the extension is enabled. Their `clientInfo.name` values are `claude-ai` and `local-agent-mode-` plus the extension's display name. Claude Code sends `claude-code` | Only the `claude-ai` copy reports the app (ADR-0007) |
-| They start as soon as the extension is installed and enabled, not per conversation | |
+| Two copies of the server run from app launch to quit, including while the app sits in the tray. Their `clientInfo.name` values are `claude-ai` and `local-agent-mode-` plus the extension's display name. Claude Code sends `claude-code` | Only the `claude-ai` copy reports the app (ADR-0007) |
+| Neither is per conversation. Right after an install the `claude-ai` copy may be missing until the app is restarted | Install instructions say to restart Claude Desktop |
+| At launch a copy is started and has its input closed before `initialize`; the `claude-ai` copy proper follows two seconds later. A server still running two seconds after its input closes is ended | Do nothing visible before `initialize`. Exit when input closes |
 | A server that exits by itself is not restarted until the extension is switched off and on | Never exit while input is open |
 | Saving the settings restarts the `claude-ai` copy only | |
 | An optional setting left empty arrives as the literal text `${user_config.KEY}`. The first start comes before the settings form is saved | Treat a placeholder as unset |
@@ -168,7 +169,7 @@ Observed by CRP-002 on Windows with Claude Desktop 2.9939.4. Not documented anyw
 | No console window is shown, and no SmartScreen or Defender prompt appeared for an unsigned binary | One machine |
 | The server is in a job with kill-on-close | |
 
-Unverified: what happens to the servers when the app is launched, closed to the tray and quit; everything on macOS; Cowork; and whether Claude Code's bundle loader honours everything in the specification, which CRP-001 owns.
+Unverified: a tool call from a Chat conversation; everything on macOS; Cowork; and whether Claude Code's bundle loader honours everything in the specification, which CRP-001 owns.
 
 ### Claude Desktop's packaging on Windows
 
