@@ -3,7 +3,7 @@ id: CRP-010
 title: "Domain model: events, sessions, registry"
 milestone: M1 Core
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-011, CRP-020, CRP-030, CRP-032, CRP-041]
