@@ -3,7 +3,7 @@ id: CRP-004
 title: Repository scaffolding and toolchain
 milestone: M0 Foundation
 type: chore
-status: todo
+status: in-progress
 priority: P0
 blocked_by: []
 blocks: [CRP-005, CRP-010, CRP-012, CRP-013, CRP-020, CRP-021, CRP-022, CRP-031, CRP-040]
