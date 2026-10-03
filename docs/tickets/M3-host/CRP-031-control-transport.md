@@ -3,7 +3,7 @@ id: CRP-031
 title: Control transport and the host lock
 milestone: M3 Host
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-032]
