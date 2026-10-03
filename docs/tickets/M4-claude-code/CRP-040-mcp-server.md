@@ -3,7 +3,7 @@ id: CRP-040
 title: Minimal MCP stdio server
 milestone: M4 Claude Code
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-041]
