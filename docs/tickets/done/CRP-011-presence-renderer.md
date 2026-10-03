@@ -3,7 +3,7 @@ id: CRP-011
 title: Presence renderer
 milestone: M1 Core
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-010]
 blocks: [CRP-032]
@@ -50,13 +50,13 @@ Package `internal/presence`:
 
 ## Acceptance criteria
 
-- [ ] A golden table test covers every combination of surface, status, tool kind, privacy level, and one versus several sessions.
-- [ ] Focus selection is covered for every tie-break, and the same input always produces the same output.
-- [ ] A project name appears only when the focus session's level is `full`.
-- [ ] Session count appears only when more than one session is open and the level is not `minimal`.
-- [ ] Lines over the limit are truncated on a character boundary, never in the middle of a multi-byte character.
-- [ ] The idle-clear rule is tested at, just before and just after the threshold.
-- [ ] The package has no I/O and takes the current time as a parameter.
+- [x] A golden table test covers every combination of surface, status, tool kind, privacy level, and one versus several sessions.
+- [x] Focus selection is covered for every tie-break, and the same input always produces the same output.
+- [x] A project name appears only when the focus session's level is `full`.
+- [x] Session count appears only when more than one session is open and the level is not `minimal`.
+- [x] Lines over the limit are truncated on a character boundary, never in the middle of a multi-byte character.
+- [x] The idle-clear rule is tested at, just before and just after the threshold.
+- [x] The package has no I/O and takes the current time as a parameter.
 
 ## Notes for the implementer
 
