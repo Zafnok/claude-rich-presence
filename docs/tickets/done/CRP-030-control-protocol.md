@@ -3,7 +3,7 @@ id: CRP-030
 title: Control protocol
 milestone: M3 Host
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-010]
 blocks: [CRP-032]
@@ -49,14 +49,14 @@ The message format adapters and the host use to talk to each other, specified in
 
 ## Acceptance criteria
 
-- [ ] `docs/protocol/control.md` exists and matches the code, with an example of each message.
-- [ ] Every message round-trips through encode and decode.
-- [ ] An unknown message type decodes to an "unknown" value, not an error.
-- [ ] Unknown fields are ignored.
-- [ ] A line over the limit, invalid JSON, and a message missing a required field each return a distinct error and never panic.
-- [ ] No message type can carry prompt text, tool input, a file path or any free-form field not in the domain event. Shown by the type definitions and a test.
-- [ ] A fuzz test on the decoder runs clean.
-- [ ] `status_result` contains nothing unsafe to paste in a public issue: no project names, no paths.
+- [x] `docs/protocol/control.md` exists and matches the code, with an example of each message.
+- [x] Every message round-trips through encode and decode.
+- [x] An unknown message type decodes to an "unknown" value, not an error.
+- [x] Unknown fields are ignored.
+- [x] A line over the limit, invalid JSON, and a message missing a required field each return a distinct error and never panic.
+- [x] No message type can carry prompt text, tool input, a file path or any free-form field not in the domain event. Shown by the type definitions and a test.
+- [x] A fuzz test on the decoder runs clean.
+- [x] `status_result` contains nothing unsafe to paste in a public issue: no project names, no paths.
 
 ## Notes for the implementer
 
