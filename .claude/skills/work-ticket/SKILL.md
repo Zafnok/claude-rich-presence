@@ -9,9 +9,9 @@ All work in this repository happens against a ticket in `docs/tickets/`. This is
 
 ## 1. Choose and check
 
-1. If no ticket was named, open `docs/tickets/README.md` and pick the lowest-numbered `todo` ticket in the earliest wave whose `blocked_by` tickets are all `done`.
+1. If no ticket was named, open `docs/tickets/README.md` and pick the lowest-numbered `todo` ticket in the earliest wave whose `blocked_by` tickets are all `done`. Closed tickets live in `docs/tickets/done/`, so everything still in a milestone directory is open, and a blocker is done when its file is in `done/`.
 2. Read the ticket in full. Read every document it links under References. Do not read the rest of `docs/` unless the ticket points there.
-3. Confirm each `blocked_by` ticket has `status: done` in its own file on `main`. If one does not, stop and say which. If the list is empty or all are done, the ticket can start now, whatever else is in progress: `blocked_by` is complete. If the ticket turns out to need the output of a ticket it does not list, that is a defect in the ticket. Stop and report it. Do not wait for the other ticket and do not guess at its output.
+3. Confirm each `blocked_by` ticket has `status: done` in its own file on `main`, and that the file is in `docs/tickets/done/`. If a ticket is `done` but still in its milestone directory, move it as "Closing a ticket" describes, in your pull request. If one does not, stop and say which. If the list is empty or all are done, the ticket can start now, whatever else is in progress: `blocked_by` is complete. If the ticket turns out to need the output of a ticket it does not list, that is a defect in the ticket. Stop and report it. Do not wait for the other ticket and do not guess at its output.
 4. If the ticket is `conditional`, check that its condition has occurred. If it has not, do not build it.
 5. Check the ticket's `model` and `effort` against the session you are in. If you are running on a weaker setting than recommended, say so before starting. If the ticket is an owner task, your role is to prepare and to record, not to act on the owner's accounts.
 
@@ -48,8 +48,19 @@ A ticket with `type: spike` produces knowledge, not code.
 2. Walk the acceptance criteria one by one. For each, name the test or observation that shows it. If one is not met, the ticket is not done; say so plainly.
 3. If the ticket required a manual check in a real Claude or Discord, record what was run and what was seen. If you could not run it, say that and ask the owner.
 4. Update documentation the change made stale.
-5. Set the ticket's `status` to `done` in its own file, in the same pull request. Do not edit the index.
-6. Open one pull request per ticket. Title: `CRP-NNN: ticket title`. Body: what changed, how each criterion was verified, what was not verified.
+5. Set the ticket's `status` to `done` in its own file, in the same pull request.
+6. Move the ticket to `docs/tickets/done/`, in the same pull request. See "Closing a ticket" below.
+7. Open one pull request per ticket. Title: `CRP-NNN: ticket title`. Body: what changed, how each criterion was verified, what was not verified.
+
+## Closing a ticket
+
+A ticket that reaches `done` or `not-needed` leaves its milestone directory, so that the milestone directories list only what is still open.
+
+1. Move the file with `git mv` to `docs/tickets/done/`, keeping its name. `done/` is flat, with no milestone directories inside it. It sits at the same depth as a milestone directory, so the links inside the ticket keep working.
+2. Repoint every link to the ticket. Find them with `git grep -n "CRP-NNN-"` and replace the milestone directory in each path with `done`. Expect the index row in `docs/tickets/README.md`, and often an ADR, `docs/architecture/` or `docs/research/`. The link in the index row is the only thing you change in the index.
+3. Run `git grep -n "M[0-9]-[a-z-]*/CRP-NNN-"` and confirm it prints nothing.
+
+Tickets that are `in-progress`, `blocked` or `conditional` stay where they are.
 
 ## If you get stuck
 

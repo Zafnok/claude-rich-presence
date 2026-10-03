@@ -84,7 +84,7 @@ Why this is viable:
 | No runtime prerequisites | A static Go binary. No Node, Python, or shell | Design |
 | Windows named pipes without third-party code | Go 1.26 opens pipes with overlapped I/O, so deadlines work | Docs (Go release notes), to be exercised in [CRP-021](../tickets/M2-discord/CRP-021-discord-transport.md) |
 | Delivery into Claude Code without a shell | Plugin references a released MCPB bundle by URL | Docs, to be exercised in [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) |
-| Delivery into Claude Desktop | The same MCPB bundle, installed as a desktop extension | Docs, to be exercised in [CRP-002](../tickets/M0-foundation/CRP-002-spike-desktop-extension.md) |
+| Delivery into Claude Desktop | The same MCPB bundle, installed as a desktop extension | Docs, to be exercised in [CRP-002](../tickets/done/CRP-002-spike-desktop-extension.md) |
 | 100% coverage and SonarQube | Go has built-in coverage including for compiled binaries. SonarQube Cloud analyses Go and is free for public repositories | Docs |
 | Permissive licensing throughout | Standard library only (BSD-3-Clause). No copyleft anywhere | Design |
 

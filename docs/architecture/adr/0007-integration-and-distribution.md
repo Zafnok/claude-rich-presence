@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed.** Accepted or replaced by the outcome of [CRP-001](../../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) for Claude Code and [CRP-002](../../tickets/M0-foundation/CRP-002-spike-desktop-extension.md) for Claude Desktop. Until then, only the tickets that name this ADR depend on it. The core does not.
+**Proposed.** Accepted or replaced by the outcome of [CRP-001](../../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) for Claude Code and [CRP-002](../../tickets/done/CRP-002-spike-desktop-extension.md) for Claude Desktop. Until then, only the tickets that name this ADR depend on it. The core does not.
 
 CRP-002 has reported on Windows, and the Claude Desktop section below was revised on 2026-10-03 to match its [findings](../../research/crp-002-desktop-extension.md). The Desktop wiring holds there. macOS is untested, and CRP-001 is still to report.
 
