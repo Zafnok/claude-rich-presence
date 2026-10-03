@@ -46,7 +46,7 @@ The rule is in ADR-0009: 100.0% statement coverage on each operating system, no 
 
 ## Checking coverage
 
-Use the commands in the Development section of `CONTRIBUTING.md`, which CRP-004 and CRP-005 establish. The gate tool prints every uncovered block as `file:line`. A package is done when it prints nothing.
+Use the commands in the Development section of `CONTRIBUTING.md`. The gate tool, `tools/covercheck`, prints every uncovered block as `file:line`. A package is done when it prints nothing.
 
 Remember that your machine covers only the files your operating system compiles. Files for other operating systems are measured in CI. If you changed one, say in the pull request that it is unverified locally.
 

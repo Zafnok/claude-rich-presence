@@ -100,28 +100,50 @@ go vet ./...
 ```
 
 ```bash
+go run honnef.co/go/tools/cmd/staticcheck@v0.8.1 ./...
+```
+
+```bash
 CGO_ENABLED=1 go test -race ./...
 ```
 
-`gofmt -l .` must print nothing.
+`gofmt -l .` must print nothing. The static analyser is [Staticcheck](https://staticcheck.dev/), pinned to the version in [the workflow](.github/workflows/ci.yml); use the same one.
+
+### Fuzz
+
+Every fuzz target runs briefly in CI. To run the ones in a package you touched:
+
+```bash
+pkg=./tools/covercheck; for t in $(go test -list '^Fuzz' $pkg | grep '^Fuzz'); do go test -run '^$' -fuzz "^$t\$" -fuzztime 10s $pkg || break; done
+```
 
 ### Measure coverage
 
-Statement coverage must be 100.0%. `main` cannot be called from a test, so it is covered by running a binary built with coverage instrumentation. The unit tests and that run write to one directory, and the result is the merge of both.
+Statement coverage must be 100.0% of the measured set, which is every package except those under `internal/testutil`. That rule is written once, in [tools/covercheck](tools/covercheck/main.go), and the test command takes its package list from there.
+
+`main` cannot be called from a test, so it is covered by running binaries built with coverage instrumentation. The gate reads the unit-test profile and the profile of those runs together.
 
 ```bash
-rm -rf coverage && mkdir coverage
-go test -cover ./... -args -test.gocoverdir="$PWD/coverage"
-go build -cover -o bin/ ./cmd/rich-presence
-GOCOVERDIR=coverage bin/rich-presence version
-go tool covdata percent -i=coverage
+rm -rf coverage && mkdir -p coverage/e2e
+go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck
+measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
+CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
+GOCOVERDIR=coverage/e2e bin/rich-presence version
+go tool covdata textfmt -i=coverage/e2e -o coverage/e2e.txt
+{ cat coverage/unit.txt; tail -n +2 coverage/e2e.txt; } > coverage/profile.txt
+go run ./tools/covercheck check -module "$(go list -m)" coverage/profile.txt
 ```
 
-To list what is not covered, by function:
+The last command prints each uncovered block as `file:line` and fails unless coverage is 100.0%. To see a file line by line:
 
 ```bash
-go tool covdata textfmt -i=coverage -o coverage/profile.txt
-go tool cover -func=coverage/profile.txt
+go tool cover -html=coverage/profile.txt
 ```
 
-`bin/` and `coverage/` are ignored by git. [CRP-005](docs/tickets/M0-foundation/CRP-005-ci-pipeline.md) replaces the last step with a gate tool that fails below 100.0% and prints each uncovered block.
+The unit tests must write their profile with `-coverprofile`. A package that no test reaches appears there with nothing covered; in the binary coverage data that `-test.gocoverdir` writes, it does not appear at all, and the gate would not see it.
+
+`bin/` and `coverage/` are ignored by git.
+
+### Continuous integration
+
+[The workflow](.github/workflows/ci.yml) runs the steps above, in that order, on Linux, macOS and Windows for every pull request and every push to `main`. Each operating system must reach 100.0% over the files it compiles. Its coverage profile is kept as an artifact named `coverage-` followed by the runner name. The check named `CI` passes only when all three pass.

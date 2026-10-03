@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# The token can read the repository and nothing else. A job that needs more
+# asks for it by name.
+permissions:
+  contents: read
+
+# A new push to a pull request cancels the run it supersedes. Runs on main are
+# never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Tools are pinned to an exact version (ADR-0003).
+  GO_VERSION: "1.27.1"
+  # honnef.co/go/tools 2026.2.1. The go command verifies it against the Go
+  # checksum database.
+  STATICCHECK_VERSION: v0.8.1
+  FUZZ_TIME: 10s
+  RELEASE_TARGETS: windows/amd64 darwin/amd64 darwin/arm64 linux/amd64
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    name: Check (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          # There is no go.sum, because there is no dependency.
+          cache-dependency-path: go.mod
+
+      - name: Format
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt would change:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Static analysis
+        run: go run "honnef.co/go/tools/cmd/staticcheck@$STATICCHECK_VERSION" ./...
+
+      - name: Build every release target
+        run: |
+          for target in $RELEASE_TARGETS; do
+            echo "building $target"
+            GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build ./...
+          done
+
+      # The binaries are built with coverage instrumentation, so that running
+      # them covers what no test can call: each main function.
+      - name: Test with the race detector
+        run: |
+          mkdir -p coverage/e2e
+          go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck
+          measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
+          CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
+
+      # Fuzz targets are discovered, so a new one is picked up without a
+      # change here.
+      - name: Fuzz smoke
+        run: |
+          for pkg in $(go list ./...); do
+            for target in $(go test -list '^Fuzz' "$pkg" | grep '^Fuzz' || true); do
+              echo "fuzzing $target in $pkg"
+              go test -run '^$' -fuzz "^$target\$" -fuzztime "$FUZZ_TIME" "$pkg"
+            done
+          done
+
+      # End-to-end runs of the instrumented binary. CRP-043 adds the real
+      # scenarios here.
+      - name: End-to-end coverage
+        run: |
+          GOCOVERDIR=coverage/e2e bin/rich-presence version
+          go tool covdata textfmt -i=coverage/e2e -o coverage/e2e.txt
+          { cat coverage/unit.txt; tail -n +2 coverage/e2e.txt; } > coverage/profile.txt
+
+      - name: Upload the coverage profile
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-${{ matrix.os }}
+          path: coverage/profile.txt
+          if-no-files-found: error
+
+      - name: Coverage gate
+        run: go run ./tools/covercheck check -module "$(go list -m)" coverage/profile.txt
+
+  # One check that stands for the whole matrix, so that branch protection has
+  # a single name to require.
+  ci:
+    name: CI
+    if: always()
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Every operating system passed
+        env:
+          RESULT: ${{ needs.check.result }}
+        run: test "$RESULT" = success
