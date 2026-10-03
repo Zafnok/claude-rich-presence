@@ -304,8 +304,13 @@ func TestMissingFileIsNormal(t *testing.T) {
 			t.Errorf("%v: got %+v, %v", err, cfg, warnings)
 		}
 	}
+	// A byte order mark before the JSON is skipped.
+	cfg, warnings := load(t, "ï»¿"+`{"privacy": "full"}`)
+	if cfg.Privacy != domain.PrivacyFull || len(warnings) != 0 {
+		t.Errorf("byte order mark: got %+v, %v", cfg, warnings)
+	}
 	// JSON null holds no settings.
-	cfg, warnings := load(t, "null")
+	cfg, warnings = load(t, "null")
 	if cfg != config.Default() || len(warnings) != 0 {
 		t.Errorf("null: got %+v, %v", cfg, warnings)
 	}

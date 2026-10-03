@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io/fs"
@@ -194,6 +195,8 @@ func applyFile(cfg *Config, files FileReader, path string) []Warning {
 	if err != nil {
 		return []Warning{{SourceFile, FileName, "cannot be read"}}
 	}
+	// Some Windows editors begin a UTF-8 file with a byte order mark.
+	data = bytes.TrimPrefix(data, []byte("ï»¿"))
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return []Warning{{SourceFile, FileName, "is not a JSON object"}}
