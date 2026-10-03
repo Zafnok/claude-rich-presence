@@ -75,7 +75,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-012](M1-core/CRP-012-configuration.md) | Configuration | 004, 005 | Sonnet 5.5 | medium | M |
 | [CRP-013](done/CRP-013-update-scheduler.md) | Update scheduler | 004, 005 | Sonnet 5.5 | high | S |
 | [CRP-014](M1-core/CRP-014-project-profiles.md) | Project profiles in configuration | 012 | Sonnet 5.5 | medium | M |
-| [CRP-020](M2-discord/CRP-020-discord-codec.md) | Discord IPC codec | 004, 005, 010 | Sonnet 5.5 | medium | S |
+| [CRP-020](done/CRP-020-discord-codec.md) | Discord IPC codec | 004, 005, 010 | Sonnet 5.5 | medium | S |
 | [CRP-021](M2-discord/CRP-021-discord-transport.md) | Discord transport: pipe and socket dialers | 004, 005, 022 | Opus 5.5 | high | M |
 | [CRP-022](M2-discord/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-023](M2-discord/CRP-023-discord-session-manager.md) | Discord session manager | 013, 020, 021, 022 | Opus 5.5 | high | M |
