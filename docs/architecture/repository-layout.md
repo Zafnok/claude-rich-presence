@@ -1,6 +1,6 @@
 # Repository layout
 
-The target structure. Today only the Markdown exists. Each other path names the ticket that creates it.
+The target structure. The Go module, `cmd/rich-presence`, `internal/cli` and an empty package directory for each component under `internal/` exist since CRP-004. Each other path names the ticket that creates or fills it.
 
 ```text
 claude-rich-presence/
@@ -91,6 +91,6 @@ claude-rich-presence/
 
 They are different manifests for different hosts. `plugin/` is fetched by Claude Code from git and contains no binary; it points at the bundle. `extension/` is the source of the bundle that the release pipeline builds, which is also what Claude Desktop installs directly.
 
-## Files that are not Markdown and do not exist yet
+## Repository basics
 
-The architecture pull request contains Markdown only, by instruction. That leaves a few repository basics to the first implementation ticket, [CRP-004](../tickets/M0-foundation/CRP-004-repo-scaffolding.md): `.gitignore`, `.gitattributes`, `.editorconfig`, and `go.mod`.
+`.gitignore`, `.gitattributes`, `.editorconfig` and `go.mod` were added by [CRP-004](../tickets/done/CRP-004-repo-scaffolding.md), the first implementation ticket. The architecture pull request before it contained Markdown only.

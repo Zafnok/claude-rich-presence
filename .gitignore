@@ -1,0 +1,23 @@
+# Build output
+/bin/
+/dist/
+*.exe
+*.test
+
+# Coverage
+/coverage/
+*.out
+*.coverprofile
+covcounters.*
+covmeta.*
+
+# Session worktrees
+.claude/worktrees/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db

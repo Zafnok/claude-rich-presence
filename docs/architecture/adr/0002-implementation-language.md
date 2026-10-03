@@ -36,7 +36,7 @@ Facts established during assessment:
 - The whole dependency surface is the Go project's own code, under BSD-3-Clause.
 - Statement coverage is the only coverage Go reports. There is no branch coverage. [ADR-0009](0009-quality-gates.md) addresses this.
 - Reaching 100% in Go means every `if err != nil` path needs a test, which forces the port structure of [ADR-0001](0001-core-architecture.md).
-- Contributors need Go installed. It is not on the development machine today; installing it is the first step of [CRP-004](../../tickets/M0-foundation/CRP-004-repo-scaffolding.md).
+- Contributors need Go installed. It is not on the development machine today; installing it is the first step of [CRP-004](../../tickets/done/CRP-004-repo-scaffolding.md).
 
 ## Alternatives considered
 
