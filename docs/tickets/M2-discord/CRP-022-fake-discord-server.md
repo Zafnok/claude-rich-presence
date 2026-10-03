@@ -3,7 +3,7 @@ id: CRP-022
 title: Fake Discord IPC server for tests
 milestone: M2 Discord
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-021, CRP-023, CRP-043]
