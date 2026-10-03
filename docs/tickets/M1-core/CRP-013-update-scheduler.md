@@ -3,7 +3,7 @@ id: CRP-013
 title: Update scheduler
 milestone: M1 Core
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-023]
