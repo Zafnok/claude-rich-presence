@@ -31,12 +31,12 @@ The MCPB manifest selects by operating system, not by CPU architecture. That is 
   - server type `binary`, running the `mcp` command;
   - per-operating-system overrides selecting the Windows, Mac and Linux binaries;
   - `user_config` for the privacy level and an optional Discord application id, passed to the server as the environment variables CRP-012 reads;
-  - the tools the server exposes, declared as CRP-041 and CRP-050 define them;
+  - tools marked as generated at run time, not listed one by one, so that a later ticket which adds or removes a tool does not have to touch the manifest;
   - compatibility limited to the three supported operating systems.
 - A build step, as a Go program under `tools/` or documented commands, that assembles the bundle from built binaries, the manifest and the icon. The bundle is a zip archive with a fixed layout.
 - The Mac universal binary: produced by merging the two architecture builds on a Mac runner.
 - A CI job that builds the bundle on every pull request and checks its contents: manifest valid, every referenced file present, executable permission set on the Unix binaries.
-- The icon, a placeholder until CRP-003 supplies the final artwork.
+- The icon: `assets/icon.png` if CRP-003 has supplied it, otherwise a placeholder.
 
 ## Out of scope
 
@@ -61,6 +61,14 @@ The MCPB manifest selects by operating system, not by CPU architecture. That is 
 - Zip archives do not always preserve Unix permissions. Set them explicitly when writing the archive, and test by extracting.
 - Go signs Mac binaries for Apple silicon ad hoc at link time, because the system refuses to run unsigned ones. Verify what survives the merge.
 - If CRP-001 showed that Claude Code's bundle loader differs from the specification in any way, follow what Claude Code actually does and note it.
+- What [CRP-002](../../research/crp-002-desktop-extension.md) saw Claude Desktop do with a bundle on Windows:
+  - A command written as `${__dirname}/server/name.exe` in a `win32` override runs. The specification's bare relative form was not tried.
+  - The server's working directory is `C:\Windows\system32`. Never rely on it.
+  - The server is started as soon as the extension is installed, before the user saves the settings form, so every setting must have a usable default.
+  - An optional setting left empty reaches the server as the literal text `${user_config.KEY}`. CRP-012 treats that as not set.
+  - Numbers and booleans arrive as text: `42`, `true`, `false`.
+  - Saving the settings restarts only one of the two copies Claude Desktop runs. See CRP-050.
+  - A setting marked sensitive still reaches the server in a plain environment variable.
 
 ## Why this model and effort
 

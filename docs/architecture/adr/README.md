@@ -19,6 +19,7 @@ An ADR records one decision, why it was made, and what it costs. Accepted ADRs a
 | [0013](0013-summary-first-card-layout.md) | The summary owns the text lines; every other fact lives in hover text, images or buttons | Proposed, pending CRP-070 |
 | [0014](0014-personalities.md) | Personalities: a voice for Claude's summaries and a matching vocabulary for the fixed text | Proposed, pending CRP-046 and CRP-072 |
 | [0015](0015-status-line-bridge.md) | An opt-in status line bridge for model, context, cost and usage limits; never the login token | Proposed, pending CRP-045 |
+| [0016](0016-windows-file-locations.md) | On Windows, nothing of ours lives directly under `AppData` | Accepted |
 
 ## Format
 

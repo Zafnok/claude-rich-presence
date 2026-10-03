@@ -43,6 +43,7 @@ Until listed, users install by adding this repository as a marketplace, which wo
 
 - A model can prepare the listing text and the privacy page. Haiku 4.5 is enough. The submission itself is the owner's action.
 - If the reviewers object to naming, return to ADR-0010 rather than working around the objection.
+- On 2026-10-02 Claude's page on building MCPB bundles said that desktop extension listings are deprecated and the directory no longer accepts MCPB submissions; a local server reaches the directory only inside a plugin. If that still holds, only the plugin can be submitted, and the extension stays a file users install themselves. Check the page again before deciding: https://claude.com/docs/connectors/building/mcpb
 
 ## Why this model and effort
 

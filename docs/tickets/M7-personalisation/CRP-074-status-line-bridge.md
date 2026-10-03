@@ -58,7 +58,7 @@ This command runs after every assistant message, in the user's shell, in place o
 - [ ] The usage gauge picks the right image for values just below, at and just above each threshold.
 - [ ] With the bridge connected, a new session shows the model before the first prompt.
 - [ ] `connect-statusline` followed by `disconnect-statusline` leaves the user's settings identical to before. Checked on a machine with an existing status line and on one without.
-- [ ] The binary still links no network client, and no code path opens Claude's credentials file. The test from CRP-062 covers this command.
+- [ ] The binary still links no network client, and no code path opens Claude's credentials file. If the no-network test from CRP-062 exists, it is extended to cover this command. If not, this ticket adds that check for this command.
 - [ ] The user documentation states which surfaces the bridge works on, what each fact reveals, and that usage limits are published only if enabled.
 
 ## Notes for the implementer

@@ -5,7 +5,7 @@ milestone: M2 Discord
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004]
+blocked_by: [CRP-004, CRP-005, CRP-010]
 blocks: [CRP-023]
 model: claude-sonnet-5-5
 effort: medium
@@ -31,7 +31,7 @@ Package `internal/discord/codec`:
 - Opcodes: handshake, frame, close, ping, pong.
 - Messages to encode: the handshake with protocol version and application id; the set-activity command with process id, a nonce, and the activity; the same command with a null activity, to clear; pong.
 - Messages to decode: the ready event; an error response, with its code and message; a close frame, with its code and message; ping; and the acknowledgement of a command, matched by nonce.
-- Activity fields: both text lines, the start timestamp, large and small image keys with their hover text, and the activity type. Empty fields are omitted from the JSON, not sent as empty strings.
+- Activity fields, taken from the `Activity` type that CRP-010 defines in the domain package: both text lines, the start timestamp, large and small image keys with their hover text, and the activity type. Empty fields are omitted from the JSON, not sent as empty strings.
 
 ## Out of scope
 

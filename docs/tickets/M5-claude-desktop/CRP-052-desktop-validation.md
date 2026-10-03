@@ -5,8 +5,8 @@ milestone: M5 Claude Desktop
 type: owner-task
 status: todo
 priority: P1
-blocked_by: [CRP-002, CRP-050, CRP-051]
-blocks: [CRP-061]
+blocked_by: [CRP-002, CRP-042, CRP-050, CRP-051]
+blocks: [CRP-061, CRP-063]
 model: owner
 effort: low
 size: S
@@ -28,7 +28,7 @@ On Windows, and on a Mac if one is available, with the bundle built from `main`:
 
 | # | Step | Expected |
 |---|---|---|
-| V1 | Install the bundle as a desktop extension | Installs without errors. Note any security prompt |
+| V1 | Install the bundle as a desktop extension | Installs without errors. Note any security prompt. Record whether presence appears straight away or only after Claude Desktop is restarted: in CRP-002 the copy that reports ran right after one install and not after another |
 | V2 | Open Claude Desktop with Discord running | Presence appears, with an elapsed timer |
 | V3 | Quit Claude Desktop | Presence clears within a few seconds |
 | V4 | Start Discord after Claude Desktop | Presence appears without restarting Claude |
@@ -37,11 +37,14 @@ On Windows, and on a Mac if one is available, with the bundle built from `main`:
 | V7 | End the Code session | Presence returns to Desktop |
 | V8 | Quit Claude Desktop while the Code session is running | Presence continues from the Code session after a brief gap |
 | V9 | Use the Code tab inside Claude Desktop with both the extension and the plugin installed | One Code session is shown, not two |
-| V10 | Ask Claude in Desktop Chat whether rich presence is working | Claude calls the status tool and reports correctly |
+| V10 | Ask Claude in Desktop Chat whether rich presence is working | Claude calls the status tool and reports correctly. CRP-002 never saw a tool call from Chat reach the server, so this is the first real check |
 | V11 | Change the privacy setting in the extension's settings and restart | The change takes effect |
 | V12 | Leave everything idle past the idle-clear period | Behaviour matches what CRP-050 decided |
 | V13 | If an alternative Discord client such as Vesktop is available, repeat V2 with it | Presence appears. If not, record it as a known limitation. One other project's card disappeared there |
 | V14 | With presence showing, start a game that Discord detects | Record which activity Discord shows first. One other project's users lost their game activity |
+| V15 | Quit Claude Desktop, start it again and do not open a chat | Presence appears within a few seconds |
+| V16 | Close the Claude Desktop window so the app stays in the tray | Presence stays. CRP-002 saw the server keep running |
+| V17 | Run `doctor` from a terminal while only Claude Desktop is providing presence | It finds the host. This is the check that the runtime directory is shared across Claude Desktop's packaging on Windows |
 
 ## Out of scope
 
@@ -58,6 +61,8 @@ On Windows, and on a Mac if one is available, with the bundle built from `main`:
 
 - A model can prepare the checklist, read the logs, and write up the record. Sonnet 5.5 at low effort is enough. The steps themselves are the owner's.
 - Run `doctor` from a standalone copy of the binary if a step fails, and attach its output.
+- Run the terminal steps from a terminal opened outside Claude Desktop. A terminal inside a Code-tab session is inside Claude Desktop's packaging and does not test the same thing.
+- Two server processes for the one extension are expected. CRP-002 found that Claude Desktop always starts two.
 
 ## Why this model and effort
 

@@ -5,7 +5,7 @@ milestone: M2 Discord
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004, CRP-022]
+blocked_by: [CRP-004, CRP-005, CRP-022]
 blocks: [CRP-023]
 model: claude-opus-5-5
 effort: high

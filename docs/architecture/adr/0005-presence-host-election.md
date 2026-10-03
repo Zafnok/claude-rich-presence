@@ -12,10 +12,10 @@ That answer has known problems:
 
 - **Stuck presence.** Reference counts drift when a session is killed without its end hook. One prior project has this as an open bug on Windows.
 - **Per-platform detachment.** Starting a process that survives its parent differs on each operating system and is awkward to test.
-- **Job objects.** Claude Desktop on Windows appears to run its children in a job. A daemon started from inside it may be killed when the app closes, even while terminal sessions still need it. This is unverified, and the design below does not depend on the answer.
+- **Job objects.** Claude Desktop on Windows runs an extension's server in a job whose limits include kill-on-close ([observed in CRP-002](../../research/crp-002-desktop-extension.md)). A daemon started from inside it may be killed when the app closes, even while terminal sessions still need it. The design below does not depend on this.
 - **A lingering process.** A background program that the user did not start and cannot see draws suspicion from users and from security software.
 
-In the chosen wiring every Claude Code session and the Claude Desktop app each already run one adapter process for exactly as long as they live.
+In the chosen wiring every Claude Code session already runs one adapter process for exactly as long as it lives. Claude Desktop runs two for as long as the extension is enabled, of which one reports ([ADR-0007](0007-integration-and-distribution.md)).
 
 ## Decision
 
@@ -37,7 +37,7 @@ There is no daemon. One of the adapter processes acts as host.
 - Failover produces a short gap in presence while the new host handshakes with Discord. The elapsed timer is preserved because the start time travels with session state.
 - Each session costs one idle process of a few megabytes. With dozens of sessions that is tens of megabytes in total, small beside the sessions themselves.
 - Election and failover are the hardest code in the project to get right. They get the strongest model and effort in the plan ([CRP-032](../../tickets/M3-host/CRP-032-presence-host.md)) and dedicated end-to-end tests ([CRP-043](../../tickets/M4-claude-code/CRP-043-end-to-end-tests.md)).
-- If the lock file and socket are not visible to all adapters, for instance because a packaged app sees a redirected directory, there will be two hosts and two Discord connections. This degrades to a duplicated or flickering activity, never to a blocked session. [CRP-002](../../tickets/M0-foundation/CRP-002-spike-desktop-extension.md) checks for it.
+- If the lock file and socket are not visible to all adapters, there will be two hosts and two Discord connections. This degrades to a duplicated or flickering activity, never to a blocked session. [CRP-002](../../research/crp-002-desktop-extension.md) found exactly this at the first Windows location, under Claude Desktop's packaging, and [ADR-0006](0006-control-channel.md) moved the location.
 
 ## If the fallback is adopted
 

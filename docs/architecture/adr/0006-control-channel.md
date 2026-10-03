@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. The socket location on Windows is confirmed or revised by [CRP-002](../../tickets/M0-foundation/CRP-002-spike-desktop-extension.md).
+Accepted. The Windows location was revised on 2026-10-02 by the findings of [CRP-002](../../research/crp-002-desktop-extension.md): it was `%LOCALAPPDATA%\rich-presence` and is now under `%TEMP%`.
 
 ## Context
 
@@ -18,7 +18,7 @@ A Unix domain stream socket, on every operating system. Windows has supported th
 |---|---|
 | Linux | `$XDG_RUNTIME_DIR/rich-presence`, else a per-user directory under the temp directory |
 | macOS | A per-user directory under `$TMPDIR` |
-| Windows | `%LOCALAPPDATA%\rich-presence`, else a per-user directory under `%TEMP%` |
+| Windows | `%TEMP%\rich-presence`. Never a folder directly under `%LOCALAPPDATA%` or `%APPDATA%` |
 
 Rules:
 
@@ -48,13 +48,15 @@ The channel is reachable only by the same operating-system user, by directory pe
 - One transport implementation for all platforms.
 - Line-delimited JSON is debuggable with ordinary tools and fuzzable with the standard library.
 - A path-length ceiling we must handle explicitly.
-- On Windows, a packaged app may see a redirected `%LOCALAPPDATA%`. If the spike shows that, the Windows location moves to a path that is not redirected, or we fall back to the alternative below.
+- On Windows, Claude Desktop is a packaged app, and every process it starts has new folders under `%LOCALAPPDATA%` redirected to a private copy. Observed in CRP-002: a lock file there is not shared with a terminal session, and a Unix socket there can be neither bound nor connected from inside. `%TEMP%` is under `%LOCALAPPDATA%` but is not redirected, because the folder already exists at the real location. That matches Microsoft's documented rule and was observed in both start orders. It is a dependency on behaviour. If it stops holding, the fallback is the named pipe below, which was observed to cross the same boundary.
+- `%TEMP%` can be cleaned by the system. The directory holds nothing durable, and the host recreates it.
 
 ## Alternatives considered
 
 | Alternative | Why not |
 |---|---|
-| Windows named pipe for the control channel | No server-side support in the standard library; would need `golang.org/x/sys` calls or `go-winio`. Kept as the fallback if socket files prove unusable under packaged apps |
+| Windows named pipe for the control channel | No server-side support in the standard library; would need `golang.org/x/sys` calls or `go-winio`. Kept as the fallback if socket files prove unusable under packaged apps. CRP-002 found sockets usable under `%TEMP%`, so it is not needed today |
+| A folder in the user's home directory on Windows | Also worked in CRP-002. Runtime files are disposable and belong with temporary files, and a home directory can be on a network share, where a Unix socket cannot live |
 | Loopback TCP | Reachable by other local users, needs an authentication token and port discovery |
 | A shared state file | No liveness signal, races between writers, and polling |
 | A binary framing | No benefit at this message rate, and harder to inspect |

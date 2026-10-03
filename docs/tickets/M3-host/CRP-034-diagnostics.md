@@ -61,6 +61,7 @@ Package `internal/diag`:
 
 - The handshake check opens a second Discord connection briefly. That is fine; it sets nothing.
 - Writing log files goes through a file-system interface so failures can be driven in tests.
+- Take the log directory from CRP-012's resolver and never from the standard library's user cache directory. On Windows that directory is redirected for every process Claude Desktop starts, so a log written there would be invisible to `doctor` run from a terminal ([ADR-0016](../../architecture/adr/0016-windows-file-locations.md)).
 
 ## Why this model and effort
 

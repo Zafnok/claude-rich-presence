@@ -60,7 +60,7 @@ D2 is the important one. A Claude Code hook is a process that runs for milliseco
 |---|---|---|
 | Local extensions | Desktop Extensions (MCPB bundles) run a local MCP server. Server type `binary` needs no runtime | Docs |
 | Signal about conversations | **None.** A server is told only when the model calls one of its tools | Docs |
-| Server lifetime | Started with the app and kept alive while it is open | **Unverified**, owned by [CRP-002](../tickets/M0-foundation/CRP-002-spike-desktop-extension.md) |
+| Server lifetime | Two copies of the server are started at app launch and kept until the app quits, including while it sits in the tray. Neither is tied to a conversation | **Observed** on Windows, in the [CRP-002 findings](../research/crp-002-desktop-extension.md). **Unverified** on macOS |
 
 A server that lives exactly as long as the app is still useful: it is a reliable "Claude Desktop is open" signal with no polling and nothing installed at login.
 
@@ -84,7 +84,7 @@ Why this is viable:
 | No runtime prerequisites | A static Go binary. No Node, Python, or shell | Design |
 | Windows named pipes without third-party code | Go 1.26 opens pipes with overlapped I/O, so deadlines work | Docs (Go release notes), to be exercised in [CRP-021](../tickets/M2-discord/CRP-021-discord-transport.md) |
 | Delivery into Claude Code without a shell | Plugin references a released MCPB bundle by URL | Docs, to be exercised in [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) |
-| Delivery into Claude Desktop | The same MCPB bundle, installed as a desktop extension | Docs, to be exercised in [CRP-002](../tickets/M0-foundation/CRP-002-spike-desktop-extension.md) |
+| Delivery into Claude Desktop | The same MCPB bundle, installed as a desktop extension | Docs, to be exercised in [CRP-002](../tickets/done/CRP-002-spike-desktop-extension.md) |
 | 100% coverage and SonarQube | Go has built-in coverage including for compiled binaries. SonarQube Cloud analyses Go and is free for public repositories | Docs |
 | Permissive licensing throughout | Standard library only (BSD-3-Clause). No copyleft anywhere | Design |
 

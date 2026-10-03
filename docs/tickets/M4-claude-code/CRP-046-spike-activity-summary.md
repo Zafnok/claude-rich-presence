@@ -22,7 +22,7 @@ Find out whether Claude will reliably and cheaply describe what the user is work
 
 The owner wants presence to read like "Building the battle system for Visions of Shuyi". Nothing in a hook event contains such a phrase. The session's own Claude can write one. The open questions are about behaviour and cost, which only real sessions answer.
 
-This is a spike. Prototype code is thrown away. It extends the prototype from CRP-001: add one tool that logs what it receives.
+This is a spike. Prototype code is never merged. It extends the prototype that CRP-001 left on the branch `spike/crp-001`: add one tool that logs what it receives.
 
 ## Scope
 
@@ -60,7 +60,7 @@ Also record:
 - [ ] Example summaries are listed, good and bad. Anything sensitive is redacted before committing.
 - [ ] ADR-0011 is marked Accepted, with the chosen nudge and wording recorded, or Rejected with the evidence, following the rule in the ADR.
 - [ ] CRP-047, CRP-049 and CRP-053 are amended to match the findings, or set to `not-needed`.
-- [ ] No prototype code is merged.
+- [ ] The prototype is pushed to a branch named `spike/crp-046`, linked from the findings, and never merged.
 
 ## Notes for the implementer
 

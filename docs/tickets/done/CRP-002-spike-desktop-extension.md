@@ -3,10 +3,10 @@ id: CRP-002
 title: "Spike: Claude Desktop extension lifecycle"
 milestone: M0 Foundation
 type: spike
-status: todo
+status: done
 priority: P0
 blocked_by: []
-blocks: [CRP-050, CRP-052]
+blocks: [CRP-044, CRP-050, CRP-052, CRP-063]
 model: claude-opus-5-5
 effort: high
 size: M
@@ -22,11 +22,11 @@ Establish how Claude Desktop runs a desktop extension's server, so we know wheth
 
 The Desktop design in [ADR-0007](../../architecture/adr/0007-integration-and-distribution.md) assumes the extension's server process lives exactly as long as the app. The documentation implies this but does not state it. On Windows, Claude Desktop is a packaged Store app, which may change what its child processes see of the file system.
 
-This is a spike. Prototype code is thrown away. It can reuse the prototype from CRP-001.
+This is a spike, and it is self-contained: it builds its own small prototype and needs nothing from any other ticket. Prototype code is never merged.
 
 ## Scope
 
-Install a logging prototype as a desktop extension, server type `binary`, and answer:
+Build a throwaway prototype: a Go program that speaks just enough MCP over standard streams to answer `initialize`, `tools/list` and `tools/call`, and that appends everything it observes to a local file, including when it started and stopped, its environment, its working directory, its parent process and every path it resolves. Package it as an MCPB bundle of server type `binary`, install it as a desktop extension, and answer:
 
 | # | Question |
 |---|---|
@@ -53,15 +53,21 @@ Optional, if time allows: does Cowork run an extension's server on the host or i
 
 ## Acceptance criteria
 
-- [ ] `docs/research/crp-002-desktop-extension.md` exists and answers B1 to B13 with what was run, on which operating system and app version, and what was observed.
-- [ ] Windows is covered. macOS is covered, or listed as untested with B9 left open and flagged in [risks.md](../../architecture/risks.md).
-- [ ] If B7 fails on any platform, [ADR-0006](../../architecture/adr/0006-control-channel.md) is amended with the corrected location or transport, and CRP-031 is updated to match.
-- [ ] If B1 to B3 show the lifetime assumption is false, the Desktop section of ADR-0007 is revised and CRP-050 and CRP-052 are amended, or set to `not-needed` with the reason.
-- [ ] If B11 shows doubled adapters, CRP-050 states how the duplicate is handled.
-- [ ] No prototype code is merged.
+- [x] `docs/research/crp-002-desktop-extension.md` exists and answers B1 to B13 with what was run, on which operating system and app version, and what was observed.
+- [x] Windows is covered. macOS is covered, or listed as untested with B9 left open and flagged in [risks.md](../../architecture/risks.md).
+- [x] If B7 fails on any platform, [ADR-0006](../../architecture/adr/0006-control-channel.md) is amended with the corrected location or transport. If CRP-031 is still `todo`, it is amended to match. If it has started or finished, a follow-up ticket is written instead.
+- [x] If B1 to B3 show the lifetime assumption is false, the Desktop section of ADR-0007 is revised and CRP-050 and CRP-052 are amended, or set to `not-needed` with the reason.
+- [x] If B11 shows doubled adapters, CRP-050 states how the duplicate is handled.
+- [x] The prototype is pushed to a branch named `spike/crp-002`, linked from the findings, and never merged.
+
+## Outcome
+
+Done on 2026-10-03, over two runs on Windows. The [findings](../../research/crp-002-desktop-extension.md) answer B1 to B13. macOS was not tested: no Mac was used, B9 stays open, and it is flagged in the risk register under R5. A tool call from a Chat conversation was never seen to reach the server; CRP-052 checks it.
 
 ## Notes for the implementer
 
+- Go must be installed first. If CRP-004 has not landed, install it for the spike only.
+- CRP-001 builds a similar logger for Claude Code. The two are separate on purpose, so the spikes can run at the same time. Do not wait for it and do not share code with it. The program is about a hundred lines.
 - For B7, have the prototype take the lock, create the socket, and log the absolute paths it resolved. Run a second copy from a terminal and compare.
 - For B12, a raw open of the pipe and a handshake is enough. No activity needs to be set. A Discord application id is needed for the handshake; use any test application of the owner's.
 - These steps need the owner's machine and Claude Desktop install. Ask the owner to perform them and record exactly what was run.

@@ -62,8 +62,9 @@ claude-rich-presence/
 │   └── skills/                       user-facing skills: status, privacy
 │
 ├── extension/                        CRP-051  MCPB bundle sources
-│   ├── manifest.json
-│   └── icon.png                      CRP-003 supplies the artwork
+│   └── manifest.json
+│
+├── assets/                           CRP-003  artwork sources and the extension icon
 │
 └── docs/
     ├── architecture/                 this directory

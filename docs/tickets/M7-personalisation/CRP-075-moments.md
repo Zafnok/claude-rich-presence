@@ -57,7 +57,7 @@ CRP-001 records whether the `if` filter works on hooks of type `mcp_tool`. If it
 ## Notes for the implementer
 
 - Write the filters to match the push as one of several commands joined together, which the hooks reference says the filter handles, and record the exact patterns tested.
-- A new image key is needed for the shipped state. Add it to the artwork list in CRP-003.
+- A new image key, `shipped`, is needed. Uploading it to the Discord application is an owner action within this ticket: ask the owner, and store the source image under `assets/`.
 - Moments pass through the update scheduler like everything else, so one may appear up to the minimum interval late. A three-minute display makes that unimportant.
 
 ## Why this model and effort

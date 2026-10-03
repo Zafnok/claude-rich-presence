@@ -5,7 +5,7 @@ milestone: M2 Discord
 type: feature
 status: todo
 priority: P0
-blocked_by: [CRP-004]
+blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-021, CRP-023, CRP-043]
 model: claude-sonnet-5-5
 effort: high
@@ -30,7 +30,7 @@ Package `internal/testutil/fakediscord`:
 
 - Listens on a Unix socket on Linux and macOS, and on a named pipe on Windows, at a unique name chosen by the test.
 - Accepts connections, reads frames, and by default behaves like Discord: answers a valid handshake with a ready event, and acknowledges each set-activity command with the same nonce.
-- Records what it received, exposed to the test: handshakes, activities set, clears, in order, with timestamps from an injected clock.
+- Records what it received, exposed to the test: handshakes, activities set, clears, in order, with timestamps from a time function the test passes in. It does not need the fake clock package from CRP-013.
 - Scriptable deviations:
   - reject the handshake with a given error code;
   - close the connection after N frames, or immediately;

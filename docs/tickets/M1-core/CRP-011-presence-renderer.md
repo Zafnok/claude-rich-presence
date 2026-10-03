@@ -41,7 +41,7 @@ Package `internal/presence`:
 - **Images**: the `logo` asset as the large image, and `working`, `waiting` or `idle` as the small image, with hover text.
 - **Idle clearing**: if every session has been idle longer than the configured period, the result is "show nothing".
 - **Empty registry**: "show nothing".
-- An **Activity** value type that the Discord codec consumes, with equality so the scheduler can drop duplicates.
+- The output is the **Activity** type that CRP-010 defines in the domain package, or "show nothing".
 
 ## Out of scope
 
