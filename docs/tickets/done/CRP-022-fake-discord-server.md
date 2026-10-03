@@ -3,7 +3,7 @@ id: CRP-022
 title: Fake Discord IPC server for tests
 milestone: M2 Discord
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-021, CRP-023, CRP-043]
@@ -49,13 +49,13 @@ Package `internal/testutil/fakediscord`:
 
 ## Acceptance criteria
 
-- [ ] The server runs on Linux, macOS and Windows in CI.
-- [ ] It does not import `internal/discord/codec`.
-- [ ] Each scripted deviation has a self-test using a raw connection.
-- [ ] Two servers can run in the same test process at different indices without interfering.
-- [ ] Nothing it creates is left on disk or in the pipe namespace after shutdown.
-- [ ] Any dependency it needs for the Windows pipe server is `golang.org/x/sys` only, used in test code only, and listed in the allowlist from CRP-007 if that ticket has landed.
-- [ ] It is classified as test code for coverage and for SonarQube, as [ADR-0009](../../architecture/adr/0009-quality-gates.md) describes.
+- [x] The server runs on Linux, macOS and Windows in CI.
+- [x] It does not import `internal/discord/codec`.
+- [x] Each scripted deviation has a self-test using a raw connection.
+- [x] Two servers can run in the same test process at different indices without interfering.
+- [x] Nothing it creates is left on disk or in the pipe namespace after shutdown.
+- [x] Any dependency it needs for the Windows pipe server is `golang.org/x/sys` only, used in test code only, and listed in the allowlist from CRP-007 if that ticket has landed.
+- [x] It is classified as test code for coverage and for SonarQube, as [ADR-0009](../../architecture/adr/0009-quality-gates.md) describes.
 
 ## Notes for the implementer
 

@@ -24,7 +24,7 @@ We speak two external protocols.
 
 - No third-party code in the binary.
 - We own protocol drift. The `discord-ipc` and `claude-surfaces` skills carry the references and the re-verification steps, and the end-to-end tests run against fakes that encode our understanding.
-- The fake Discord server ([CRP-022](../../tickets/M2-discord/CRP-022-fake-discord-server.md)) is a second implementation of the framing, which guards against the codec agreeing only with itself. It must be written from the documentation, not by reusing the codec.
+- The fake Discord server ([CRP-022](../../tickets/done/CRP-022-fake-discord-server.md)) is a second implementation of the framing, which guards against the codec agreeing only with itself. It must be written from the documentation, not by reusing the codec.
 - Behaviour we rely on that the documentation does not promise is listed in [risks.md](../risks.md): setting an activity without OAuth, and the stricter of two published rate limits.
 
 ## Alternatives considered
