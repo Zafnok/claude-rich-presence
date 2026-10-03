@@ -4,6 +4,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -291,4 +292,66 @@ func TestSlowConsumerDoesNotBlockSubmitters(t *testing.T) {
 		t.Fatalf("emitted %q, want only the latest, %q", got, "d")
 	}
 	release <- struct{}{}
+}
+
+// steppingClock is a fake clock whose reading can be set back, as a wall clock
+// can be. Its timers are unaffected.
+type steppingClock struct {
+	*fakeclock.Clock
+	back atomic.Int64
+}
+
+func (c *steppingClock) Now() time.Time {
+	return c.Clock.Now().Add(-time.Duration(c.back.Load()))
+}
+
+func TestClockSteppingBackDelaysButDoesNotStall(t *testing.T) {
+	clock := &steppingClock{Clock: fakeclock.New(start)}
+	rec := &recorder{t: t, clock: clock.Clock, calls: make(chan emission, 16)}
+	s := New(clock, interval, rec.emit)
+	t.Cleanup(s.Stop)
+
+	s.Submit("a")
+	rec.want(emission{"a", true, 0})
+	s.Submit("b")
+	clock.WaitForTimers(1)
+
+	// The timer fires on time, but the clock now reads five seconds short of
+	// the boundary. The scheduler must wait those five seconds, not forever.
+	clock.back.Store(int64(5 * time.Second))
+	clock.Advance(interval)
+	clock.WaitForTimers(1)
+	clock.Advance(5 * time.Second)
+	rec.want(emission{"b", true, interval + 5*time.Second})
+}
+
+func TestTimerIsKeptThroughABurst(t *testing.T) {
+	clock := &countingClock{Clock: fakeclock.New(start)}
+	rec := &recorder{t: t, clock: clock.Clock, calls: make(chan emission, 16)}
+	s := New(clock, interval, rec.emit)
+	t.Cleanup(s.Stop)
+
+	s.Submit("a")
+	rec.want(emission{"a", true, 0})
+	for _, v := range []string{"b", "c", "d", "e"} {
+		s.Submit(v)
+	}
+	clock.WaitForTimers(1)
+	clock.Advance(interval)
+	rec.want(emission{"e", true, interval})
+	s.Stop()
+	if got := clock.armed.Load(); got != 1 {
+		t.Fatalf("armed %d timers for one burst, want 1", got)
+	}
+}
+
+// countingClock counts the timers armed on it.
+type countingClock struct {
+	*fakeclock.Clock
+	armed atomic.Int64
+}
+
+func (c *countingClock) AfterFunc(d time.Duration, f func()) func() bool {
+	c.armed.Add(1)
+	return c.Clock.AfterFunc(d, f)
 }

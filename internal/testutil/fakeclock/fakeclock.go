@@ -73,27 +73,25 @@ func (c *Clock) Advance(d time.Duration) {
 		panic("fakeclock: Advance by a negative duration")
 	}
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	end := c.now.Add(d)
-	for {
-		t := c.nextDue(end)
-		if t == nil {
-			break
-		}
-		if t.at.After(c.now) {
-			c.now = t.at
-		}
-		c.mu.Unlock()
-		t.f()
-		c.mu.Lock()
+	c.mu.Unlock()
+	// The lock is not held while a timer's function runs, so the function may
+	// use the clock, and a panic in it reaches the test unchanged.
+	for f := c.nextDue(end); f != nil; f = c.nextDue(end) {
+		f()
 	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if end.After(c.now) {
 		c.now = end
 	}
 }
 
-// nextDue removes and returns the earliest timer due at or before end, or nil.
-func (c *Clock) nextDue(end time.Time) *timer {
+// nextDue removes the earliest timer due at or before end, moves the clock to
+// its deadline and returns its function. It returns nil when none is due.
+func (c *Clock) nextDue(end time.Time) func() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	at := -1
 	for i, t := range c.timers {
 		if t.at.After(end) {
@@ -109,7 +107,10 @@ func (c *Clock) nextDue(end time.Time) *timer {
 	t := c.timers[at]
 	c.timers = append(c.timers[:at], c.timers[at+1:]...)
 	c.changed.Broadcast()
-	return t
+	if t.at.After(c.now) {
+		c.now = t.at
+	}
+	return t.f
 }
 
 // Timers returns how many timers are waiting to fire.

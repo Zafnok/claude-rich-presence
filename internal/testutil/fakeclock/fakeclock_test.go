@@ -143,3 +143,20 @@ func TestWaitForTimers(t *testing.T) {
 	go c.Advance(time.Second)
 	c.WaitForTimers(0)
 }
+
+func TestPanicInTimerFunctionReachesTheCaller(t *testing.T) {
+	c := fakeclock.New(start)
+	c.AfterFunc(time.Second, func() { panic("boom") })
+	func() {
+		defer func() {
+			if got := recover(); got != "boom" {
+				t.Fatalf("recovered %v, want boom", got)
+			}
+		}()
+		c.Advance(time.Second)
+	}()
+	// The clock is still usable.
+	if got, want := c.Now(), start.Add(time.Second); !got.Equal(want) {
+		t.Fatalf("Now() = %v, want %v", got, want)
+	}
+}

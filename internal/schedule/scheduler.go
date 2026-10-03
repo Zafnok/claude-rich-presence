@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -107,29 +108,55 @@ func (s *Scheduler[T]) signal() {
 	}
 }
 
+// timer is one armed wake-up. fired is set by the clock's goroutine and read
+// by the loop.
+type timer struct {
+	stop  func() bool
+	fired atomic.Bool
+}
+
+func (s *Scheduler[T]) arm(wait time.Duration) *timer {
+	t := &timer{}
+	t.stop = s.clock.AfterFunc(wait, func() {
+		t.fired.Store(true)
+		s.signal()
+	})
+	return t
+}
+
 func (s *Scheduler[T]) run() {
 	defer close(s.done)
-	stopTimer := func() bool { return false }
+	var armed *timer
 	for {
 		select {
 		case <-s.stop:
-			stopTimer()
+			if armed != nil {
+				armed.stop()
+			}
 			return
 		case <-s.wake:
 		}
-		// A timer from an earlier pass is out of date either way: it has just
-		// fired, or what is wanted has changed.
-		stopTimer()
 
 		s.mu.Lock()
 		u, emit, wait := s.limiter.next(s.clock.Now())
 		s.mu.Unlock()
 
-		switch {
-		case emit:
+		if wait > 0 {
+			// The moment an emission is next allowed moves only when one is
+			// made, so a timer that is still waiting is still right. One that
+			// has fired while there is time left to wait, which takes a clock
+			// that stepped backwards, is replaced.
+			if armed == nil || armed.fired.Load() {
+				armed = s.arm(wait)
+			}
+			continue
+		}
+		if armed != nil {
+			armed.stop()
+			armed = nil
+		}
+		if emit {
 			s.emit(u.value, u.show)
-		case wait > 0:
-			stopTimer = s.clock.AfterFunc(wait, s.signal)
 		}
 	}
 }
