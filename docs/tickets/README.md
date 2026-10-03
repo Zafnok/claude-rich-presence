@@ -40,7 +40,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 
 | Id | Title | Blocked by | Model | Effort | Size | Status |
 |---|---|---|---|---|---|---|
-| [CRP-001](M0-foundation/CRP-001-spike-claude-code-adapter.md) | Spike: Claude Code adapter wiring | none | Opus 5.5 | high | M | todo |
+| [CRP-001](M0-foundation/CRP-001-spike-claude-code-adapter.md) | Spike: Claude Code adapter wiring | none | Opus 5.5 | high | M | in-progress |
 | [CRP-002](M0-foundation/CRP-002-spike-desktop-extension.md) | Spike: Claude Desktop extension lifecycle | none | Opus 5.5 | high | M | todo |
 | [CRP-003](M0-foundation/CRP-003-naming-branding-discord-app.md) | Owner: naming, branding, Discord application | none | Owner, with Haiku 4.5 | n/a | S | todo |
 | [CRP-004](M0-foundation/CRP-004-repo-scaffolding.md) | Repository scaffolding and toolchain | none | Sonnet 5.5 | low | S | todo |
