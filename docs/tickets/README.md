@@ -80,7 +80,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-022](M2-discord/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-023](M2-discord/CRP-023-discord-session-manager.md) | Discord session manager | 013, 020, 021, 022 | Opus 5.5 | high | M |
 | [CRP-030](M3-host/CRP-030-control-protocol.md) | Control protocol | 010 | Sonnet 5.5 | medium | S |
-| [CRP-031](M3-host/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
+| [CRP-031](done/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
 | [CRP-032](M3-host/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |
 | [CRP-033](M3-host/CRP-033-cli.md) | Command line and composition root | 012, 032, 034, 041 | Sonnet 5.5 | medium | M |
 | [CRP-034](M3-host/CRP-034-diagnostics.md) | Logging and diagnostics | 012 | Sonnet 5.5 | medium | S |

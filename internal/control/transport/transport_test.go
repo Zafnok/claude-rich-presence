@@ -237,6 +237,9 @@ func TestClosingTheListenerRemovesTheSocket(t *testing.T) {
 	if !exists(t, paths.Socket) {
 		t.Fatalf("no socket file at %s while listening", paths.Socket)
 	}
+	if got := listener.Addr().String(); got != paths.Socket {
+		t.Errorf("Addr() = %q, want %q", got, paths.Socket)
+	}
 	if err := listener.Close(); err != nil {
 		t.Fatalf("Close() error = %v", err)
 	}
@@ -427,13 +430,29 @@ func TestDialWithNoSocketFileIsNoHost(t *testing.T) {
 	if err := transport.Prepare(paths.Dir); err != nil {
 		t.Fatal(err)
 	}
+	const timeout = 2 * time.Second
 	start := time.Now()
-	conn, err := transport.Dial(context.Background(), paths.Socket, patience)
+	conn, err := transport.Dial(context.Background(), paths.Socket, timeout)
 	if !errors.Is(err, transport.ErrNoHost) || conn != nil {
 		t.Fatalf("Dial() = %v, %v, want nil and ErrNoHost", conn, err)
 	}
-	if elapsed := time.Since(start); elapsed >= patience {
-		t.Errorf("Dial() took %v, want it within the timeout of %v", elapsed, patience)
+	if elapsed := time.Since(start); elapsed >= timeout {
+		t.Errorf("Dial() took %v, want it within the timeout of %v", elapsed, timeout)
+	}
+}
+
+func TestDialRefusesToWaitWithoutLimit(t *testing.T) {
+	paths := testPaths(t)
+	listener, err := acquire(t, paths).Listen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	for _, timeout := range []time.Duration{0, -time.Second} {
+		conn, err := transport.Dial(context.Background(), paths.Socket, timeout)
+		if !errors.Is(err, transport.ErrNoTimeout) || conn != nil {
+			t.Errorf("Dial() with timeout %v = %v, %v, want nil and ErrNoTimeout", timeout, conn, err)
+		}
 	}
 }
 

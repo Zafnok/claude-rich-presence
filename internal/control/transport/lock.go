@@ -71,7 +71,7 @@ func (l *HostLock) Listen() (*Listener, error) {
 	}
 	// Close removes the file itself, on every operating system alike.
 	inner.SetUnlinkOnClose(false)
-	l.listener = &Listener{Listener: inner, path: l.socket}
+	l.listener = &Listener{inner: inner, path: l.socket}
 	return l.listener, nil
 }
 

@@ -10,12 +10,26 @@ import (
 
 // Listener accepts follower connections on the control socket. It is made
 // by HostLock.Listen.
+//
+// The network listener inside is not exported: closing it directly would
+// leave the socket file behind.
 type Listener struct {
-	net.Listener
-	path string
+	inner net.Listener
+	path  string
 
 	mu     sync.Mutex
 	closed bool
+}
+
+// Accept waits for the next follower connection. After Close it returns an
+// error wrapping net.ErrClosed.
+func (l *Listener) Accept() (net.Conn, error) {
+	return l.inner.Accept()
+}
+
+// Addr returns the address of the control socket.
+func (l *Listener) Addr() net.Addr {
+	return l.inner.Addr()
 }
 
 // Close stops listening and removes the socket file. Closing twice is
@@ -27,7 +41,7 @@ func (l *Listener) Close() error {
 		return nil
 	}
 	l.closed = true
-	return errors.Join(l.Listener.Close(), removeIfExists(l.path))
+	return errors.Join(l.inner.Close(), removeIfExists(l.path))
 }
 
 func (l *Listener) isClosed() bool {
