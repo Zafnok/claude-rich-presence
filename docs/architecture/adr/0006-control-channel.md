@@ -37,7 +37,7 @@ Rules:
 6. `status` asks the host for a summary, for the `status` command.
 7. Unknown message types and unknown fields are ignored, so newer followers can talk to older hosts. A change that old hosts cannot ignore increments the protocol version.
 
-The message catalogue and field definitions are specified in [CRP-030](../../tickets/M3-host/CRP-030-control-protocol.md) and live in `docs/protocol/control.md` once written.
+The message catalogue and field definitions are specified in [CRP-030](../../tickets/done/CRP-030-control-protocol.md) and live in [docs/protocol/control.md](../../protocol/control.md).
 
 ### Trust
 
