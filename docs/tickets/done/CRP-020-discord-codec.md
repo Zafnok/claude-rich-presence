@@ -3,7 +3,7 @@ id: CRP-020
 title: Discord IPC codec
 milestone: M2 Discord
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005, CRP-010]
 blocks: [CRP-023]
@@ -41,14 +41,14 @@ Package `internal/discord/codec`:
 
 ## Acceptance criteria
 
-- [ ] Encoded bytes for the handshake and for a set-activity command match fixtures written by hand from Discord's documentation.
-- [ ] The reader returns complete frames when fed one byte at a time, and when fed several frames in one read.
-- [ ] A declared length above the maximum is rejected before any payload is read.
-- [ ] A stream that ends mid-header or mid-payload returns a distinct error.
-- [ ] Unknown opcodes and unknown JSON fields are tolerated: reported to the caller as unknown, never a panic.
-- [ ] Empty optional activity fields do not appear in the output.
-- [ ] A fuzz test on the frame reader and on each message decoder runs clean, with a seed corpus that includes the fixtures.
-- [ ] The package imports nothing that performs I/O beyond the stream interfaces it is given.
+- [x] Encoded bytes for the handshake and for a set-activity command match fixtures written by hand from Discord's documentation.
+- [x] The reader returns complete frames when fed one byte at a time, and when fed several frames in one read.
+- [x] A declared length above the maximum is rejected before any payload is read.
+- [x] A stream that ends mid-header or mid-payload returns a distinct error.
+- [x] Unknown opcodes and unknown JSON fields are tolerated: reported to the caller as unknown, never a panic.
+- [x] Empty optional activity fields do not appear in the output.
+- [x] A fuzz test on the frame reader and on each message decoder runs clean, with a seed corpus that includes the fixtures.
+- [x] The package imports nothing that performs I/O beyond the stream interfaces it is given.
 
 ## Notes for the implementer
 
