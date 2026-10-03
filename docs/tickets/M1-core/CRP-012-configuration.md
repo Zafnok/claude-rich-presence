@@ -3,7 +3,7 @@ id: CRP-012
 title: Configuration
 milestone: M1 Core
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-014, CRP-033, CRP-034, CRP-041]
