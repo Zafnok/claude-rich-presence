@@ -10,10 +10,10 @@ on:
 permissions:
   contents: read
 
-# A new push to a pull request cancels the run it supersedes. Runs on main are
-# never cancelled.
+# A new push to a pull request cancels the run it supersedes. Each push to main
+# is its own group, so every commit there is checked.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
