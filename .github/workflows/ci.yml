@@ -46,8 +46,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
-          # There is no go.sum, because there is no dependency.
-          cache-dependency-path: go.mod
+          cache-dependency-path: go.sum
 
       - name: Format
         run: |

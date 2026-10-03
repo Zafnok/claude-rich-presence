@@ -195,6 +195,8 @@ So on Windows we keep nothing directly under `AppData` (ADR-0006, ADR-0016). Whe
 We implement the minimum (ADR-0004, CRP-040): `initialize`, the `initialized` notification, `ping`, `tools/list`, `tools/call`. JSON-RPC 2.0, one message per line.
 
 - The client's name and version arrive in `initialize`. That is how the adapter tells Claude Code from Claude Desktop. The actual names are recorded by the spikes.
+- `internal/mcp` was written against revision 2025-11-25 of the specification, read on 2026-10-03, and also accepts 2025-06-18. Claude Code 2.1.284 and Claude Desktop 2.9939.4 both asked for 2025-11-25 (CRP-001, CRP-002).
+- **Revision 2026-07-28 removes the `initialize` handshake and `ping`.** Every request carries its version, capabilities and `clientInfo` in `_meta`, and a server must answer `server/discover`. `internal/mcp` does not implement it. No Claude client has been seen asking for it. When one does, that is new work, and ADR-0004 says to weigh the official SDK then.
 - Standard output is the protocol stream. Never print anything else to it.
 - When standard input closes, the host is gone. Shut down.
 

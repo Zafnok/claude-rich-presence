@@ -3,7 +3,7 @@ id: CRP-040
 title: Minimal MCP stdio server
 milestone: M4 Claude Code
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-041]
@@ -44,17 +44,17 @@ Package `internal/mcp`:
 
 ## Acceptance criteria
 
-- [ ] A scripted session of `initialize`, `initialized`, `tools/list`, `tools/call` and end of input produces the expected responses, compared against golden files.
-- [ ] Requests before `initialize`, other than `ping`, are rejected with the proper error.
-- [ ] Each error case returns the right JSON-RPC code and the server continues to serve.
-- [ ] A notification never produces a response.
-- [ ] Request ids are echoed exactly, whether numbers or strings.
-- [ ] A handler panic produces a tool error result and does not end the server.
-- [ ] Responses are written whole and never interleaved, with concurrent handlers. Tested under the race detector.
-- [ ] Nothing but protocol messages is written to the output stream.
-- [ ] End of input triggers the shutdown callback exactly once.
-- [ ] A fuzz test on the message decoder runs clean.
-- [ ] The package documentation states the supported protocol versions and the supported subset.
+- [x] A scripted session of `initialize`, `initialized`, `tools/list`, `tools/call` and end of input produces the expected responses, compared against golden files.
+- [x] Requests before `initialize`, other than `ping`, are rejected with the proper error.
+- [x] Each error case returns the right JSON-RPC code and the server continues to serve.
+- [x] A notification never produces a response.
+- [x] Request ids are echoed exactly, whether numbers or strings.
+- [x] A handler panic produces a tool error result and does not end the server.
+- [x] Responses are written whole and never interleaved, with concurrent handlers. Tested under the race detector.
+- [x] Nothing but protocol messages is written to the output stream.
+- [x] End of input triggers the shutdown callback exactly once.
+- [x] A fuzz test on the message decoder runs clean.
+- [x] The package documentation states the supported protocol versions and the supported subset.
 
 ## Notes for the implementer
 

@@ -182,7 +182,7 @@ Privacy levels, set per adapter and enforced before anything is sent to the host
 | `full` | Plus the project name, which is the last element of the working directory |
 | `summary`, opt-in, proposed | Plus one short phrase describing the work, written by Claude |
 
-Exact strings, truncation to Discord's limits and the tool-kind vocabulary are specified in [CRP-011](../tickets/M1-core/CRP-011-presence-renderer.md).
+Exact strings, truncation to Discord's limits and the tool-kind vocabulary are specified in [CRP-011](../tickets/done/CRP-011-presence-renderer.md).
 
 ### The activity summary
 
@@ -210,7 +210,7 @@ Short-lived moments, such as a successful push, briefly change the small image a
 
 - The Discord codec and transport are written in-house against the documented protocol. See [ADR-0004](adr/0004-in-house-protocol-implementations.md).
 - The transport tries pipe indices 0 to 9 and, on Linux, the Flatpak and Snap locations as well.
-- The scheduler sends the first change immediately and then at most one update per 15 seconds, always the latest. See [CRP-013](../tickets/M1-core/CRP-013-update-scheduler.md).
+- The scheduler sends the first change immediately and then at most one update per 15 seconds, always the latest. See [CRP-013](../tickets/done/CRP-013-update-scheduler.md).
 - If Discord is not running, the host retries quietly with backoff. Starting Discord later just works.
 - On shutdown the host clears the activity before closing, though closing alone also clears it.
 
