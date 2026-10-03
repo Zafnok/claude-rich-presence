@@ -3,7 +3,7 @@ id: CRP-020
 title: Discord IPC codec
 milestone: M2 Discord
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005, CRP-010]
 blocks: [CRP-023]
