@@ -3,7 +3,7 @@ id: CRP-010
 title: "Domain model: events, sessions, registry"
 milestone: M1 Core
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-011, CRP-020, CRP-030, CRP-032, CRP-041]
@@ -42,14 +42,14 @@ Package `internal/domain`:
 
 ## Acceptance criteria
 
-- [ ] Every transition in the state diagram is covered by a table-driven test, including each transition that must not change state.
-- [ ] Any event for an unknown session id creates that session with sensible defaults, so the registry can be rebuilt from any event.
-- [ ] Applying a sync for a session twice gives the same state as applying it once.
-- [ ] Subagent count never goes below zero.
-- [ ] A snapshot cannot be used to mutate the registry.
-- [ ] An invalid event is rejected with an error and leaves the registry unchanged.
-- [ ] The package imports only the standard library, and nothing from `os`, `net`, `time.Now` or `log`.
-- [ ] A property test over random event sequences shows the registry never panics and every session stays in a valid status.
+- [x] Every transition in the state diagram is covered by a table-driven test, including each transition that must not change state.
+- [x] Any event for an unknown session id creates that session with sensible defaults, so the registry can be rebuilt from any event.
+- [x] Applying a sync for a session twice gives the same state as applying it once.
+- [x] Subagent count never goes below zero.
+- [x] A snapshot cannot be used to mutate the registry.
+- [x] An invalid event is rejected with an error and leaves the registry unchanged.
+- [x] The package imports only the standard library, and nothing from `os`, `net`, `time.Now` or `log`.
+- [x] A property test over random event sequences shows the registry never panics and every session stays in a valid status.
 
 ## Notes for the implementer
 

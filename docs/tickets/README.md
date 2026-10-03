@@ -70,7 +70,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-005](done/CRP-005-ci-pipeline.md) | CI pipeline and the coverage gate | 004 | Sonnet 5.5 | medium | M |
 | [CRP-006](M0-foundation/CRP-006-sonarqube-cloud.md) | SonarQube Cloud integration | 005 | Sonnet 5.5 | low | S |
 | [CRP-007](M0-foundation/CRP-007-supply-chain-policy.md) | Supply-chain policy enforcement | 005 | Sonnet 5.5 | low | S |
-| [CRP-010](M1-core/CRP-010-domain-model.md) | Domain model: events, sessions, registry | 004, 005 | Sonnet 5.5 | high | M |
+| [CRP-010](done/CRP-010-domain-model.md) | Domain model: events, sessions, registry | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-011](M1-core/CRP-011-presence-renderer.md) | Presence renderer | 010 | Sonnet 5.5 | medium | M |
 | [CRP-012](M1-core/CRP-012-configuration.md) | Configuration | 004, 005 | Sonnet 5.5 | medium | M |
 | [CRP-013](M1-core/CRP-013-update-scheduler.md) | Update scheduler | 004, 005 | Sonnet 5.5 | high | S |

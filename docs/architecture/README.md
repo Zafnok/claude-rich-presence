@@ -115,9 +115,30 @@ stateDiagram-v2
     Waiting --> [*]: session ended or connection lost
 ```
 
-A session records: id, surface, status, the kind of tool in use, model if known, project name if permitted, start time, time of last activity, and count of running subagents.
+The diagram shows a session whose events arrive complete and in order. Events can also be missed or arrive late, around a failover or when two hooks fire together, so the state machine defines every event in every status. This table is the whole of it, and the code holds the same table as data. A dash means the status does not change.
 
-Events are upserts. Any event carrying a session id creates the session if the host does not know it. That is what lets a new host rebuild state and lets events arrive in any order after a failover.
+| Event | From `Idle` | From `Working` | From `Waiting` | From `Compacting` |
+|---|---|---|---|---|
+| turn started | `Working` | - | `Working` | `Working` |
+| tool started | `Working` | - | `Working` | `Working` |
+| tool finished | - | - | `Working` | - |
+| attention needed | `Waiting` | `Waiting` | - | - |
+| idle | - | `Idle` | `Idle` | `Idle` |
+| turn finished | - | `Idle` | `Idle` | `Idle` |
+| compaction started | - | `Compacting` | - | - |
+| compaction finished | - | - | - | `Working` |
+| session opened, session refreshed, model changed, subagent started, subagent stopped | - | - | - | - |
+| session ended | removed | removed | removed | removed |
+
+Three cells are deliberate:
+
+- A tool that finishes does not wake an idle session. Its event can arrive just after the turn's stop, and the session would then show as working until the next prompt.
+- Only a working session enters `Compacting`. A user who compacts an idle session by hand would otherwise leave it shown as working, because nothing follows to end the turn.
+- Every status can reach `Idle` and `Working`, so a missed event never leaves a session stuck.
+
+A session records: id, surface, status, the kind of tool in use, model if known, project name if permitted, privacy level, start time, time of last activity, and count of running subagents. The tool kind is kept only while the session is working. Every event but the idle notice counts as activity.
+
+Events are upserts. Any event carrying a session id creates the session if the host does not know it: idle, at the `minimal` privacy level, started at the time of that event. That is what lets a new host rebuild state and lets events arrive in any order after a failover. The registry applies events in the order they arrive and does not reorder them by timestamp, since a clock that steps backwards would otherwise freeze a session. A session's start time only moves earlier and its last activity only later.
 
 ### Where the events come from
 
