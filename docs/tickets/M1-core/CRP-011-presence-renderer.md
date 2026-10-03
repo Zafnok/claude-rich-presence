@@ -3,7 +3,7 @@ id: CRP-011
 title: Presence renderer
 milestone: M1 Core
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-010]
 blocks: [CRP-032]
