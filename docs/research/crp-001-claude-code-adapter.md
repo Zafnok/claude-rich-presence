@@ -2,7 +2,7 @@
 
 Spike for [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md), run 2026-10-02 and 2026-10-03. It tests the wiring proposed in [ADR-0007](../architecture/adr/0007-integration-and-distribution.md): a native binary delivered as an MCPB bundle referenced from a plugin, receiving events through hooks of type `mcp_tool`.
 
-**Status of this document: draft.** Headless results for Windows and Linux are in. Still open are the interactive checks on Windows (terminal, Desktop Code tab). They are listed under [Not yet tested](#not-yet-tested). The ADR decision is not recorded until they are in.
+Headless results cover Windows and Linux. One interactive terminal session was run on Windows by the owner. What could not be tested is listed under [Not yet tested](#not-yet-tested).
 
 ## How to read this
 
@@ -17,7 +17,7 @@ Spike for [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.m
 |---|---|---|
 | Operating system | Windows 11 Pro 10.0.26200, x64 | Ubuntu 24.04.4 under WSL2, kernel 6.6.87.2, x86-64 |
 | Claude Code | 2.1.284, the binary Claude Desktop installs under `%APPDATA%\Claude\claude-code` | 2.1.287, native installer |
-| How sessions were started | `claude -p` (headless) from Git Bash, and `claude mcp list` | The same, from Bash |
+| How sessions were started | `claude -p` (headless) from Git Bash, `claude mcp list`, and one interactive session run by the owner in Windows Terminal | `claude -p` and `claude mcp list` from Bash |
 | Login | Owner's claude.ai login for model turns. Install, update and start-up tests ran with no login | The same |
 | Go | 1.27.0, cross-compiled from Windows for all three targets | |
 
@@ -41,7 +41,7 @@ Install and update tests used an isolated configuration directory (`CLAUDE_CONFI
 | # | Criterion | Windows | Linux | Notes |
 |---|---|---|---|---|
 | A1 | Installs, downloads the bundle, starts the right binary with no shell | **Pass** | **Pass** | Download happens on first load, not at install |
-| A2 | Hooks deliver every event except launch-time `SessionStart` | **Pass** for all but `Notification` (untested) and `SessionEnd` at exit (fails, see below) | Same | |
+| A2 | Hooks deliver every event except launch-time `SessionStart` | **Pass** for all but `SessionEnd` at exit (fails, see below). Of the notification types only `idle_prompt` was seen | Same, without `Notification` | |
 | A3 | Absent field does not break the hook | **Pass** | **Pass** | Absent fields arrive as empty strings |
 | A4 | Tool result adds nothing to context | **Pass** with an empty or plain-text result. **A result that is hook-control JSON is acted on** | Same | Mitigation is already the design: return empty content |
 | A5 | Latency under 10 ms at p99; hung or dead server bounded by the timeout | **Pass**: p99 5 ms, max 6 ms over 256 calls. Hung: 2.000 s per hooked event. Dead: about 5 ms, then restarted | **Pass**: p99 8 ms over 256 calls, with three calls above 10 ms (12, 15, 17). Hung and dead as on Windows | |
@@ -49,7 +49,7 @@ Install and update tests used an isolated configuration directory (`CLAUDE_CONFI
 | A7 | Updating to a new bundle URL replaces the binary | **Pass**, when the plugin version changes | **Pass** | A changed URL with an unchanged version does nothing |
 | A8 | Tool definitions are small and not called unprompted | **Pass**: 78 and 59 tokens, deferred; no unprompted call in 434 observed calls | **Pass**: same sizes, no unprompted call | |
 
-No criterion that forces the fallback (A1, A2, A4, A5, A6) has failed. Two findings need mitigation in later tickets: `SessionEnd` at exit, and the launch-time `SessionStart` skip being reported as a hook error.
+No criterion that forces the fallback (A1, A2, A4, A5, A6) has failed. Two findings need a change to the hook file, and the change was tested: `SessionEnd` at exit fails with a visible error, and the launch-time `SessionStart` skip is shown to the user as a hook error. See [the tested hook file changes](#the-tested-hook-file-changes).
 
 ## A1. Install, download, start
 
@@ -66,7 +66,7 @@ No criterion that forces the fallback (A1, A2, A4, A5, A6) has failed. Two findi
 - When the download fails (here: an untrusted certificate), the plugin still shows as enabled, `claude mcp list` says `No MCP servers configured`, and the only trace is in the debug log: `Plugin MCP server error - mcpb-download-failed`. Nothing is shown to the user by these commands.
 - A local-path bundle is extracted into `.mcpb-cache/` inside the plugin directory.
 
-**Observed, Windows only.** No console window: `GetConsoleWindow` returned null in the server process in every run. These runs had no visible parent console to inherit, so this covers the headless case. The Desktop Code tab is [not yet tested](#not-yet-tested).
+**Observed, Windows only.** No console window: `GetConsoleWindow` returned null in the server process in every run. These runs had no visible parent console to inherit, so this covers the headless case. The Desktop Code tab is [not yet tested](#not-yet-tested). In the interactive Windows Terminal session there was no console window either.
 
 **Other things seen.**
 
@@ -98,7 +98,7 @@ No criterion that forces the fallback (A1, A2, A4, A5, A6) has failed. Two findi
 | `SubagentStart`, `SubagentStop` | Yes | `agent_id`, `agent_type` |
 | `SessionEnd` on `/clear` | Yes | `reason: clear` |
 | `SessionEnd` at exit | **No**, see below | |
-| `Notification` | Untested | Needs an interactive session |
+| `Notification` | Yes, Windows interactive | `notification_type: idle_prompt`, about 60 s after the turn ended. The permission and input types were not provoked |
 
 Substitution details, all observed:
 
@@ -117,7 +117,9 @@ SessionEnd hook [plugin:rich-presence:presence/presence_event] failed: MCP serve
 
 The server had already seen its input close (Windows) or received an interrupt signal (Linux) a few milliseconds earlier. The design already treats that as the end of the session, so nothing is lost by removing the `SessionEnd` hook. `SessionEnd` with `reason: clear` does arrive, but `SessionStart` with `source: clear` follows it immediately and carries the same information.
 
-**Consequence.** Do not declare a `SessionEnd` hook. Whether the error line is visible in an interactive terminal is [not yet tested](#not-yet-tested); it is visible in headless mode.
+In the interactive session the same failure was logged on `/exit` (`reason: prompt_input_exit`) as `SessionEnd hook [plugin:rich-presence:presence/presence_event] failed: Not connected`, written to standard error as the program exited. The owner did not report seeing it.
+
+**Consequence.** Do not declare a `SessionEnd` hook.
 
 ### Finding: the launch-time skip is logged as a hook error
 
@@ -127,13 +129,32 @@ The documented skip appears in the debug log as a warning and an error, and in s
 mcp_tool hooks are not available for the 'SessionStart' hook event (no MCP client context)
 ```
 
-It did not affect the session. Whether an interactive terminal shows it is [not yet tested](#not-yet-tested). It cannot be avoided while a `SessionStart` hook of type `mcp_tool` is declared, and that hook is the only source of the model after a compaction and of the new session id after a clear.
+It did not affect the session. **In an interactive terminal it is shown to the user** at every start, under the welcome banner:
+
+```
+⎿  SessionStart:startup hook error
+⎿  MCP server 'plugin:rich-presence:presence' not connected
+```
+
+**Consequence.** The `SessionStart` hook must not match at launch. A matcher does that.
+
+### The tested hook file changes
+
+A second copy of the hook file was run on Windows with two changes: the `SessionStart` entry given `"matcher": "clear|compact"`, and the `SessionEnd` entry removed. In a session with a prompt, `/clear`, `/model`, `/compact` and an exit:
+
+- no hook reported an error; the stream showed two `SessionStart` hook responses, both `success`;
+- nothing was written to standard error at exit;
+- `SessionStart` with `source: clear` and with `source: compact` still arrived, the first with the new session id and the second with the model;
+- every other event arrived as before.
+
+This run was headless. That the banner no longer shows the error in an interactive terminal follows from the hook not matching at launch, and is inferred, not observed.
 
 ### Other observations that affect the design
 
 - **`UserPromptSubmit` is not only the user.** It also fired when a background subagent finished and Claude Code fed the result back in as a new turn. For presence this is still "turn started", so the mapping holds.
 - **Compaction produces a `SubagentStop` with an empty `agent_type` and no matching `SubagentStart`.** A subagent counter must not go below zero and should count only stops whose start it saw.
-- **`SessionStart` at launch carried no `model` field** in any run, logged in or not, including through a command hook. The model was present only on `source: compact`.
+- **`SessionStart` at launch carried no `model` field in headless runs**, logged in or not, including through a command hook. **In the interactive session it did**: a command hook saw `model: claude-opus-5-5` with `source: startup`. An `mcp_tool` hook cannot receive that event, so this helps only a command hook. It is passed to [CRP-045](../tickets/M4-claude-code/CRP-045-spike-initial-model.md).
+- **A `SubagentStop` with an empty `agent_type` and no start also followed an ordinary turn** in the interactive session, about a second after `Stop`. It is not specific to compaction.
 - **A session id changes on `/clear`** while the server process stays the same. See [the server's environment](#the-servers-environment).
 
 ## A3. Absent fields
@@ -239,7 +260,7 @@ Old version directories stayed in the cache after the update. Each holds its own
 
 Field names present in the hook input for each event, recorded on Windows with Claude Code 2.1.284 through command hooks. Only names and types were recorded. Fields under `tool_input` and `tool_response` vary by tool and are omitted. **Bold** fields are the ones the adapter may read.
 
-Every event carries `session_id`, `cwd`, `hook_event_name` and `transcript_path`. `prompt_id` is present once a prompt has been submitted.
+Every event carries `session_id`, `cwd`, `hook_event_name` and `transcript_path`. `prompt_id` is present once a prompt has been submitted. The interactive session also carried `scratchpad_dir` on every event, and `effort.level` on tool events and `Stop` (`medium` arrived through `${effort.level}`).
 
 | Event | Additional fields | Values seen |
 |---|---|---|
@@ -255,10 +276,10 @@ Every event carries `session_id`, `cwd`, `hook_event_name` and `transcript_path`
 | `PostModelSwitch` | **`to_model`**, `from_model`, `requested_model`, `source`, `cache_ttl`, `context_tokens`, `estimated_cache_write_usd`, `pricing`, `prompt_cache_warm` | `source`: `command` |
 | `SubagentStart` | `agent_id`, `agent_type` | `general-purpose` |
 | `SubagentStop` | `agent_id`, `agent_type`, `agent_transcript_path`, `stop_hook_active`, `last_assistant_message`, `background_tasks`, `session_crons`, `permission_mode` | `agent_type` empty for the compaction's own agent |
-| `SessionEnd` | **`reason`** | `clear`, `other` |
-| `Notification` | Untested | |
+| `SessionEnd` | **`reason`** | `clear`, `other` (headless exit), `prompt_input_exit` (`/exit`) |
+| `Notification` | **`notification_type`**, `message` | `idle_prompt` |
 
-Fields that carry user content and must stay unread: `prompt`, `tool_input`, `tool_response`, `error`, `last_assistant_message`, `compact_summary`, `custom_instructions`, `transcript_path`, `agent_transcript_path`.
+Fields that carry user content and must stay unread: `prompt`, `tool_input`, `tool_response`, `error`, `message`, `last_assistant_message`, `compact_summary`, `custom_instructions`, `transcript_path`, `agent_transcript_path`, `scratchpad_dir`.
 
 ## Other facts later tickets need
 
@@ -271,20 +292,20 @@ Sent in `initialize` by Claude Code, identical on both platforms apart from the 
   "description": "Anthropic's agentic coding tool", "websiteUrl": "https://claude.com/claude-code" }
 ```
 
-`protocolVersion` was `2025-11-25`. Capabilities offered: `roots` with `listChanged`, and `elicitation`. Only headless `claude -p` and `claude mcp list` were observed, on both platforms. Other surfaces are [not yet tested](#not-yet-tested).
+`protocolVersion` was `2025-11-25`. Capabilities offered: `roots` with `listChanged`, and `elicitation`. The interactive terminal session on Windows sent the same `clientInfo`. Other surfaces are listed under [Not yet tested](#not-yet-tested).
 
 ### The server's environment
 
 | Item | Observed |
 |---|---|
 | Working directory | The session's working directory |
-| Parent process | `claude.exe` or `claude`, directly |
+| Parent process | `claude.exe` or `claude`, directly. In the interactive session the chain above it was `cmd.exe`, `powershell.exe`, `WindowsTerminal.exe`, and no console window was created for the server |
 | Standard input | A pipe on Windows, a socket on Linux |
 | `CLAUDE_PLUGIN_ROOT` | The plugin's cache directory for the installed version, or the source directory for an in-place plugin |
 | `CLAUDE_PLUGIN_DATA` | `<config>/plugins/data/rich-presence-<marketplace>`, or `…/rich-presence-inline` under `--plugin-dir` |
 | `CLAUDE_PROJECT_DIR` | The session's project directory |
 | `CLAUDE_CODE_SESSION_ID` | The session id at spawn. Equal to the hooks' `session_id` at first. Not updated on `/clear`. Wrong under `--continue`. Documented |
-| `CLAUDE_CODE_ENTRYPOINT` | `sdk-cli` for `claude -p` |
+| `CLAUDE_CODE_ENTRYPOINT` | `sdk-cli` for `claude -p`, `cli` for the interactive terminal. A shell started by the Desktop Code tab had `claude-desktop` in its own environment; a server started from the Code tab was not observed |
 | `CLAUDECODE` | `1` |
 | `CLAUDE_CODE_REMOTE` | Not set in any local run |
 | Also present, by name | `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`. The adapter has no use for them and must not read them |
@@ -327,9 +348,10 @@ Two of two expected firings, none unexpected in five other successful commands. 
 | Item | Why | Owner |
 |---|---|---|
 | Interactive terminal on Linux | Driving the terminal interface through a pseudo-terminal stopped at first-run onboarding, which asked for a second sign-in | Untested |
-| `Notification` events and their fields, any platform | Needs an interactive session with a permission prompt and an idle period | Owner, terminal |
-| Whether the `SessionStart` skip and the `SessionEnd` failure are visible in an interactive terminal | Needs an interactive session | Owner, terminal |
-| Claude Desktop Code tab: events, `clientInfo`, entrypoint, console window | Needs the plugin installed in the owner's configuration | Owner |
+| `Notification` types `permission_prompt`, `agent_needs_input`, `elicitation_dialog` | The interactive session ran in auto mode and showed no permission prompt | CRP-043 |
+| `Notification` on Linux | No interactive session there | Untested |
+| The corrected hook file in an interactive terminal | The corrected file was run headless only | CRP-042 |
+| Claude Desktop Code tab: events, `clientInfo`, entrypoint, console window | Needs the plugin installed in the owner's configuration. Not run | CRP-043 |
 | VS Code extension | The extension is not installed on the test machine | Untested |
 | JetBrains extension | Not available | Untested |
 | macOS | No machine | Untested |
