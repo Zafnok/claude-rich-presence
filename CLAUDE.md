@@ -2,7 +2,7 @@
 
 Discord Rich Presence for Claude Code and Claude Desktop. Go, MIT, one static binary named `rich-presence`.
 
-The Go module and toolchain are in place ([CRP-004](docs/tickets/done/CRP-004-repo-scaffolding.md)): a skeleton with one package directory per component and a `version` command. Build, test and coverage commands are in the Development section of [CONTRIBUTING.md](CONTRIBUTING.md).
+The Go module and toolchain are in place ([CRP-004](docs/tickets/done/CRP-004-repo-scaffolding.md)): a skeleton with one package directory per component and a `version` command. CI runs on Linux, macOS and Windows and fails below 100.0% statement coverage ([CRP-005](docs/tickets/done/CRP-005-ci-pipeline.md)). Build, test and coverage commands are in the Development section of [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Source of truth
 

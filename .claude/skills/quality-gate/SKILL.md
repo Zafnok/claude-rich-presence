@@ -5,7 +5,7 @@ description: The checks to run before opening or updating any pull request in th
 
 # Quality gate
 
-Run these before opening a pull request. They mirror CI, so passing here means CI should pass on your operating system. The exact commands are in the Development section of `CONTRIBUTING.md`, which CRP-004 and CRP-005 establish; until those land, the checks marked "after CRP-005" do not exist yet.
+Run these before opening a pull request. They mirror CI, so passing here means CI should pass on your operating system. The exact commands are in the Development section of `CONTRIBUTING.md`, in the order CI runs them.
 
 ## Before the pull request
 
@@ -13,11 +13,11 @@ Run these before opening a pull request. They mirror CI, so passing here means C
 |---|---|---|
 | 1 | Format | `gofmt` would change nothing |
 | 2 | Vet | `go vet` reports nothing |
-| 3 | Static analysis, after CRP-005 | The pinned analyser reports nothing |
+| 3 | Static analysis | Staticcheck, at the version pinned in the workflow, reports nothing |
 | 4 | Build | The module builds with cgo disabled for every release target |
 | 5 | Tests | All pass with the race detector on |
 | 6 | Fuzz smoke | Each fuzz target you touched runs clean for a short fixed time |
-| 7 | Coverage, after CRP-005 | The gate tool reports 100.0% and lists no uncovered block |
+| 7 | Coverage | `tools/covercheck` reports 100.0% and lists no uncovered block |
 | 8 | Dependencies | `go.mod` has no new module, or an accepted ADR covers it |
 | 9 | Plugin, after CRP-042 | `claude plugin validate --strict` passes, if you touched `plugin/` or the marketplace file |
 | 10 | Documents | Links in Markdown you changed resolve. Ticket status updated in its own file |

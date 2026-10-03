@@ -3,7 +3,7 @@ id: CRP-005
 title: CI pipeline and the coverage gate
 milestone: M0 Foundation
 type: chore
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-004]
 blocks: [CRP-006, CRP-007, CRP-010, CRP-012, CRP-013, CRP-020, CRP-021, CRP-022, CRP-031, CRP-040, CRP-060]
@@ -39,14 +39,14 @@ Platform-specific files compile on one operating system only, so coverage must b
 
 ## Acceptance criteria
 
-- [ ] A pull request that leaves one statement untested fails on the coverage gate, and the log names the file and line.
-- [ ] A pull request that breaks formatting, `go vet`, the static analyser, or any cross-build fails at that stage.
-- [ ] All three operating systems run and must pass.
-- [ ] `main` in `cmd/rich-presence` shows as covered, through an instrumented binary run of `version`.
-- [ ] Every third-party action is pinned to a full commit hash, and the workflow's token has read-only permissions by default.
-- [ ] `tools/covercheck` is itself covered to 100.0% and included in the measured set.
-- [ ] `internal/testutil` is excluded from the measured set, and nothing else is.
-- [ ] A run on an unchanged tree takes under ten minutes.
+- [x] A pull request that leaves one statement untested fails on the coverage gate, and the log names the file and line.
+- [x] A pull request that breaks formatting, `go vet`, the static analyser, or any cross-build fails at that stage.
+- [x] All three operating systems run and must pass.
+- [x] `main` in `cmd/rich-presence` shows as covered, through an instrumented binary run of `version`.
+- [x] Every third-party action is pinned to a full commit hash, and the workflow's token has read-only permissions by default.
+- [x] `tools/covercheck` is itself covered to 100.0% and included in the measured set.
+- [x] `internal/testutil` is excluded from the measured set, and nothing else is.
+- [x] A run on an unchanged tree takes under ten minutes.
 
 ## Notes for the implementer
 

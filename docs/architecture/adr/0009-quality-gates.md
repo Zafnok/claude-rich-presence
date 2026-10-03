@@ -42,7 +42,7 @@ Statement coverage proves a line ran, not that it was checked. To make the numbe
 
 ### Static checks
 
-`gofmt`, `go vet`, `govulncheck`, and one static analyser, chosen and pinned in [CRP-005](../../tickets/M0-foundation/CRP-005-ci-pipeline.md).
+`gofmt`, `go vet`, `govulncheck`, and one static analyser, chosen and pinned in [CRP-005](../../tickets/done/CRP-005-ci-pipeline.md).
 
 ## Consequences
 
