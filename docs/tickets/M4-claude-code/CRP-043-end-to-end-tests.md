@@ -68,6 +68,7 @@ Scenarios:
 - Killing a process differs by operating system. Wrap it once in the test helper.
 - For E5 on Windows, confirm the lock is released when the process is terminated, not only when it exits normally.
 - If a scenario reveals a design gap rather than a bug, stop and raise it. Do not weaken the assertion.
+- The [CRP-001 findings](../../research/crp-001-claude-code-adapter.md) list what that spike could not test. The manual part of this ticket picks those up in a real Claude Code, and records the result: the notification types `permission_prompt`, `agent_needs_input` and `elicitation_dialog`; a session in the Claude Desktop Code tab through `/clear`, compaction and a model switch; that the banner shows no hook error at start and nothing is printed at exit; and that the model's context gains no line from the hooks. For the last, ask the session to quote any line containing both "hook" and "success". ADR-0007's rules 4, 6 and 7 rest on undocumented behaviour, so this check is repeated whenever the minimum Claude Code version is raised.
 
 ## Why this model and effort
 

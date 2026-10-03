@@ -70,6 +70,7 @@ If the bridge is unworkable, evaluate these for the model alone, in this order, 
 - Start by re-reading the status line reference. Field names and triggers change between releases.
 - L1 decides most of the value. The owner works mainly in the Claude Desktop Code tab; if the status line does not run there, say so prominently.
 - These steps need the owner's machine and settings. Back up the settings file before any experiment, and restore it afterwards.
+- The [CRP-001 findings](../../research/crp-001-claude-code-adapter.md) bear on this. In an interactive terminal session a **command** hook on `SessionStart` at launch received `model` with `source: startup`. Headless sessions did not carry it. An `mcp_tool` hook cannot receive that event at all, and declaring one for it shows the user an error at every start. After `/clear` the event carried no model; after a compaction it did. A command hook at launch is therefore a second candidate beside the status line, at the cost of the shell-free rule, and should be weighed here.
 - Time box: one working day.
 
 ## Why this model and effort

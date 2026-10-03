@@ -3,7 +3,7 @@ id: CRP-044
 title: "Fallback: command hooks and standalone host"
 milestone: M4 Claude Code
 type: feature
-status: conditional
+status: not-needed
 priority: P0
 blocked_by: [CRP-001, CRP-002, CRP-043]
 blocks: []
@@ -13,6 +13,10 @@ size: L
 ---
 
 # CRP-044: Fallback: command hooks and standalone host
+
+## Closed as not needed
+
+CRP-001 found that the wiring in ADR-0007 works on Windows and Linux, and the ADR was accepted on 2026-10-03. The condition below did not occur. See the [findings](../../research/crp-001-claude-code-adapter.md).
 
 ## Condition
 

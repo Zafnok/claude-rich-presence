@@ -3,7 +3,7 @@ id: CRP-001
 title: "Spike: Claude Code adapter wiring"
 milestone: M0 Foundation
 type: spike
-status: in-progress
+status: done
 priority: P0
 blocked_by: []
 blocks: [CRP-041, CRP-042, CRP-044, CRP-046, CRP-051]

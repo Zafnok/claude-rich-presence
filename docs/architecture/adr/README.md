@@ -10,7 +10,7 @@ An ADR records one decision, why it was made, and what it costs. Accepted ADRs a
 | [0004](0004-in-house-protocol-implementations.md) | Implement the Discord IPC client and the MCP stdio subset ourselves | Accepted |
 | [0005](0005-presence-host-election.md) | The presence host is elected among adapter processes; no daemon | Accepted |
 | [0006](0006-control-channel.md) | Unix domain sockets and newline-delimited JSON between adapters and host | Accepted |
-| [0007](0007-integration-and-distribution.md) | One MCPB bundle for both surfaces; `mcp_tool` hooks in Claude Code | Proposed, pending CRP-001 and CRP-002 |
+| [0007](0007-integration-and-distribution.md) | One MCPB bundle for both surfaces; `mcp_tool` hooks in Claude Code | Accepted |
 | [0008](0008-privacy-and-safety-by-default.md) | Documented interfaces only, data minimised at the edge, never block Claude | Accepted |
 | [0009](0009-quality-gates.md) | 100% statement coverage and SonarQube Cloud, enforced in CI | Accepted |
 | [0010](0010-naming-and-branding.md) | Neutral product names, no Anthropic or Discord marks | Proposed, pending CRP-003 |

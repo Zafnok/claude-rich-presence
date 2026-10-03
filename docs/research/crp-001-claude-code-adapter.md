@@ -1,8 +1,8 @@
 # CRP-001 findings: Claude Code adapter wiring
 
-Spike for [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md), run 2026-10-02 and 2026-10-03. It tests the wiring proposed in [ADR-0007](../architecture/adr/0007-integration-and-distribution.md): a native binary delivered as an MCPB bundle referenced from a plugin, receiving events through hooks of type `mcp_tool`.
+Spike for [CRP-001](../tickets/done/CRP-001-spike-claude-code-adapter.md), run 2026-10-02 and 2026-10-03. It tests the wiring proposed in [ADR-0007](../architecture/adr/0007-integration-and-distribution.md): a native binary delivered as an MCPB bundle referenced from a plugin, receiving events through hooks of type `mcp_tool`.
 
-Headless results cover Windows and Linux. One interactive terminal session was run on Windows by the owner. What could not be tested is listed under [Not yet tested](#not-yet-tested).
+Headless results cover Windows and Linux. The owner ran one interactive terminal session and one Claude Desktop Code-tab session on Windows. What could not be tested is listed under [Not yet tested](#not-yet-tested).
 
 ## How to read this
 
@@ -25,7 +25,7 @@ macOS was not tested. Linux was tested under WSL2 only, not on a bare-metal desk
 
 ### The prototype
 
-All of it lived outside the repository and is thrown away.
+All of it lived outside the working tree. The source is kept on the branch `spike/crp-001`, under `spike/crp-001/`, which is never merged.
 
 - **Probe**: a Go program, standard library only. As `probe mcp` it answers `initialize`, `ping`, `tools/list` and `tools/call` over standard streams and appends everything it sees to a local file: arguments, working directory, parent processes, selected environment variables, every request, and a heartbeat every five seconds. A control file switches its behaviour per run: return an empty result, return text, return hook-control JSON, return an error, never answer, or exit.
 - **Bundle**: `manifest.json` (manifest version 0.3, server type `binary`, `platform_overrides` for `win32`, `darwin`, `linux`, one `user_config` option) plus the three binaries, zipped with executable mode bits set.
@@ -43,13 +43,13 @@ Install and update tests used an isolated configuration directory (`CLAUDE_CONFI
 | A1 | Installs, downloads the bundle, starts the right binary with no shell | **Pass** | **Pass** | Download happens on first load, not at install |
 | A2 | Hooks deliver every event except launch-time `SessionStart` | **Pass** for all but `SessionEnd` at exit (fails, see below). Of the notification types only `idle_prompt` was seen | Same, without `Notification` | |
 | A3 | Absent field does not break the hook | **Pass** | **Pass** | Absent fields arrive as empty strings |
-| A4 | Tool result adds nothing to context | **Pass** with an empty or plain-text result. **A result that is hook-control JSON is acted on** | Same | Mitigation is already the design: return empty content |
+| A4 | Tool result adds nothing to context | **Pass only when the tool returns the text `{}`.** With empty content, Claude Code adds a fixed line to the model's context on every `UserPromptSubmit`. A result that is hook-control JSON is acted on | Same | The workaround changes ADR-0007's rule from "empty result" to "the text `{}`" |
 | A5 | Latency under 10 ms at p99; hung or dead server bounded by the timeout | **Pass**: p99 5 ms, max 6 ms over 256 calls. Hung: 2.000 s per hooked event. Dead: about 5 ms, then restarted | **Pass**: p99 8 ms over 256 calls, with three calls above 10 ms (12, 15, 17). Hung and dead as on Windows | |
 | A6 | Server ends with the session, including a kill | **Pass** | **Pass** | Windows kill gives the server no chance to clean up |
 | A7 | Updating to a new bundle URL replaces the binary | **Pass**, when the plugin version changes | **Pass** | A changed URL with an unchanged version does nothing |
 | A8 | Tool definitions are small and not called unprompted | **Pass**: 78 and 59 tokens, deferred; no unprompted call in 434 observed calls | **Pass**: same sizes, no unprompted call | |
 
-No criterion that forces the fallback (A1, A2, A4, A5, A6) has failed. Two findings need a change to the hook file, and the change was tested: `SessionEnd` at exit fails with a visible error, and the launch-time `SessionStart` skip is shown to the user as a hook error. See [the tested hook file changes](#the-tested-hook-file-changes).
+No criterion that forces the fallback (A1, A2, A4, A5, A6) is left failing: A2 and A4 each failed as first specified and each has a tested workaround. Besides the A4 reply, two findings need a change to the hook file, and the change was tested: `SessionEnd` at exit fails with a visible error, and the launch-time `SessionStart` skip is shown to the user as a hook error. See [the tested hook file changes](#the-tested-hook-file-changes).
 
 ## A1. Install, download, start
 
@@ -66,7 +66,7 @@ No criterion that forces the fallback (A1, A2, A4, A5, A6) has failed. Two findi
 - When the download fails (here: an untrusted certificate), the plugin still shows as enabled, `claude mcp list` says `No MCP servers configured`, and the only trace is in the debug log: `Plugin MCP server error - mcpb-download-failed`. Nothing is shown to the user by these commands.
 - A local-path bundle is extracted into `.mcpb-cache/` inside the plugin directory.
 
-**Observed, Windows only.** No console window: `GetConsoleWindow` returned null in the server process in every run. These runs had no visible parent console to inherit, so this covers the headless case. The Desktop Code tab is [not yet tested](#not-yet-tested). In the interactive Windows Terminal session there was no console window either.
+**Observed, Windows only.** No console window: `GetConsoleWindow` returned null in the server process in every run. These runs had no visible parent console to inherit, so this covers the headless case. In the interactive Windows Terminal session and in the Desktop Code tab there was no console window either.
 
 **Other things seen.**
 
@@ -171,14 +171,39 @@ This run was headless. That the banner no longer shows the error in an interacti
 
 | Tool result | What happened |
 |---|---|
-| Empty content | Nothing reached the conversation |
-| Plain text | Nothing reached the conversation. Both models answered `NOTFOUND`. The stream contained the string in no user or assistant message. This held for `UserPromptSubmit` as well |
+| Empty content | The tool's result did not reach the conversation, **but see the next finding** |
+| Plain text | The text did not reach the conversation. Both models answered `NOTFOUND`. The stream contained the string in no user or assistant message. This held for `UserPromptSubmit` as well |
 | `isError: true` with text | Non-blocking error. Text went to the debug log only. Model answered `NOTFOUND` |
 | Text that is JSON with `hookSpecificOutput.additionalContext` | **Injected.** The model quoted it from `UserPromptSubmit` and from `Stop`. On `Stop` it made Claude continue, and the session looped through several extra turns |
 
 The four rows were the same on Windows and Linux.
 
-**Consequence.** With an empty result the criterion holds. The control run shows why the rule in ADR-0008 must be absolute: text beginning with `{` is parsed as hook output and can steer the session. The tool must never return text.
+### Finding: an empty result still adds a line on `UserPromptSubmit`
+
+This was noticed late, when the test plugin was loaded into the Desktop session doing this spike and the line appeared in that session's own context. It was then reproduced headless on both platforms by asking Sonnet 5.5 to quote every line containing "hook" and "success".
+
+With the hook file's two `UserPromptSubmit` handlers and a tool that returns empty content, the model saw this, once per handler, on every prompt:
+
+```
+UserPromptSubmit hook success: UserPromptSubmit completed
+```
+
+It is Claude Code's own text, not the tool's. It appeared for `UserPromptSubmit` only: a turn with a tool call produced no such line for `PreToolUse`, `PostToolUse` or `Stop`. The earlier marker runs could not have caught it, because the line never contains the tool's text.
+
+| What the tool returns | Lines added to context per prompt, two handlers |
+|---|---|
+| `content: []` | 2 |
+| No `content` field | 2 |
+| One text item, empty string | 2 |
+| One text item, `{}` | **0** |
+| One text item, `{"suppressOutput":true}` | **0** |
+| For comparison: command hooks that print nothing | 0 |
+
+With the `{}` reply, a full session on each platform (prompt, `/clear`, `/model`, `/compact`, exit) delivered all 19 hook calls with no hook error and nothing else different.
+
+**Consequence.** As ADR-0007 first stated it, "returns an empty result", criterion A4 fails for `UserPromptSubmit`: about ten tokens of fixed text per prompt. Returning the text `{}` is a workaround, and with it the criterion holds. The rule becomes: `presence_event` always returns exactly one text item whose text is `{}`, a constant, and never anything else. The control run above shows why it must be a constant: any other JSON is parsed as hook output and can steer the session.
+
+This rests on how Claude Code 2.1.284 and 2.1.287 treat an empty hook-output object. It is not documented for `mcp_tool` hooks, so CRP-043 must keep a test for it.
 
 A re-fired `SessionStart` (after `/clear` and after compaction) was delivered with an empty result and the session continued normally. A marker run specifically on a re-fired `SessionStart` was not done.
 
@@ -305,7 +330,7 @@ Sent in `initialize` by Claude Code, identical on both platforms apart from the 
 | `CLAUDE_PLUGIN_DATA` | `<config>/plugins/data/rich-presence-<marketplace>`, or `…/rich-presence-inline` under `--plugin-dir` |
 | `CLAUDE_PROJECT_DIR` | The session's project directory |
 | `CLAUDE_CODE_SESSION_ID` | The session id at spawn. Equal to the hooks' `session_id` at first. Not updated on `/clear`. Wrong under `--continue`. Documented |
-| `CLAUDE_CODE_ENTRYPOINT` | `sdk-cli` for `claude -p`, `cli` for the interactive terminal. A shell started by the Desktop Code tab had `claude-desktop` in its own environment; a server started from the Code tab was not observed |
+| `CLAUDE_CODE_ENTRYPOINT` | `sdk-cli` for `claude -p`, `cli` for the interactive terminal, `claude-desktop` for the Desktop Code tab |
 | `CLAUDECODE` | `1` |
 | `CLAUDE_CODE_REMOTE` | Not set in any local run |
 | Also present, by name | `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`. The adapter has no use for them and must not read them |
@@ -319,7 +344,21 @@ Sent in `initialize` by Claude Code, identical on both platforms apart from the 
 
 `%TEMP%` and the user profile (`~/.claude`) were the same from both sides in this spike.
 
-**Consequence.** An adapter started by the Desktop Code tab and one started by a terminal session may not agree on anything under `AppData\Roaming`, and possibly under `AppData\Local`, which was not checked. The lock file and control socket ([ADR-0005](../architecture/adr/0005-presence-host-election.md), [ADR-0006](../architecture/adr/0006-control-channel.md)) and the configuration file must live somewhere both sides resolve identically, and that has to be verified with one adapter on each side before the location is fixed.
+**Consequence.** None beyond what [ADR-0016](../architecture/adr/0016-windows-file-locations.md) already decides from CRP-002's fuller study of the same redirection. This spike met it independently, which confirms it applies to the Claude Code binary and to anything addressed by path under `%APPDATA%\Claude`.
+
+### Claude Desktop Code tab
+
+**What was run.** The owner installed the test plugin into their normal configuration from a terminal (`claude plugin marketplace add <local directory>`, `claude plugin install`) while Claude Desktop 2.9939.4 was open with thirteen Code-tab sessions, then opened a new Code-tab session and sent one prompt that runs a shell command. The plugin was uninstalled afterwards.
+
+**Observed.**
+
+- **Installing loaded the plugin into every open session.** Within one second of the install, thirteen servers started, one per open session, and hooks began firing in those sessions. No restart was needed. Uninstalling closed their input within seconds and they exited.
+- Each server's parent was `claude.exe`, whose parent was `claude.exe`, whose parent was `explorer.exe`. `CLAUDE_CODE_ENTRYPOINT` was `claude-desktop`. `clientInfo` was the same as in the terminal: `claude-code`, 2.1.284.
+- No server had a console window (`GetConsoleWindow` returned null in all fourteen). The owner reported no window appearing.
+- The new session delivered `UserPromptSubmit`, `PreToolUse`, `PostToolUse` and `Stop` as in the terminal, with `${effort.level}` filled.
+- The new session ran the server from `~/.claude/plugins/cache/<marketplace>/rich-presence/0.0.3`, a cached copy, with `CLAUDE_PLUGIN_DATA` ending `rich-presence-inline`. The sessions that were already open ran it in place from the marketplace directory. The same plugin was therefore loaded two ways at once.
+
+**Consequence.** One install can start many adapters in the same second. Host election ([ADR-0005](../architecture/adr/0005-presence-host-election.md)) must be correct under that burst, and CRP-032 should test it with a dozen simultaneous starts.
 
 ### How options arrive
 
@@ -351,7 +390,8 @@ Two of two expected firings, none unexpected in five other successful commands. 
 | `Notification` types `permission_prompt`, `agent_needs_input`, `elicitation_dialog` | The interactive session ran in auto mode and showed no permission prompt | CRP-043 |
 | `Notification` on Linux | No interactive session there | Untested |
 | The corrected hook file in an interactive terminal | The corrected file was run headless only | CRP-042 |
-| Claude Desktop Code tab: events, `clientInfo`, entrypoint, console window | Needs the plugin installed in the owner's configuration. Not run | CRP-043 |
+| Claude Desktop Code tab: lifecycle events (`/clear`, compaction, model switch), kill, latency | Only one short session was run there | CRP-043 |
+| The `{}` reply and the corrected hook file in the Desktop Code tab and in an interactive terminal | Run headless only | CRP-043 |
 | VS Code extension | The extension is not installed on the test machine | Untested |
 | JetBrains extension | Not available | Untested |
 | macOS | No machine | Untested |

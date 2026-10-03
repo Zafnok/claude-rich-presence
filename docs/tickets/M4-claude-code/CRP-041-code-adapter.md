@@ -22,7 +22,7 @@ The translation layer between Claude Code and the core: two MCP tools, one that 
 
 Hooks of type `mcp_tool` call `presence_event` once per hook event ([ADR-0007](../../architecture/adr/0007-integration-and-distribution.md)). Claude waits for each call. Everything [ADR-0008](../../architecture/adr/0008-privacy-and-safety-by-default.md) says about never impairing Claude and minimising data applies here first.
 
-CRP-001 determines the exact fields each event delivers. Read its findings before starting. If it adopted the fallback, this ticket's tool handler becomes a parser of hook standard input instead, with the same mapping and the same rules; amend the ticket then.
+[CRP-001](../../research/crp-001-claude-code-adapter.md) recorded the exact fields each event delivers and several behaviours this ticket must handle. Read its findings before starting. The fallback was not adopted.
 
 ## Scope
 
@@ -51,14 +51,17 @@ Package `internal/adapter/code`:
   - `standard`: add status, tool kind and model family.
   - `full`: add the project name, which is the last element of the working directory.
 - Publishes through a small publish interface that this package defines. CRP-033 connects it to the host node. This ticket does not need the host, and tests against a fake.
-- **Always returns an empty success result**, for valid input, invalid input and internal errors alike.
+- **Always returns the same success result: one text item whose text is `{}`**, for valid input, invalid input and internal errors alike. The value is a constant in the code. An empty result makes Claude Code add a line to the model's context on every prompt, and any other JSON can steer the session (ADR-0007, rule 4).
+- Treats an empty string as an absent field. Claude Code substitutes an empty string for a field the event does not carry.
+- Counts a `SubagentStop` only if it saw the matching `SubagentStart`. Claude Code emits stops with an empty `agent_type` and no start, after compaction and after ordinary turns. The count never goes below zero.
+- Ignores a call that carries `_meta` with `claudecode/toolUseId`, which marks a call made by the model and not by a hook, and still returns the constant. This is defence in depth on undocumented behaviour, not a guarantee.
 
 **Session identity**
 
 - The session opens when MCP `initialize` completes, before any hook has fired, under a provisional id.
-- The first event that carries a session id binds it. Later events with a different id, as after `/clear`, rebind.
+- The first event that carries a session id binds it. Later events with a different id, as after `/clear`, rebind. `CLAUDE_CODE_SESSION_ID` in the adapter's environment is not used: it is fixed at start, stale after `/clear`, and wrong under `--continue`.
 - Events from inside a subagent count toward the same session.
-- The session ends when the server's input closes.
+- The session ends when the server's input closes, or on an interrupt or termination signal, which is what Linux sends at a normal exit. There is no `SessionEnd` event to rely on.
 
 **`presence_status` tool**
 
@@ -80,7 +83,10 @@ Package `internal/adapter/code`:
 - [ ] The tool-kind table and the model-label mapping are covered row by row, including unknown inputs.
 - [ ] **Leak test**: every field that could carry user content is seeded with a marker string. At every privacy level, the marker never appears in any published event. At `minimal` and `standard`, no part of the working directory appears either.
 - [ ] At `full`, only the last path element of the working directory is published, for both slash styles and for a trailing separator.
-- [ ] Unknown event names, missing fields, wrong types and oversized values all produce an empty success result and publish nothing.
+- [ ] Unknown event names, missing fields, wrong types and oversized values all produce the constant success result and publish nothing.
+- [ ] The result is byte-identical for every input, shown by a test over all the cases above.
+- [ ] An empty string in any field is handled as the field being absent.
+- [ ] A `SubagentStop` with no matching start leaves the count unchanged.
 - [ ] With the publish interface stalled, the tool handler still returns immediately.
 - [ ] The provisional id is replaced by the real one without creating a second session, and a changed id rebinds without leaving the old session behind.
 - [ ] `presence_status` output contains no project name and no path.

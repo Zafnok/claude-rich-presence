@@ -124,7 +124,7 @@ Events are upserts. Any event carrying a session id creates the session if the h
 | Claude Code hook | Presence event | Effect |
 |---|---|---|
 | Adapter start (MCP `initialize`) | session opened | Create session, `Idle` |
-| `SessionStart` when it re-fires after clear or compaction | session refreshed | Model, source |
+| `SessionStart` when it re-fires after clear or compaction. The hook is matched to those two sources only | session refreshed | New session id after a clear. Model after a compaction |
 | `UserPromptSubmit` | turn started | `Working` |
 | `PreToolUse` | tool started | `Working`, tool kind |
 | `PostToolUse`, `PostToolUseFailure` | tool finished | `Working` |
@@ -133,8 +133,10 @@ Events are upserts. Any event carrying a session id creates the session if the h
 | `Stop`, `StopFailure` | turn finished | `Idle` |
 | `PreCompact`, `PostCompact` | compaction | `Compacting`, then back |
 | `PostModelSwitch` | model changed | Model |
-| `SubagentStart`, `SubagentStop` | subagent count | Count |
-| `SessionEnd`, or the adapter's input closing | session ended | Remove |
+| `SubagentStart`, `SubagentStop` | subagent count | Count. A stop whose start was not seen is ignored |
+| The adapter's input closing, or an interrupt or termination signal | session ended | Remove |
+
+No `SessionEnd` hook is declared: at exit Claude Code stops the adapter before it would run, and after a clear `SessionStart` says the same thing. `UserPromptSubmit` also fires when a background subagent's result starts a new turn, which is still a turn starting. The table was checked against real sessions in [CRP-001](../research/crp-001-claude-code-adapter.md), which also lists every field each event carries.
 
 The Claude Desktop adapter emits only *session opened* and *session ended*.
 

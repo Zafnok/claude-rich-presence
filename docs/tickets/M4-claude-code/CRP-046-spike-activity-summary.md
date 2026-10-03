@@ -67,6 +67,7 @@ Also record:
 - Use the owner's own projects for realism, with the owner running the sessions. Ask which projects are fine to quote from in the findings.
 - Measure S5 from Claude Code's own usage reporting, comparing sessions with and without the tool.
 - Do not tune the wording against one model only. The summary must work on whatever model the user happens to run.
+- From the [CRP-001 findings](../../research/crp-001-claude-code-adapter.md): the adapter's tools are loaded on demand, so the model sees only their names until it searches for them; a call made by the model needed the user's permission, and was refused outright in a headless session with no allow rule; a call made by the model carries `_meta` with `claudecode/toolUseId`, which a hook's call does not; and any text a tool returns to a **hook** can reach the model or steer it, while a normal tool result to the model is ordinary. Answer the permission question first, since a prompt on the first summary of every session would decide the design.
 - Time box: one and a half working days. S10 needs three sessions open at once on the same project.
 
 ## Why this model and effort
