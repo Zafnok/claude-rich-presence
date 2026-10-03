@@ -1,6 +1,6 @@
 # CRP-002 findings: Claude Desktop extension lifecycle
 
-Ticket: [CRP-002](../tickets/M0-foundation/CRP-002-spike-desktop-extension.md). Prototype: branch [`spike/crp-002`](https://github.com/Zafnok/claude-rich-presence/tree/spike/crp-002/spike/crp-002), never merged.
+Ticket: [CRP-002](../tickets/done/CRP-002-spike-desktop-extension.md). Prototype: branch [`spike/crp-002`](https://github.com/Zafnok/claude-rich-presence/tree/spike/crp-002/spike/crp-002), never merged.
 
 **Coverage.** Windows is covered, over two runs on one machine. macOS is untested. The gaps are listed under [Not tested](#not-tested).
 

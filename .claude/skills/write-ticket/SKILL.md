@@ -9,8 +9,8 @@ Tickets are the unit of work and the unit of cost. A good ticket lets a cheaper 
 
 ## Procedure
 
-1. **Check it is not already covered.** Search `docs/tickets/` for the topic.
-2. **Take the next free id.** Ids are `CRP-NNN`, grouped by milestone in tens: M0 is 001 to 009, M1 is 010 to 019, and so on. Use the next unused number in the milestone's range. Never reuse an id.
+1. **Check it is not already covered.** Search `docs/tickets/` for the topic, including the closed tickets in `docs/tickets/done/`.
+2. **Take the next free id.** Ids are `CRP-NNN`, grouped by milestone in tens: M0 is 001 to 009, M1 is 010 to 019, and so on. Use the next unused number in the milestone's range. Never reuse an id. Ids of closed tickets in `docs/tickets/done/` count as used.
 3. **Copy `docs/tickets/TEMPLATE.md`** into the milestone directory as `CRP-NNN-short-slug.md`.
 4. **Fill every section.** See the rules below.
 5. **Set dependencies both ways.** Add the new id to `blocks` in each ticket it depends on, and to `blocked_by` in each ticket that depends on it. `blocked_by` must be complete: list every ticket whose merged output this one needs in order to be started and finished, including the test helpers, tools and CI it relies on. People run tickets in parallel on the strength of this field.
@@ -58,4 +58,4 @@ Default to the cheaper option and make the ticket precise enough for it. Reserve
 
 - Changing scope or criteria of a ticket that is `todo`: edit it, and say why in the pull request.
 - A ticket that is `in-progress` or `done`: do not rewrite it. Add a follow-up ticket.
-- A ticket that is no longer needed: set `status: not-needed` with a one-line reason. Do not delete the file.
+- A ticket that is no longer needed: set `status: not-needed` with a one-line reason and move it to `docs/tickets/done/`, as "Closing a ticket" in the `work-ticket` skill describes. Do not delete the file.

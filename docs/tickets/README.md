@@ -6,7 +6,9 @@ The work plan. One file per ticket, grouped by milestone. Each ticket states wha
 
 1. Pick a ticket whose `blocked_by` tickets are all `done`.
 2. Follow the `work-ticket` skill.
-3. In the pull request that completes it, set the `status` in the ticket's own file to `done`.
+3. In the pull request that completes it, set the `status` in the ticket's own file to `done` and move the file to [done/](done/).
+
+Closed tickets, `done` or `not-needed`, live in [done/](done/). Every ticket still in a milestone directory is open, so the milestone directories are the list of what is left.
 
 To see every ticket's status:
 
@@ -23,7 +25,7 @@ A ticket may mention a ticket that is not in its `blocked_by`. Such a mention is
 | Topic | Rule |
 |---|---|
 | Claiming | Before starting, check that no open pull request, remote branch or local worktree exists for the ticket. Then open a draft pull request at once. The open pull request is the claim |
-| Status | A ticket's status lives only in its own file. The index below has no status column, so parallel tickets do not collide on this page |
+| Status | A ticket's status lives only in its own file. The index below has no status column, so parallel tickets do not collide on this page. Closing a ticket changes only the link in its own index row |
 | Other tickets | Do not edit a ticket that is `in-progress` or `done`. If your findings affect one, write a follow-up ticket |
 | Shared files | Tickets in the same wave are independent in what they need, but some add to the same files: the domain and protocol types, the renderer, the plugin's hook file. Rebase on `main` before merging and expect small conflicts there |
 | Spikes | A spike's prototype is pushed to a branch named `spike/crp-NNN` and never merged. A later ticket that builds on it is blocked by the spike and reads that branch |
@@ -38,9 +40,9 @@ New tickets follow [TEMPLATE.md](TEMPLATE.md) and the `write-ticket` skill. Ids 
 | `todo` | Not started |
 | `in-progress` | Someone has a branch |
 | `blocked` | Started, then stopped on something outside the ticket. The ticket says what |
-| `done` | Merged, definition of done met |
+| `done` | Merged, definition of done met. The file is in `done/` |
 | `conditional` | Built only if a named condition occurs. Otherwise closed as `not-needed` |
-| `not-needed` | Closed without being built |
+| `not-needed` | Closed without being built. The file is in `done/` |
 
 ## Milestones
 
@@ -62,7 +64,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | Id | Title | Blocked by | Model | Effort | Size |
 |---|---|---|---|---|---|
 | [CRP-001](M0-foundation/CRP-001-spike-claude-code-adapter.md) | Spike: Claude Code adapter wiring | none | Opus 5.5 | high | M |
-| [CRP-002](M0-foundation/CRP-002-spike-desktop-extension.md) | Spike: Claude Desktop extension lifecycle | none | Opus 5.5 | high | M |
+| [CRP-002](done/CRP-002-spike-desktop-extension.md) | Spike: Claude Desktop extension lifecycle | none | Opus 5.5 | high | M |
 | [CRP-003](M0-foundation/CRP-003-naming-branding-discord-app.md) | Owner: naming, branding, Discord application | none | Owner, with Haiku 4.5 | n/a | S |
 | [CRP-004](M0-foundation/CRP-004-repo-scaffolding.md) | Repository scaffolding and toolchain | none | Sonnet 5.5 | low | S |
 | [CRP-005](M0-foundation/CRP-005-ci-pipeline.md) | CI pipeline and the coverage gate | 004 | Sonnet 5.5 | medium | M |
