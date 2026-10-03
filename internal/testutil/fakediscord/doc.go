@@ -28,4 +28,10 @@
 //     before the handshake: a close frame, code 1003, and the connection is
 //     closed. Discord does not document this case; the code is the one the
 //     arrpc reimplementation uses.
+//
+// # Windows
+//
+// A named pipe needs one instance per client. The server keeps eight waiting,
+// so up to eight clients can connect before it has accepted any. A ninth is
+// told the pipe is busy, as a client of a real Discord can be.
 package fakediscord

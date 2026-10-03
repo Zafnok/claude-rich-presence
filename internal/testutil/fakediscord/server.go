@@ -30,10 +30,12 @@ type Behavior struct {
 	// CloseOnConnect closes each connection as soon as it is accepted.
 	CloseOnConnect bool
 	// CloseAfterFrames, if positive, closes a connection once it has read
-	// that many frames. The last one is recorded and not answered.
+	// that many frames. The last one is recorded and not answered. It
+	// applies even when Silent is set.
 	CloseAfterFrames int
-	// Silent keeps reading and recording but sends nothing, and never closes
-	// the connection itself.
+	// Silent keeps reading and recording but sends nothing, and does not
+	// hang up on a frame Discord would refuse. A handshake read in silence
+	// still counts: commands sent after the silence is lifted are answered.
 	Silent bool
 	// Delay is waited before each answer, using the server's After function.
 	Delay time.Duration
@@ -155,6 +157,7 @@ func (n *Namespace) Start(t TB, index int, o Options) *Server {
 		now:       o.Now,
 		after:     o.After,
 		patience:  o.Patience,
+		timer:     time.After,
 		ln:        ln,
 		behavior:  o.Behavior,
 		conns:     map[int]*conn{},
@@ -174,7 +177,10 @@ type Server struct {
 	now       func() time.Time
 	after     func(time.Duration) <-chan time.Time
 	patience  time.Duration
-	ln        listener
+	// timer is what the patience is waited on. It is real time, except in
+	// this package's own tests of running out of it.
+	timer func(time.Duration) <-chan time.Time
+	ln    listener
 
 	closeOnce sync.Once
 	stopping  chan struct{}
@@ -197,6 +203,7 @@ type conn struct {
 	rw         io.ReadWriteCloser
 	writeMu    sync.Mutex
 	closeOnce  sync.Once
+	closed     chan struct{} // closed when this side closes the connection
 	frames     int
 	handshaken bool
 }
@@ -208,7 +215,12 @@ func (c *conn) write(b []byte) error {
 	return err
 }
 
-func (c *conn) close() { c.closeOnce.Do(func() { _ = c.rw.Close() }) }
+func (c *conn) close() {
+	c.closeOnce.Do(func() {
+		close(c.closed)
+		_ = c.rw.Close()
+	})
+}
 
 // Namespace returns the namespace the server listens in.
 func (s *Server) Namespace() *Namespace { return s.namespace }
@@ -238,7 +250,7 @@ func (s *Server) Events() []Event {
 // fails the test.
 func (s *Server) Await(kind Kind, n int) []Event {
 	s.t.Helper()
-	timeout := time.After(s.patience)
+	timeout := s.timer(s.patience)
 	for {
 		s.mu.Lock()
 		var found []Event
@@ -334,8 +346,14 @@ func (s *Server) Close() {
 		}()
 		select {
 		case <-done:
-		case <-time.After(s.patience):
+		case <-s.timer(s.patience):
 			s.t.Errorf("fakediscord: %d goroutines still running %v after shutdown", s.running.Load(), s.patience)
+			// The endpoint cannot be released under a running goroutine.
+			// Release it if they ever do end.
+			go func() {
+				<-done
+				_ = s.ln.Close()
+			}()
 			return
 		}
 		if err := s.ln.Close(); err != nil {
@@ -373,7 +391,7 @@ func (s *Server) accept() {
 			continue
 		}
 		s.accepted++
-		c := &conn{id: s.accepted, rw: rw}
+		c := &conn{id: s.accepted, rw: rw, closed: make(chan struct{})}
 		s.conns[c.id] = c
 		s.mu.Unlock()
 		s.spawn(func() { s.serve(c) })
@@ -393,12 +411,6 @@ func (s *Server) record(c *conn, ev Event) Behavior {
 	return s.behavior
 }
 
-func (s *Server) current() Behavior {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.behavior
-}
-
 // serve reads frames from one connection until either side ends it.
 func (s *Server) serve(c *conn) {
 	defer func() {
@@ -408,7 +420,10 @@ func (s *Server) serve(c *conn) {
 		s.mu.Unlock()
 		s.record(c, Event{Kind: KindDisconnect})
 	}()
-	if s.current().CloseOnConnect {
+	s.mu.Lock()
+	closeOnConnect := s.behavior.CloseOnConnect
+	s.mu.Unlock()
+	if closeOnConnect {
 		return
 	}
 	for {
@@ -444,7 +459,7 @@ func (s *Server) serve(c *conn) {
 			if b.Delay > 0 {
 				select {
 				case <-s.after(b.Delay):
-				case <-s.stopping:
+				case <-c.closed:
 					return
 				}
 			}

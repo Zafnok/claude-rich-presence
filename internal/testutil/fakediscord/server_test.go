@@ -391,6 +391,26 @@ func TestShutdownDuringADelayLeavesNothingRunning(t *testing.T) {
 	c.expectClosed()
 }
 
+func TestDisconnectDuringADelayEndsTheConnection(t *testing.T) {
+	asked := make(chan time.Duration, 1)
+	srv := fakediscord.Start(t, fakediscord.Options{
+		Behavior: fakediscord.Behavior{Delay: time.Hour},
+		After: func(d time.Duration) <-chan time.Time {
+			asked <- d
+			return nil // never fires
+		},
+	})
+	c := connect(t, srv.Addr())
+	c.send(opHandshake, handshake)
+	within(t, "the server to start waiting", func() time.Duration { return <-asked })
+
+	if err := srv.Disconnect(); err != nil {
+		t.Fatal(err)
+	}
+	c.expectClosed()
+	srv.Await(fakediscord.KindDisconnect, 1)
+}
+
 func TestPing(t *testing.T) {
 	srv := fakediscord.Start(t, fakediscord.Options{})
 	c := connect(t, srv.Addr())
@@ -661,15 +681,18 @@ func TestShutdownIsCleanWithConnectionsInEveryState(t *testing.T) {
 
 func TestShutdownReportsAGoroutineLeftBehind(t *testing.T) {
 	tb := &fakeTB{}
-	srv := fakediscord.Start(tb, fakediscord.Options{Patience: 20 * time.Millisecond})
+	srv := fakediscord.Start(tb, fakediscord.Options{})
 	release := srv.LeakForTest()
+	srv.ExpirePatienceForTest()
 	srv.Close()
 	errs := tb.reported()
-	if len(errs) != 1 || !strings.Contains(errs[0], "1 goroutines still running") {
-		t.Errorf("reported %q, want one error about one goroutine", errs)
+	// How many are still running at that instant depends on how far the
+	// server's own goroutines have got; that the one left behind is reported
+	// does not.
+	if len(errs) != 1 || !strings.Contains(errs[0], "goroutines still running") {
+		t.Errorf("reported %q, want one error about goroutines left running", errs)
 	}
 	release()
-	srv.ReleaseForTest()
 	tb.finish()
 	if errs := tb.reported(); len(errs) != 1 {
 		t.Errorf("cleanup reported more: %q", errs)
@@ -678,9 +701,11 @@ func TestShutdownReportsAGoroutineLeftBehind(t *testing.T) {
 
 func TestAwaitFailsTheTestWhenTheEventNeverComes(t *testing.T) {
 	tb := &fakeTB{}
-	srv := fakediscord.Start(tb, fakediscord.Options{Patience: 20 * time.Millisecond})
+	srv := fakediscord.Start(tb, fakediscord.Options{})
 	t.Cleanup(tb.finish)
 	connect(t, srv.Addr()).handshake()
+	srv.Await(fakediscord.KindHandshake, 1)
+	srv.ExpirePatienceForTest()
 
 	message := fatalMessage(tb, func() { srv.Await(fakediscord.KindSetActivity, 1) })
 	if !strings.Contains(message, "for 1 set-activity events, have 0") {
