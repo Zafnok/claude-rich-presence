@@ -1,0 +1,9 @@
+{
+  "name": "@MARKET@",
+  "owner": { "name": "claude-rich-presence spike" },
+  "metadata": { "description": "Throwaway marketplace for the CRP-001 spike." },
+  "plugins": [
+    { "name": "rich-presence", "source": "./rich-presence", "description": "Throwaway CRP-001 spike plugin." },
+    { "name": "rp-spike-dump", "source": "./rp-spike-dump", "description": "Throwaway CRP-001 field recorder." }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "rich-presence",
+  "version": "@VERSION@",
+  "description": "Throwaway CRP-001 spike plugin. Logs hook events to a local file. Not the real product.",
+  "author": { "name": "claude-rich-presence spike" },
+  "mcpServers": "@MCPSERVERS@"
+}

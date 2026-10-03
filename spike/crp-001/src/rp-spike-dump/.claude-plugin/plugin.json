@@ -1,0 +1,6 @@
+{
+  "name": "rp-spike-dump",
+  "version": "0.0.1",
+  "description": "Throwaway CRP-001 spike helper. Command hooks that record which fields each hook event carries (names and types only).",
+  "author": { "name": "claude-rich-presence spike" }
+}

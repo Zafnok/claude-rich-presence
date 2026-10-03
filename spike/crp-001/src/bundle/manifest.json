@@ -1,0 +1,36 @@
+{
+  "manifest_version": "0.3",
+  "name": "presence",
+  "display_name": "RP spike probe",
+  "version": "@VERSION@",
+  "description": "Throwaway CRP-001 spike. Logs the MCP traffic it receives to a local file.",
+  "author": { "name": "claude-rich-presence spike" },
+  "server": {
+    "type": "binary",
+    "entry_point": "server/rp-probe",
+    "mcp_config": {
+      "command": "${__dirname}/server/rp-probe",
+      "args": ["mcp"],
+      "env": {
+        "RP_BUNDLE_VERSION": "@VERSION@",
+        "RP_DIRNAME": "${__dirname}",
+        "RP_BUNDLE_OPT": "${user_config.bundle_opt}"
+      },
+      "platform_overrides": {
+        "win32": { "command": "${__dirname}/server/rp-probe.exe" },
+        "darwin": { "command": "${__dirname}/server/rp-probe-darwin" },
+        "linux": { "command": "${__dirname}/server/rp-probe-linux" }
+      }
+    }
+  },
+  "user_config": {
+    "bundle_opt": {
+      "type": "string",
+      "title": "Spike option",
+      "description": "Any text. Used to see how bundle options reach the server.",
+      "default": "bundle-default",
+      "required": false
+    }
+  },
+  "compatibility": { "platforms": ["win32", "darwin", "linux"] }
+}
