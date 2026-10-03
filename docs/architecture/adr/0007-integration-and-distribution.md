@@ -2,9 +2,13 @@
 
 ## Status
 
-**Proposed.** Accepted or replaced by the outcome of [CRP-001](../../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) for Claude Code and [CRP-002](../../tickets/done/CRP-002-spike-desktop-extension.md) for Claude Desktop. Until then, only the tickets that name this ADR depend on it. The core does not.
+**Accepted** on 2026-10-03. The fallback is not adopted.
 
-CRP-002 has reported on Windows, and the Claude Desktop section below was revised on 2026-10-03 to match its [findings](../../research/crp-002-desktop-extension.md). The Desktop wiring holds there. macOS is untested, and CRP-001 is still to report.
+Both spikes have reported. [CRP-001](../../tickets/done/CRP-001-spike-claude-code-adapter.md) tested the Claude Code wiring on Windows and on Linux under WSL2: [findings](../../research/crp-001-claude-code-adapter.md). [CRP-002](../../tickets/done/CRP-002-spike-desktop-extension.md) tested the Claude Desktop wiring on Windows: [findings](../../research/crp-002-desktop-extension.md). The Claude Code and Claude Desktop sections below were revised on that date to match what was observed.
+
+Three points of the Claude Code wiring as first proposed did not survive, and each has a tested replacement, recorded in the rules below: the tool's reply, the `SessionStart` hook at launch, and the `SessionEnd` hook.
+
+Untested: macOS on both surfaces, Linux outside WSL2, the VS Code and JetBrains extensions, and a download from GitHub Releases itself.
 
 ## Context
 
@@ -49,8 +53,32 @@ Standalone binaries for all built targets, checksums and a provenance attestatio
    - calls the tool `presence_event` on `plugin:rich-presence:presence`;
    - passes a literal event name and only the allowlisted fields for that event;
    - sets an explicit `timeout` of two seconds.
-4. The tool returns an empty result and never an error, so it cannot add to Claude's context or influence a decision.
+4. The tool always returns exactly one text item whose text is `{}`, a constant, and never an error. Nothing else is ever returned from `presence_event`.
 5. The plugin has no top-level `bin/` directory.
+6. The `SessionStart` hook carries the matcher `clear|compact`, so it does not match at launch.
+7. No `SessionEnd` hook is declared. A session ends when the server's input closes or it receives an interrupt or termination signal.
+8. An event has at most one handler. No event is given a second `mcp_tool` handler without measuring what it adds to the model's context.
+9. The last segment of the server address is the `name` in the bundle's manifest. A test checks that the hook file and the manifest agree.
+10. A release changes the plugin's `version` together with the bundle URL. A changed URL alone is ignored by Claude Code.
+11. `plugin/` ignores `.mcpb-cache/`, which Claude Code writes there during local development and which records absolute paths.
+
+Observed in CRP-001, on Windows with Claude Code 2.1.284 and on Linux with 2.1.287, and the reason for rules 4 to 11:
+
+| Fact | Consequence |
+|---|---|
+| With an empty result, Claude Code adds the line `UserPromptSubmit hook success: UserPromptSubmit completed` to the model's context, once per handler, on every prompt. With the text `{}` it adds nothing. Not documented | Rules 4 and 8 |
+| Text that is JSON with hook-control fields is acted on: added context reached the model, and on `Stop` it made Claude continue | Rule 4: the reply is a constant |
+| The launch-time skip of a `SessionStart` hook is shown in the terminal at every start as `SessionStart:startup hook error` | Rule 6 |
+| At exit, Claude Code closes the server before it runs `SessionEnd` hooks. The hook fails and an error line is written to the terminal | Rule 7 |
+| `SessionStart` still arrives after `/clear`, with the new session id, and after compaction, with the model | Nothing is lost by rules 6 and 7 |
+| A reference to a field that is absent arrives as an empty string and the hook succeeds | The adapter treats an empty string as absent |
+| The session id in hooks changes on `/clear` while the server process stays. `CLAUDE_CODE_SESSION_ID` in the server's environment is fixed at start and wrong under `--continue` | The process is the session. The id is a label taken from the latest hook |
+| A subagent's events arrive on the session's server with `agent_id` set. Claude Code also emits `SubagentStop` with an empty `agent_type` and no start, after compaction and after ordinary turns | Count only stops whose start was seen |
+| A call made by the model carries `_meta` with `claudecode/toolUseId`. A call made by a hook carries no `_meta`. Not documented | `presence_event` may refuse calls that carry it. It must not depend on this for safety |
+| A call made by the model needs the user's permission the first time | Affects `presence_status` and the activity summary ([ADR-0011](0011-model-authored-activity-summary.md)) |
+| The bundle is downloaded when the plugin is first loaded, not when it is installed. A failed download leaves the plugin enabled with no server and no message outside the debug log | `doctor` and the user documentation must cover it |
+| Installing the plugin while Claude Desktop is open starts a server in every open Code-tab session within a second | Host election must be correct under a burst of simultaneous starts |
+| On Windows a killed session takes the server with it, with no chance to clean up. On Linux the server sees its input close | Nothing may depend on a clean shutdown |
 
 An illustration of one hook entry, not a specification:
 
@@ -98,39 +126,41 @@ Not observed: macOS, Cowork, and a tool call from a Chat conversation. CRP-052 c
 
 | Tool | Exposed to | Purpose |
 |---|---|---|
-| `presence_event` | Claude Code only | Receives hook events. Returns an empty result |
+| `presence_event` | Claude Code only | Receives hook events. Returns the constant text `{}` |
 | `presence_status` | Both surfaces | Read-only diagnostics: whether Discord is connected, which process is host, how many sessions. Lets a user ask Claude whether presence is working, and backs the plugin's status skill |
 
 ### Acceptance criteria for this ADR
 
-CRP-001 must show all of the following on Windows and on at least one of macOS or Linux:
+CRP-001 had to show all of the following on Windows and on at least one of macOS or Linux. The last column is what it found on Windows and on Linux under WSL2.
 
-| # | Criterion |
-|---|---|
-| A1 | Claude Code installs the plugin, downloads the bundle from a URL, and starts the correct binary with no shell and no runtime present |
-| A2 | `mcp_tool` hooks deliver every event in the event table except launch-time `SessionStart`, with the substituted fields intact |
-| A3 | A field that is absent from an event does not make the hook fail in a way the user sees |
-| A4 | The tool's result adds nothing to Claude's context for any event, including `UserPromptSubmit` |
-| A5 | Added latency per hooked event is under 10 milliseconds at the 99th percentile, and a hung or dead server delays Claude by no more than the hook timeout |
-| A6 | The server's process ends when the session ends, including when the session is killed |
-| A7 | Updating the plugin to a new bundle URL replaces the binary |
-| A8 | The tool's presence in the model's context is small and causes no unwanted calls |
+| # | Criterion | Result |
+|---|---|---|
+| A1 | Claude Code installs the plugin, downloads the bundle from a URL, and starts the correct binary with no shell and no runtime present | Met. The URL was a local HTTPS server with a redirect, not GitHub |
+| A2 | `mcp_tool` hooks deliver every event in the event table except launch-time `SessionStart`, with the substituted fields intact | Met, except `SessionEnd` at exit, which never arrives and is not needed (rule 7). Of the notification types only `idle_prompt` was provoked, on Windows |
+| A3 | A field that is absent from an event does not make the hook fail in a way the user sees | Met |
+| A4 | The tool's result adds nothing to Claude's context for any event, including `UserPromptSubmit` | Not met with an empty result. Met with the reply in rule 4 |
+| A5 | Added latency per hooked event is under 10 milliseconds at the 99th percentile, and a hung or dead server delays Claude by no more than the hook timeout | Met. 99th percentile 5 ms on Windows and 8 ms on Linux over 256 calls each; three Linux calls took 12 to 17 ms |
+| A6 | The server's process ends when the session ends, including when the session is killed | Met |
+| A7 | Updating the plugin to a new bundle URL replaces the binary | Met when the plugin version changes too (rule 10) |
+| A8 | The tool's presence in the model's context is small and causes no unwanted calls | Met. 78 and 59 tokens, loaded on demand; no unprompted call observed |
 
-If A1, A2, A4, A5 or A6 fails and cannot be worked around, adopt the fallback. A3, A7 and A8 failing leads to mitigation, not fallback.
+The rule was: if A1, A2, A4, A5 or A6 fails and cannot be worked around, adopt the fallback. A2 and A4 failed as first written and were worked around, so the fallback is not adopted.
 
 ### Fallback
 
-Command hooks in exec form run `rich-presence hook`, reading the event from standard input with `async` set, and a standalone `rich-presence daemon` is the host ([ADR-0005](0005-presence-host-election.md)). The plugin is distributed as a release archive containing the binaries and a launcher per platform. This is what existing projects do and it is known to work, with these costs: a shell script outside coverage, reliance on undocumented executable resolution on Windows, a detached process, and process-id liveness tracking. Ticketed as [CRP-044](../../tickets/M4-claude-code/CRP-044-fallback-command-hooks.md), status `conditional`.
+Command hooks in exec form run `rich-presence hook`, reading the event from standard input with `async` set, and a standalone `rich-presence daemon` is the host ([ADR-0005](0005-presence-host-election.md)). The plugin is distributed as a release archive containing the binaries and a launcher per platform. This is what existing projects do and it is known to work, with these costs: a shell script outside coverage, reliance on undocumented executable resolution on Windows, a detached process, and process-id liveness tracking. It was ticketed as [CRP-044](../../tickets/done/CRP-044-fallback-command-hooks.md), now closed as `not-needed`. It stays described here in case a later Claude Code release breaks one of the undocumented behaviours the rules above rely on.
 
 ## Consequences
 
 - One artifact, one code path, both surfaces.
 - No shell anywhere. Privacy filtering happens inside Claude Code, before our code runs, because each hook names the fields it sends.
-- The model name at launch is unavailable, since it arrives only in the skipped `SessionStart`. The model appears after the first switch, clear or compaction. [CRP-045](../../tickets/M4-claude-code/CRP-045-spike-initial-model.md) looks for a better answer.
+- The model name at launch is unavailable, since it arrives only in the skipped `SessionStart`. The model appears after the first model switch or compaction; a clear does not carry it. [CRP-045](../../tickets/M4-claude-code/CRP-045-spike-initial-model.md) looks for a better answer.
+- Rules 4, 6 and 7 rest on behaviour of Claude Code that is observed and not documented. A release that changes it would show the user an error line or add text to the model's context. The end-to-end tests must detect that.
+- A hung adapter costs two seconds on every hooked event, so a turn with a few tool calls would lose many seconds. The handler must be unable to block.
 - Hook calls are synchronous. The latency criterion A5 and the two-second timeout are what keep [ADR-0008](0008-privacy-and-safety-by-default.md)'s first rule.
 - Two small tool definitions enter the model's context in each Claude Code session, and one in Claude Desktop.
 - Linux on Arm is not served by the bundle. Discord publishes no desktop client for it, so the loss is theoretical.
-- Nobody has shipped this wiring before. The spike is first in the plan for that reason.
+- Nobody had shipped this wiring before. It has now run in a prototype only.
 
 ## Alternatives considered
 

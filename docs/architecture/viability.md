@@ -83,23 +83,23 @@ Why this is viable:
 | Something must hold the Discord connection (D2) | The adapter processes already live as long as the sessions do. One of them is the host | Design |
 | No runtime prerequisites | A static Go binary. No Node, Python, or shell | Design |
 | Windows named pipes without third-party code | Go 1.26 opens pipes with overlapped I/O, so deadlines work | Docs (Go release notes), to be exercised in [CRP-021](../tickets/M2-discord/CRP-021-discord-transport.md) |
-| Delivery into Claude Code without a shell | Plugin references a released MCPB bundle by URL | Docs, to be exercised in [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) |
+| Delivery into Claude Code without a shell | Plugin references a released MCPB bundle by URL | **Observed** on Windows and Linux, [CRP-001](../research/crp-001-claude-code-adapter.md), against a local HTTPS server. A GitHub release URL is unverified |
 | Delivery into Claude Desktop | The same MCPB bundle, installed as a desktop extension | Docs, to be exercised in [CRP-002](../tickets/done/CRP-002-spike-desktop-extension.md) |
 | 100% coverage and SonarQube | Go has built-in coverage including for compiled binaries. SonarQube Cloud analyses Go and is free for public repositories | Docs |
 | Permissive licensing throughout | Standard library only (BSD-3-Clause). No copyleft anywhere | Design |
 
 ### Known gaps in the preferred wiring
 
-The preferred wiring, hooks of type `mcp_tool` calling the adapter, has not been used by any project we found. It rests on documented features, but these points need the spike before we commit:
+The preferred wiring, hooks of type `mcp_tool` calling the adapter, has not been used by any project we found. These were the points that needed the spike. [CRP-001](../research/crp-001-claude-code-adapter.md) has since answered them on Windows and Linux, and [ADR-0007](adr/0007-integration-and-distribution.md) is accepted. The last column says what was found.
 
-| Gap | Consequence if it holds | Owner |
+| Gap | Consequence if it holds | Found |
 |---|---|---|
-| `mcp_tool` hooks are skipped for `SessionStart` at launch, because MCP servers are not connected yet (**Docs**) | The adapter learns a session exists from its own start-up, which is fine. But the initial model arrives only in that event, so it is unknown until the model is switched or the session is cleared or compacted | [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md), then [CRP-045](../tickets/M4-claude-code/CRP-045-spike-initial-model.md) |
-| `mcp_tool` hooks are not documented as supporting `async` | Each call is on Claude's path. The tool must return in microseconds and every hook needs a short timeout | [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) |
-| A hook tool's text output is read like hook stdout, which for some events is added to Claude's context | The tool must return nothing that changes Claude's behaviour | [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) |
-| The adapter's tool is visible to the model | A small fixed context cost per session | [CRP-001](../tickets/M0-foundation/CRP-001-spike-claude-code-adapter.md) |
+| `mcp_tool` hooks are skipped for `SessionStart` at launch, because MCP servers are not connected yet (**Docs**) | The adapter learns a session exists from its own start-up, which is fine. But the initial model arrives only in that event, so it is unknown until the model is switched or the session is cleared or compacted | Holds, and the skip is shown to the user as a hook error unless the hook is matched to clear and compaction only. A clear does not carry the model; a compaction does. [CRP-045](../tickets/M4-claude-code/CRP-045-spike-initial-model.md) |
+| `mcp_tool` hooks are not documented as supporting `async` | Each call is on Claude's path. The tool must return in microseconds and every hook needs a short timeout | A call costs about 1 ms, 5 to 8 ms at the 99th percentile. A hung server costs the full two-second timeout per event |
+| A hook tool's text output is read like hook stdout, which for some events is added to Claude's context | The tool must return nothing that changes Claude's behaviour | Plain text did not reach the model. An empty result made Claude Code add its own line on every prompt. The constant text `{}` adds nothing |
+| The adapter's tool is visible to the model | A small fixed context cost per session | 78 and 59 tokens, loaded only on demand. No unprompted call seen |
 
-If the spike fails, the fallback is the pattern every existing project uses: command hooks that run the binary, feeding a detached background process. It works, at the price of a launcher script per platform. It is specified in [ADR-0007](adr/0007-integration-and-distribution.md) and ticketed as [CRP-044](../tickets/M4-claude-code/CRP-044-fallback-command-hooks.md), to be built only if needed. The core of the system is the same either way.
+The spike did not fail, so the fallback is not built. It is the pattern every existing project uses: command hooks that run the binary, feeding a detached background process. It works, at the price of a launcher script per platform. It is specified in [ADR-0007](adr/0007-integration-and-distribution.md) and ticketed as [CRP-044](../tickets/done/CRP-044-fallback-command-hooks.md), to be built only if needed. The core of the system is the same either way.
 
 ## What each surface can show
 
@@ -107,7 +107,7 @@ If the spike fails, the fallback is the pattern every existing project uses: com
 |---|---|---|---|
 | Claude Code, terminal | Yes | Plugin | Session open, working, running tools, waiting for input, compacting, idle, elapsed time, subagent count. Model once known. Project name if enabled |
 | Claude Desktop, Code tab, local session | Yes | Same plugin | Same |
-| VS Code and JetBrains extensions | Expected | Same plugin | Same. **Unverified**, owned by CRP-001 |
+| VS Code and JetBrains extensions | Expected | Same plugin | Same. **Unverified**: CRP-001 had neither extension to test |
 | Claude Desktop, Chat | Partial | Desktop extension | App open, elapsed time. A summary phrase if the user opts in and ADR-0011 is accepted |
 | Claude Desktop, Cowork | Not in the first release | | **Unverified** whether its extensions run on the host or in a sandbox |
 | Claude Code on the web, cloud sessions | No | | Hooks run remotely |

@@ -91,6 +91,7 @@ Unit tests use in-memory implementations of the lock, listener, dialer and Disco
 - The node's own session goes through the same path as a follower's, so there is one code path to test.
 - The stand-down delay must exceed the follower backoff's maximum jitter. Derive both from one constant.
 - Run the randomised test with a fixed seed in CI and print the seed on failure.
+- Include a burst: a dozen nodes started within the same second. CRP-001 saw exactly that when a plugin was installed while Claude Desktop had thirteen Code-tab sessions open, each of which started an adapter at once.
 - Ask for review with Opus 5.5 as well, focused on races and shutdown.
 
 ## Why this model and effort

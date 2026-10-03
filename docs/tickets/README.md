@@ -63,7 +63,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 
 | Id | Title | Blocked by | Model | Effort | Size |
 |---|---|---|---|---|---|
-| [CRP-001](M0-foundation/CRP-001-spike-claude-code-adapter.md) | Spike: Claude Code adapter wiring | none | Opus 5.5 | high | M |
+| [CRP-001](done/CRP-001-spike-claude-code-adapter.md) | Spike: Claude Code adapter wiring | none | Opus 5.5 | high | M |
 | [CRP-002](done/CRP-002-spike-desktop-extension.md) | Spike: Claude Desktop extension lifecycle | none | Opus 5.5 | high | M |
 | [CRP-003](M0-foundation/CRP-003-naming-branding-discord-app.md) | Owner: naming, branding, Discord application | none | Owner, with Haiku 4.5 | n/a | S |
 | [CRP-004](M0-foundation/CRP-004-repo-scaffolding.md) | Repository scaffolding and toolchain | none | Sonnet 5.5 | low | S |
@@ -88,7 +88,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-041](M4-claude-code/CRP-041-code-adapter.md) | Claude Code adapter | 001, 010, 012, 040 | Sonnet 5.5 | high | M |
 | [CRP-042](M4-claude-code/CRP-042-plugin-packaging.md) | Plugin and marketplace packaging | 001, 033, 051 | Sonnet 5.5 | medium | S |
 | [CRP-043](M4-claude-code/CRP-043-end-to-end-tests.md) | End-to-end tests | 022, 033 | Opus 5.5 | high | L |
-| [CRP-044](M4-claude-code/CRP-044-fallback-command-hooks.md) | Fallback: command hooks and standalone host | 001, 002, 043 | Opus 5.5 | high | L |
+| [CRP-044](done/CRP-044-fallback-command-hooks.md) | Fallback: command hooks and standalone host | 001, 002, 043 | Opus 5.5 | high | L |
 | [CRP-045](M4-claude-code/CRP-045-spike-initial-model.md) | Spike: status line bridge and the model at launch | 042 | Sonnet 5.5 | medium | M |
 | [CRP-046](M4-claude-code/CRP-046-spike-activity-summary.md) | Spike: activity summary written by Claude | 001 | Sonnet 5.5 | high | M |
 | [CRP-047](M4-claude-code/CRP-047-activity-summary.md) | Activity summary in Claude Code | 014, 042, 046 | Sonnet 5.5 | high | M |

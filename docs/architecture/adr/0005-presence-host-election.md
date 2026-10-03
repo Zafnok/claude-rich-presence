@@ -41,7 +41,7 @@ There is no daemon. One of the adapter processes acts as host.
 
 ## If the fallback is adopted
 
-With command hooks there is no long-lived adapter in Claude Code, so a standalone host is needed. The same host code runs as a `daemon` subcommand, started on demand by the hook command and exiting after a period with no sessions. Sessions are then tracked by parent process id with periodic liveness checks, because there is no connection to watch. That work is [CRP-044](../../tickets/M4-claude-code/CRP-044-fallback-command-hooks.md) and is not built unless needed.
+With command hooks there is no long-lived adapter in Claude Code, so a standalone host is needed. The same host code runs as a `daemon` subcommand, started on demand by the hook command and exiting after a period with no sessions. Sessions are then tracked by parent process id with periodic liveness checks, because there is no connection to watch. That work is [CRP-044](../../tickets/done/CRP-044-fallback-command-hooks.md) and is not built unless needed.
 
 ## Alternatives considered
 

@@ -12,7 +12,7 @@ How Claude starts our binary and tells it things. Assembled on 2026-10-02 from t
 From ADR-0008, and not negotiable:
 
 1. Anything Claude waits on returns immediately and performs no I/O.
-2. The event tool always returns an empty success result.
+2. The event tool always returns the same success result: one text item whose text is `{}`. Never empty, never anything else (ADR-0007, rule 4).
 3. Read only allowlisted fields. Never prompt text, tool inputs or outputs, assistant messages, file paths, transcript paths or session titles.
 4. Documented interfaces only. No transcripts, no `~/.claude` internals, no Claude Desktop logs or session files, no process or window inspection.
 
@@ -22,7 +22,7 @@ From ADR-0008, and not negotiable:
 |---|---|---|
 | Claude Code in a terminal | Yes | |
 | Claude Desktop, Code tab, local session | Yes | Runs the same Claude Code binary and reads the same user plugins. Observed. A desktop extension is not attached to these sessions (CRP-002) |
-| VS Code and JetBrains extensions | Expected | To be confirmed by CRP-001 |
+| VS Code and JetBrains extensions | Expected | Untested. CRP-001 had neither extension |
 | Cloud sessions, Claude Code on the web | Not usefully | Hooks run remotely. `CLAUDE_CODE_REMOTE` is `true` there, and the adapter does nothing |
 | Claude Desktop, Chat | No | Uses the desktop extension instead. No hooks exist |
 | Cowork | Unknown | Not in the first release |
@@ -51,11 +51,24 @@ Documented behaviour to design around:
 - If the tool returns an error, the hook is a non-blocking error.
 - `async` is documented for command hooks only.
 
-Not documented, to be settled by CRP-001: what happens when a `${path}` is absent from the event.
+Observed in CRP-001 on Windows (2.1.284) and Linux (2.1.287), and not documented. The full record is `docs/research/crp-001-claude-code-adapter.md`:
+
+- A `${path}` that is absent from the event arrives as an empty string and the hook succeeds. Booleans arrive as text. Nested paths such as `${effort.level}` work.
+- **An empty tool result makes Claude Code add `UserPromptSubmit hook success: UserPromptSubmit completed` to the model's context on every prompt, once per handler.** The text `{}` adds nothing. Any other JSON text is treated as hook output and can inject context or make Claude continue after `Stop`.
+- **The launch-time skip is shown to the user** as `SessionStart:startup hook error`. Give the `SessionStart` hook the matcher `clear|compact`.
+- **`SessionEnd` at exit never arrives.** Claude Code stops the server first, the hook fails, and an error line is printed. Do not declare it. After `/clear` it does arrive, followed at once by `SessionStart` with `source: clear` and the new session id.
+- A hung server is cancelled at the timeout, on every hooked event. A dead server fails in a few milliseconds and is started again on the next hook call.
+- The server's name is the `name` in the bundle's manifest.
+- A call made by the model carries `_meta` with `claudecode/toolUseId`; a hook's call carries no `_meta`. A call made by the model needs the user's permission.
+- A subagent's events arrive on the session's server with `agent_id` set. `SubagentStop` also arrives with an empty `agent_type` and no start, after compaction and after ordinary turns.
+- `UserPromptSubmit` also fires when a background subagent's result starts a new turn.
+- At launch, `SessionStart` carried `model` in an interactive terminal and not in headless runs. After a clear it carried none; after a compaction it did.
+- The session ends, for the server, with its input closing on Windows and with an interrupt signal on Linux. A killed session on Windows kills the server outright.
+- Installing a plugin while Claude Desktop is open starts its server in every open Code-tab session at once.
 
 ### The `if` filter
 
-A hook handler may carry `if`, written in permission-rule syntax such as a pattern for a shell command. It is evaluated only on tool events: `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied`. On other events a hook with `if` never runs. For shell commands, each sub-command of a compound command is checked, and when Claude Code cannot tell what will run, it runs the hook regardless. `PostToolUse` fires only after a tool call succeeds. This is how moments are detected without reading the command (CRP-075). Whether it works on `mcp_tool` hooks is confirmed by CRP-001.
+A hook handler may carry `if`, written in permission-rule syntax such as a pattern for a shell command. It is evaluated only on tool events: `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied`. On other events a hook with `if` never runs. For shell commands, each sub-command of a compound command is checked, and when Claude Code cannot tell what will run, it runs the hook regardless. `PostToolUse` fires only after a tool call succeeds. This is how moments are detected without reading the command (CRP-075). CRP-001 confirmed it works on `mcp_tool` hooks: `Bash(git push *)` fired for a push alone and for a push joined to another command, and for nothing else tried.
 
 ### Events we use, and the fields we read
 
@@ -72,7 +85,7 @@ Every event carries `session_id`, `cwd`, `hook_event_name`, and inside a subagen
 | `PreCompact`, `PostCompact` | none | |
 | `PostModelSwitch` | `to_model` | |
 | `SubagentStart`, `SubagentStop` | none | `last_assistant_message` |
-| `SessionEnd` | `reason` | |
+| `SessionEnd` | not hooked, see above | |
 
 Notification types that mean the user is needed: `permission_prompt`, `agent_needs_input`, `elicitation_dialog`. The type `idle_prompt` means idle.
 

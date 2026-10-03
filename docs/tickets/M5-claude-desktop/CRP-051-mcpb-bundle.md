@@ -60,7 +60,12 @@ The MCPB manifest selects by operating system, not by CPU architecture. That is 
 - Check the current MCPB manifest specification before writing the manifest. The format has a version field and has changed.
 - Zip archives do not always preserve Unix permissions. Set them explicitly when writing the archive, and test by extracting.
 - Go signs Mac binaries for Apple silicon ad hoc at link time, because the system refuses to run unsigned ones. Verify what survives the merge.
-- If CRP-001 showed that Claude Code's bundle loader differs from the specification in any way, follow what Claude Code actually does and note it.
+- What [CRP-001](../../research/crp-001-claude-code-adapter.md) saw Claude Code do with a bundle, on Windows and Linux:
+  - Commands written as `${__dirname}/server/name` with a `platform_overrides` entry per operating system ran on both. Nothing differed from the specification.
+  - The manifest's `name` becomes the server's name in Claude Code, and so the last segment of the address the plugin's hooks use. ADR-0007 fixes that address as `plugin:rich-presence:presence`, so the name is `presence` unless the ADR's address is changed with it.
+  - Executable bits set in the archive survived extraction on Linux. The archive was written on Windows with the mode set explicitly.
+  - A `user_config` default reached the server through `mcp_config.env` with no prompt.
+  - The server's working directory is the session's directory in Claude Code, unlike Claude Desktop.
 - What [CRP-002](../../research/crp-002-desktop-extension.md) saw Claude Desktop do with a bundle on Windows:
   - A command written as `${__dirname}/server/name.exe` in a `win32` override runs. The specification's bare relative form was not tried.
   - The server's working directory is `C:\Windows\system32`. Never rely on it.

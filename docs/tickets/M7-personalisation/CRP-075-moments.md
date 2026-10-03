@@ -57,6 +57,7 @@ CRP-001 records whether the `if` filter works on hooks of type `mcp_tool`. If it
 ## Notes for the implementer
 
 - Write the filters to match the push as one of several commands joined together, which the hooks reference says the filter handles, and record the exact patterns tested.
+- The [CRP-001 findings](../../research/crp-001-claude-code-adapter.md) confirm that `if` works on an `mcp_tool` hook, on Windows and Linux: `Bash(git push *)` fired for `git push origin main` and for `git status && git push origin main`, and for none of five other successful commands, including `echo git push origin main`. A failed push fires `PostToolUseFailure`, not `PostToolUse`. The case where the filter runs regardless, on command substitution, was not reached and still needs measuring. A second handler on `PostToolUse` added nothing to the model's context there; ADR-0007's rule 8 asks for that to be checked again for whatever this ticket adds.
 - A new image key, `shipped`, is needed. Uploading it to the Discord application is an owner action within this ticket: ask the owner, and store the source image under `assets/`.
 - Moments pass through the update scheduler like everything else, so one may appear up to the minimum interval late. A three-minute display makes that unimportant.
 
