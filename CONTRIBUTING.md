@@ -42,3 +42,80 @@ Do not add code that reads prompts, transcripts, tool inputs or file paths, or t
 ## License
 
 By contributing you agree that your contribution is licensed under the [MIT License](LICENSE.md).
+
+## Development
+
+### Install Go
+
+The minimum is Go 1.26. Build with the current stable release.
+
+| Operating system | Command |
+|---|---|
+| Windows | `winget install GoLang.Go` |
+| macOS | `brew install go` |
+| Linux | Download the archive from [go.dev/dl](https://go.dev/dl/) and follow [go.dev/doc/install](https://go.dev/doc/install), or use your distribution's package if it is new enough |
+
+Check with `go version`.
+
+The race detector needs cgo and so a C compiler, for tests only. The shipped binary is always built with `CGO_ENABLED=0`. macOS has one after `xcode-select --install`, and Linux after installing `gcc`. On Windows install a mingw-w64 `gcc`:
+
+```bash
+winget install BrechtSanders.WinLibs.POSIX.UCRT
+```
+
+There is no `Makefile`. Every task is a plain `go` command, run from the repository root. The commands below are written for a POSIX shell, which on Windows is Git Bash.
+
+### Build
+
+```bash
+go build -o bin/ ./cmd/rich-presence
+```
+
+Check that every release target compiles without cgo:
+
+```bash
+for t in windows/amd64 darwin/amd64 darwin/arm64 linux/amd64; do GOOS=${t%/*} GOARCH=${t#*/} CGO_ENABLED=0 go build ./... || break; done
+```
+
+A release sets the version through the linker. Without it, the binary reports the version the Go toolchain derives from the git state.
+
+```bash
+go build -ldflags "-X github.com/Zafnok/claude-rich-presence/internal/cli.version=1.2.3" -o bin/ ./cmd/rich-presence
+```
+
+### Format, vet and test
+
+```bash
+gofmt -l .
+```
+
+```bash
+go vet ./...
+```
+
+```bash
+CGO_ENABLED=1 go test -race ./...
+```
+
+`gofmt -l .` must print nothing.
+
+### Measure coverage
+
+Statement coverage must be 100.0%. `main` cannot be called from a test, so it is covered by running a binary built with coverage instrumentation. The unit tests and that run write to one directory, and the result is the merge of both.
+
+```bash
+rm -rf coverage && mkdir coverage
+go test -cover ./... -args -test.gocoverdir="$PWD/coverage"
+go build -cover -o bin/ ./cmd/rich-presence
+GOCOVERDIR=coverage bin/rich-presence version
+go tool covdata percent -i=coverage
+```
+
+To list what is not covered, by function:
+
+```bash
+go tool covdata textfmt -i=coverage -o coverage/profile.txt
+go tool cover -func=coverage/profile.txt
+```
+
+`bin/` and `coverage/` are ignored by git. [CRP-005](docs/tickets/M0-foundation/CRP-005-ci-pipeline.md) replaces the last step with a gate tool that fails below 100.0% and prints each uncovered block.
