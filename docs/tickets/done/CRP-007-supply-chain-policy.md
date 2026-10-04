@@ -3,7 +3,7 @@ id: CRP-007
 title: Supply-chain policy enforcement
 milestone: M0 Foundation
 type: chore
-status: in-progress
+status: done
 priority: P1
 blocked_by: [CRP-005]
 blocks: [CRP-060]

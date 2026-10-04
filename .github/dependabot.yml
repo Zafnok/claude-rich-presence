@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Go modules. go.mod holds the runtime dependencies (ADR-0003), so a pull
+  # request here still has to pass the module allowlist and licence checks.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      go-modules:
+        patterns: ["*"]
+
+  # Every action stays pinned to a full commit hash. Dependabot keeps the hash
+  # and the version comment in step.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]

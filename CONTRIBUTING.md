@@ -33,7 +33,14 @@ If a ticket forces a choice that an ADR does not already cover, record it. Small
 
 ## Dependencies
 
-Runtime dependencies are limited to the Go standard library and `golang.org/x/*`. Anything else needs an ADR. Build and CI tools are pinned to an exact version or commit. The full policy is [ADR-0003](docs/architecture/adr/0003-license-and-dependency-policy.md).
+Runtime dependencies are limited to the Go standard library and `golang.org/x/*`. Anything else needs an ADR. Build and CI tools are pinned to an exact version or commit. The full policy is [ADR-0003](docs/architecture/adr/0003-license-and-dependency-policy.md), and CI enforces it:
+
+- A module that supplies a package on any release target and is neither under `golang.org/x/` nor listed in [.github/allowed-modules.txt](.github/allowed-modules.txt) fails the build. Each line of that file names the accepted ADR that approved the module. Add the line in the same pull request as the module, after the ADR is accepted. The check is [tools/policycheck](tools/policycheck/main.go).
+- Every linked module must have a license on the ADR-0003 allowlist, checked with a pinned `go-licenses` for each release target.
+- Every `uses:` in a workflow must be a full commit hash, with the tag in a comment. Dependabot keeps them current.
+- `govulncheck` runs on every pull request and every Monday.
+
+The checks are in [ci.yml](.github/workflows/ci.yml) and [supply-chain.yml](.github/workflows/supply-chain.yml). The settings the owner applies to the repository are in [docs/repository-settings.md](docs/repository-settings.md).
 
 ## Security and privacy
 
@@ -125,10 +132,15 @@ Statement coverage must be 100.0% of the measured set, which is every package ex
 
 ```bash
 rm -rf coverage && mkdir -p coverage/e2e
-go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck
+go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck ./tools/policycheck
 measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
 CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
 GOCOVERDIR=coverage/e2e bin/rich-presence version
+for target in windows/amd64 darwin/amd64 darwin/arm64 linux/amd64; do
+  GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go list -deps -test -json ./... |
+    GOCOVERDIR=coverage/e2e bin/policycheck modules .github/allowed-modules.txt
+done
+GOCOVERDIR=coverage/e2e bin/policycheck actions .github/workflows/*.yml
 go tool covdata textfmt -i=coverage/e2e -o coverage/e2e.txt
 { cat coverage/unit.txt; tail -n +2 coverage/e2e.txt; } > coverage/profile.txt
 go run ./tools/covercheck check -module "$(go list -m)" coverage/profile.txt

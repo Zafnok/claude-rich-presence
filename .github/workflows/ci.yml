@@ -75,7 +75,7 @@ jobs:
       - name: Test with the race detector
         run: |
           mkdir -p coverage/e2e
-          go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck
+          go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck ./tools/policycheck
           measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
           CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
 
@@ -90,11 +90,19 @@ jobs:
             done
           done
 
-      # End-to-end runs of the instrumented binary. CRP-043 adds the real
+      # End-to-end runs of the instrumented binaries. CRP-043 adds the real
       # scenarios here.
       - name: End-to-end coverage
         run: |
           GOCOVERDIR=coverage/e2e bin/rich-presence version
+          # The dependency policy of ADR-0003. Running the real checks on the
+          # real files is also what covers the main function of policycheck.
+          # Windows is listed too: go-winio is linked there and nowhere else.
+          for target in $RELEASE_TARGETS; do
+            GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go list -deps -test -json ./... |
+              GOCOVERDIR=coverage/e2e bin/policycheck modules .github/allowed-modules.txt
+          done
+          GOCOVERDIR=coverage/e2e bin/policycheck actions .github/workflows/*.yml
           go tool covdata textfmt -i=coverage/e2e -o coverage/e2e.txt
           { cat coverage/unit.txt; tail -n +2 coverage/e2e.txt; } > coverage/profile.txt
 

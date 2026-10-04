@@ -1,0 +1,5 @@
+# Modules that may appear in go.mod although they are not under golang.org/x/.
+# Each line is a module path and the accepted ADR that approved it. Add a line
+# in the same pull request as the module, never before the ADR is accepted.
+# ADR-0003 is the policy and the add-dependency skill is the procedure.
+github.com/Microsoft/go-winio ADR-0017
