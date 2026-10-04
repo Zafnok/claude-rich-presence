@@ -11,6 +11,11 @@ import (
 // input, so it must return at once and must not perform I/O (ADR-0008).
 type Handler func(arguments json.RawMessage) Result
 
+// MetaHandler is a Handler that is also given the "_meta" object of the call,
+// or nil when the call had none. A client may use _meta to say where a call
+// came from. The same rules apply as for a Handler.
+type MetaHandler func(arguments, meta json.RawMessage) Result
+
 // Result is what a tool call returns: one item of text.
 type Result struct {
 	Text string
@@ -24,13 +29,25 @@ type Tool struct {
 	name        string
 	description string
 	inputSchema json.RawMessage
-	handler     Handler
+	handler     MetaHandler
 }
 
 // NewTool checks and builds a tool. The name is 1 to 128 characters from
 // A-Z, a-z, 0-9, underscore, hyphen and dot. inputSchema is a JSON Schema
 // object; the server publishes it and does not validate arguments against it.
 func NewTool(name, description string, inputSchema json.RawMessage, handler Handler) (Tool, error) {
+	if handler == nil {
+		return Tool{}, errNilHandler
+	}
+	return NewMetaTool(name, description, inputSchema, func(arguments, _ json.RawMessage) Result {
+		return handler(arguments)
+	})
+}
+
+var errNilHandler = errors.New("mcp: tool handler is nil")
+
+// NewMetaTool is NewTool for a handler that reads the call's _meta.
+func NewMetaTool(name, description string, inputSchema json.RawMessage, handler MetaHandler) (Tool, error) {
 	if !validToolName(name) {
 		return Tool{}, errors.New("mcp: tool name must be 1 to 128 characters of A-Z, a-z, 0-9, '_', '-' and '.'")
 	}
@@ -39,7 +56,7 @@ func NewTool(name, description string, inputSchema json.RawMessage, handler Hand
 		return Tool{}, errors.New("mcp: tool input schema must be a JSON object")
 	}
 	if handler == nil {
-		return Tool{}, errors.New("mcp: tool handler is nil")
+		return Tool{}, errNilHandler
 	}
 	return Tool{name: name, description: description, inputSchema: schema.Bytes(), handler: handler}, nil
 }
@@ -60,13 +77,13 @@ func validToolName(name string) bool {
 
 // call runs the handler. A panic becomes a tool error. What the handler
 // panicked with is dropped, because it may hold the arguments.
-func (t Tool) call(arguments json.RawMessage) (result Result) {
+func (t Tool) call(arguments, meta json.RawMessage) (result Result) {
 	defer func() {
 		if recover() != nil {
 			result = Result{Text: "tool failed", IsError: true}
 		}
 	}()
-	return t.handler(arguments)
+	return t.handler(arguments, meta)
 }
 
 // toolDefinition is a tool as tools/list describes it.
