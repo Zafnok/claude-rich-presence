@@ -72,20 +72,24 @@ A hook handler may carry `if`, written in permission-rule syntax such as a patte
 
 ### Events we use, and the fields we read
 
-Every event carries `session_id`, `cwd`, `hook_event_name`, and inside a subagent `agent_id` and `agent_type`. We read `session_id` always, and `cwd` only to take its last element at the `full` privacy level.
+Every event carries `session_id`, `cwd`, `hook_event_name`, and inside a subagent `agent_id` and `agent_type`. We read `session_id` always, and `cwd` only to take its last element at the `full` privacy level. Below that level `cwd` is not decoded at all.
+
+This table mirrors the allowlist in `internal/adapter/code/allowlist.go` as CRP-041 built it. The code is the definition.
 
 | Event | Extra fields we read | Fields present that we must not read |
 |---|---|---|
-| `SessionStart` | `source`, `model` when present | `session_title`, `transcript_path` |
+| `SessionStart` | `model` when present | `session_title`, `transcript_path` |
 | `UserPromptSubmit` | none | `prompt_text` |
 | `PreToolUse` | `tool_name` | `tool_input` |
-| `PostToolUse`, `PostToolUseFailure` | `tool_name` | `tool_input`, `tool_output` |
+| `PostToolUse`, `PostToolUseFailure` | none | `tool_input`, `tool_output` |
 | `Stop`, `StopFailure` | none | `last_assistant_message` |
 | `Notification` | `notification_type` | `message` |
 | `PreCompact`, `PostCompact` | none | |
 | `PostModelSwitch` | `to_model` | |
-| `SubagentStart`, `SubagentStop` | none | `last_assistant_message` |
+| `SubagentStart`, `SubagentStop` | `agent_id`, to match a stop to its start. It is not forwarded | `last_assistant_message` |
 | `SessionEnd` | not hooked, see above | |
+
+`source`, `trigger` and the tool name on the two post-tool events are not read: nothing is done with them. A new session id on any event is what moves the session after a clear.
 
 Notification types that mean the user is needed: `permission_prompt`, `agent_needs_input`, `elicitation_dialog`. The type `idle_prompt` means idle.
 

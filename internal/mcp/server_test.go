@@ -411,6 +411,65 @@ func TestToolCallArguments(t *testing.T) {
 	}
 }
 
+func TestToolCallMeta(t *testing.T) {
+	cases := []struct {
+		name   string
+		params string
+		want   string
+	}{
+		{"object", `{"name":"event","_meta":{"claudecode/toolUseId":"t1"},"arguments":{"a":1}}`, `{"claudecode/toolUseId":"t1"}`},
+		{"empty object", `{"name":"event","_meta":{}}`, `{}`},
+		{"absent", `{"name":"event","arguments":{"a":1}}`, `absent`},
+		{"null", `{"name":"event","_meta":null}`, `absent`},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var seen []string
+			tool, err := mcp.NewMetaTool("event", "d", json.RawMessage(`{"type":"object"}`), func(_, meta json.RawMessage) mcp.Result {
+				if meta == nil {
+					seen = append(seen, "absent")
+				} else {
+					seen = append(seen, string(meta))
+				}
+				return mcp.Result{Text: "{}"}
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := serve(t, initLine+`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":`+c.params+`}`+"\n", withTools(tool))
+			if len(got) != 2 {
+				t.Fatalf("got %d replies, want 2", len(got))
+			}
+			wantResult(t, got[1], "1", `{"content":[{"type":"text","text":"{}"}]}`)
+			if len(seen) != 1 || seen[0] != c.want {
+				t.Errorf("handler saw %q, want [%q]", seen, c.want)
+			}
+		})
+	}
+}
+
+func TestToolCallMetaMustBeAnObject(t *testing.T) {
+	called := false
+	opts := withTools(newTool(t, "event", func(json.RawMessage) mcp.Result {
+		called = true
+		return mcp.Result{}
+	}))
+	got := serve(t, initLine+`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"event","_meta":"x"}}`+"\n", opts)
+	if len(got) != 2 {
+		t.Fatalf("got %d replies, want 2", len(got))
+	}
+	wantError(t, got[1], "1", -32602)
+	if called {
+		t.Error("the handler ran")
+	}
+}
+
+func TestNewMetaToolNeedsAHandler(t *testing.T) {
+	if _, err := mcp.NewMetaTool("t", "d", json.RawMessage(`{"type":"object"}`), nil); err == nil {
+		t.Error("NewMetaTool accepted a nil handler")
+	}
+}
+
 func TestHandlerPanicIsAToolError(t *testing.T) {
 	opts := withTools(
 		newTool(t, "explode", func(arguments json.RawMessage) mcp.Result { panic("secret " + string(arguments)) }),
