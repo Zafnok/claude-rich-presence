@@ -3,7 +3,7 @@ id: CRP-034
 title: Logging and diagnostics
 milestone: M3 Host
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-012]
 blocks: [CRP-033]
