@@ -3,7 +3,7 @@ id: CRP-077
 title: Per-project privacy level and display name in the Claude Code adapter
 milestone: M7 Personalisation
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-014, CRP-041]
 blocks: [CRP-047, CRP-048, CRP-073]
