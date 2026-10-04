@@ -34,4 +34,8 @@
 // A named pipe needs one instance per client. The server keeps eight waiting,
 // so up to eight clients can connect before it has accepted any. A ninth is
 // told the pipe is busy, as a client of a real Discord can be.
+//
+// An accepted connection is go-winio's file type, as the production dialer's
+// is (ADR-0017): the server reads on one goroutine while a test sends from
+// another, and the standard library's file type races with itself there.
 package fakediscord
