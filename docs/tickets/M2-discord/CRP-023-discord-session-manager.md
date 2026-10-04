@@ -3,7 +3,7 @@ id: CRP-023
 title: Discord session manager
 milestone: M2 Discord
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-013, CRP-020, CRP-021, CRP-022]
 blocks: [CRP-032]
