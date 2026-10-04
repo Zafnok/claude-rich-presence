@@ -3,7 +3,7 @@ id: CRP-032
 title: "Presence host: election, serving, failover"
 milestone: M3 Host
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-010, CRP-011, CRP-023, CRP-030, CRP-031]
 blocks: [CRP-033]
