@@ -52,6 +52,12 @@
 // several times retryBase, so that every follower has retried the lock before
 // the node that gave it up does.
 //
+// Standing down must not turn into giving the lock up over and over for a
+// node that cannot take it. So a node that cannot try the lock does not ask
+// a host to stand down, and a node that stood down and then got the lock
+// back, with nobody having held it in between, does not stand down again in
+// that term.
+//
 // # The node's own session
 //
 // A node has one session at a time, and always holds its current state,

@@ -155,14 +155,18 @@ Tool kinds: `editing`, `running`, `reading`, `searching`, `browsing`, `delegatin
 
 Asks the host to give up the lock, so that a newer binary can win the election ([ADR-0005](../architecture/adr/0005-presence-host-election.md), "Version skew"). It has no fields and no reply. Every protocol version has it.
 
-A follower sends it once on a connection, straight after a `welcome` whose binary version is older than its own, and then carries on as any follower. The host acts on it only when the sender is the newer binary:
+A follower sends it once on a connection, straight after a `welcome` whose binary version is older than its own, and then carries on as any follower. A follower that could not take over, because its own attempt at the lock failed for a reason other than the lock being held, does not send it. The host acts on it only when the sender is the newer binary:
 
 | Connection | The sender is newer when |
 |---|---|
 | Welcomed | The binary version in its `hello` is [newer](#binary-version) than the host's own |
 | Refused | The protocol version in its `hello` is higher than the highest the host speaks |
 
-Any other `stand_down` is ignored. The host judges for itself, so two processes can never ask each other to stand down in turn. A host that stands down refuses every `hello` with `standing_down` from then on, closes its connections, releases the lock, and waits before it tries the lock again, long enough for the followers to have tried first.
+Any other `stand_down` is ignored. The host judges for itself, so two processes can never ask each other to stand down in turn.
+
+A host that stands down refuses every `hello` with `standing_down` from then on, closes its connections, releases the lock, and waits 800 milliseconds before it tries the lock again. A follower that has just lost its host tries the lock within 100 milliseconds, so the one that asked has time to win. A sender that means to take over must try the lock within that time.
+
+If nobody took the lock in that time, the host that stood down takes it back, and from then on ignores `stand_down` for as long as it stays host: whoever asked could not take over, and standing down again would only clear presence again. It listens to `stand_down` once more after another process has held the lock.
 
 ```json
 {"type":"stand_down"}

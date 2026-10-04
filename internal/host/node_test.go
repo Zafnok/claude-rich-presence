@@ -112,11 +112,11 @@ func TestJitterPlacesAWaitInTheUpperHalfOfTheDelay(t *testing.T) {
 	}
 }
 
-func TestTheStandDownDelayOutlastsTwoRetriesOfAFollower(t *testing.T) {
+func TestTheStandDownDelayOutlastsThreeRetriesOfAFollower(t *testing.T) {
 	// A follower that has just lost its host waits at most the base delay,
-	// and then at most twice that. The host that stood down must still be
-	// waiting after both.
-	longest := host.Jittered(host.RetryBase, 1) + host.Jittered(2*host.RetryBase, 1)
+	// then at most twice that, then at most four times. The host that stood
+	// down must still be waiting after all three.
+	longest := host.Jittered(host.RetryBase, 1) + host.Jittered(2*host.RetryBase, 1) + host.Jittered(4*host.RetryBase, 1)
 	if host.StandDownDelay <= longest {
 		t.Errorf("the stand-down delay is %v, want more than %v", host.StandDownDelay, longest)
 	}

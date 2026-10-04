@@ -343,6 +343,101 @@ func TestYieldingToElectingWhenTheDelayHasPassed(t *testing.T) {
 	w.eventually("a to hold its session", func() bool { return a.holds(a) })
 }
 
+// standsFirm checks that the host takes no stand_down from q, a welcomed
+// connection of a newer binary: it answers on the connection, so it has read
+// the request, and it is still host after its role loop has come round many
+// times, any one of which would have ended the term had the request been
+// taken.
+func standsFirm(t *testing.T, w *world, a *proc, q *peer) {
+	t.Helper()
+	stoodDown := a.logs.count("standing down")
+	q.say(protocol.StandDown{})
+	q.status()
+	for range 16 {
+		a.publish(domain.KindSessionRefreshed)
+		w.clock.Advance(time.Millisecond)
+		w.eventually("the host's own event to be shown", func() bool {
+			held := a.held()
+			return len(held) > 0 && held[0] == a.want()[0]
+		})
+	}
+	if !a.isHost() || w.lockFree() {
+		t.Fatalf("role is %v after a stand_down the host does not take, want host", a.role())
+	}
+	if got := a.logs.count("standing down"); got != stoodDown {
+		t.Fatalf("the host stood down %d times more, want none", got-stoodDown)
+	}
+}
+
+func TestANodeThatStoodDownForNobodyDoesNotStandDownAgain(t *testing.T) {
+	w := newWorld(t)
+	a := w.spawn("a", version("1.0.0")).open().run()
+	w.eventually("a to become host", a.isHost)
+
+	// A newer binary asks, and then does not take the lock.
+	q := w.join("newer")
+	q.welcomed("1.1.0")
+	q.say(protocol.StandDown{})
+	w.eventually("a to give up the lock", w.lockFree)
+	w.sleeping(1)
+	w.clock.Advance(host.StandDownDelay)
+	w.eventually("a to become host again", func() bool { return a.isHost() && a.holds(a) })
+
+	// Asked again, it stays: standing down again would clear presence for
+	// nothing, as often as it was asked.
+	q = w.join("newer")
+	q.welcomed("1.1.0")
+	standsFirm(t, w, a, q)
+	q.c.Close()
+
+	// A newer node that can take the lock follows it meanwhile, and takes
+	// over when it goes.
+	b := w.spawn("b", version("1.1.0")).open().run()
+	w.settle("b to follow", func() bool { return b.isFollower() && a.holds(a, b) })
+	a.stop()
+	w.settle("b to become host", func() bool { return b.isHost() && b.holds(b) })
+}
+
+func TestANodeThatStoodDownForAnotherStandsDownAgainLater(t *testing.T) {
+	w := newWorld(t)
+	a := w.spawn("a", version("1.0.0")).open().run()
+	w.eventually("a to become host", a.isHost)
+	b := w.spawn("b", version("1.1.0")).open().run()
+	w.settle("the newer node to host and the older to follow", func() bool {
+		return b.isHost() && a.isFollower() && b.holds(a, b)
+	})
+
+	// The newer node goes, and the older is host once more. It stood down
+	// for a node that did take over, so it does so again when asked.
+	b.stop()
+	w.settle("a to become host again", func() bool { return a.isHost() && a.holds(a) })
+	q := w.join("newer")
+	q.welcomed("1.2.0")
+	q.say(protocol.StandDown{})
+	w.eventually("a to give up the lock", w.lockFree)
+	if got := a.logs.count("standing down for a newer version"); got != 2 {
+		t.Errorf("a stood down %d times, want twice", got)
+	}
+}
+
+func TestANodeThatCannotTryTheLockDoesNotAskAHostToStandDown(t *testing.T) {
+	w := newWorld(t)
+	s := w.stubHost().listen()
+	b := w.spawn("b", version("2.0.0")).open()
+	b.set(func(k *knobs) { k.acquireFails = true })
+	b.run()
+
+	// It is newer than the host, and could not take over from it.
+	q, _ := s.greeted("1.0.0")
+	if got, ok := q.hear().(protocol.Sync); !ok {
+		t.Fatalf("the first message after the welcome is %#v, want a sync", got)
+	}
+	w.eventually("b to follow", b.isFollower)
+	if got := b.logs.count("asked an older presence host to stand down"); got != 0 {
+		t.Errorf("the node asked %d times, want none", got)
+	}
+}
+
 func TestHostingToRetryingWhenAGoroutineOfTheTermPanics(t *testing.T) {
 	// recovers checks that the panic cost the term and no more: the node
 	// gave up the lock, and is host again once the fault is gone.

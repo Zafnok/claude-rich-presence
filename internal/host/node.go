@@ -21,10 +21,10 @@ const (
 	// retryCap bounds the delay between rounds that reach no host.
 	retryCap = 64 * retryBase
 	// standDownDelay is how long a host that stood down waits before it
-	// tries the lock again. A follower's first wait is at most retryBase and
-	// its second at most twice that, so by then every follower has tried the
-	// lock twice, and the one that asked has had its chance to win.
-	standDownDelay = 4 * retryBase
+	// tries the lock again. A follower's first three waits are at most one,
+	// two and four times retryBase, so by then every follower has tried the
+	// lock three times, and the one that asked has had its chance to win.
+	standDownDelay = 8 * retryBase
 	// greetTimeout is how long a connection has to be welcomed. One that
 	// says nothing, or is refused, is closed when it has passed.
 	greetTimeout = 10 * retryBase
@@ -112,7 +112,10 @@ type Node struct {
 	heard Status
 
 	// The rest belongs to the goroutine in Run.
-	followed   bool // a host has been followed since this node was last host
+	followed bool // a host has been followed since this node was last host
+	// yielded says this node stood down and has not seen the lock held by
+	// another since: so far, it stood down for nobody.
+	yielded    bool
 	lockWarned bool // a lock that cannot be tried has been reported
 }
 
@@ -252,11 +255,18 @@ func (n *Node) round(ctx context.Context) outcome {
 		n.lockWarned = false
 		return n.host(ctx, lock)
 	}
-	if !errors.Is(err, ErrLocked) && !n.lockWarned {
+	held := errors.Is(err, ErrLocked)
+	if held {
+		// If this node stood down, somebody took the lock after it.
+		n.yielded = false
+	}
+	if !held && !n.lockWarned {
 		n.lockWarned = true
 		n.log.Warn("the host lock cannot be tried, so this process can only follow a host", diag.ErrorClass("lock_failed"))
 	}
-	return n.follow(ctx)
+	// A node that cannot try the lock could not take over from a host, so
+	// it does not ask one to stand down.
+	return n.follow(ctx, held)
 }
 
 // attach gives the node a host: itself, with its term, or the one that

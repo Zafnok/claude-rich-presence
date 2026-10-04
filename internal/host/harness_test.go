@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -240,7 +239,6 @@ type conn struct {
 	label   string
 	in, out *half
 	once    sync.Once
-	closed  atomic.Bool
 	// onClose runs before the first Close closes anything.
 	onClose func()
 
@@ -314,7 +312,6 @@ func (c *conn) Close() error {
 			c.onClose()
 		}
 		c.w.note("closed " + c.label)
-		c.closed.Store(true)
 		c.in.mu.Lock()
 		c.in.broken = true
 		c.in.change.Broadcast()

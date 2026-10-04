@@ -10,7 +10,8 @@ import (
 
 // follow is one attempt to follow a host: dial, hello, and on a welcome the
 // node's session and then its events, for as long as the connection lasts.
-func (n *Node) follow(ctx context.Context) outcome {
+// mayAsk says whether an older host may be asked to stand down.
+func (n *Node) follow(ctx context.Context, mayAsk bool) outcome {
 	conn, err := n.dial(ctx)
 	if err != nil {
 		n.log.Debug("no presence host could be reached")
@@ -26,7 +27,7 @@ func (n *Node) follow(ctx context.Context) outcome {
 		n.log.Debug("the presence host did not welcome this process")
 		return missed
 	}
-	if newer(n.version, welcome.Version) {
+	if mayAsk && newer(n.version, welcome.Version) {
 		// Asked once. A host that does not agree it is older carries on,
 		// and so does this node, as its follower.
 		n.log.Info("asked an older presence host to stand down", diag.Version("host_version", welcome.Version))

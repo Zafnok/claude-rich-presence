@@ -40,6 +40,9 @@ type term struct {
 
 	// draining is set when the term has begun to end: a hello is refused.
 	draining atomic.Bool
+	// firm says the term does not end for a stand_down. It is set for good
+	// when the term begins.
+	firm bool
 
 	// stopDiscord ends the Discord connection, and cleared is closed when
 	// it has ended.
@@ -67,7 +70,10 @@ func (n *Node) host(ctx context.Context, lock Lock) outcome {
 	// The deferred calls run in the order a term ends in: everything else
 	// first, and the lock last.
 	defer n.release(lock)
-	t := n.begin(lock)
+	// A node that stood down and has the lock back, with nobody having held
+	// it in between, stood down for a node that could not take over. Doing
+	// so again would only clear presence again, so this term it stays.
+	t := n.begin(lock, n.yielded)
 	defer t.end()
 
 	if n.followed {
@@ -84,6 +90,7 @@ func (n *Node) host(ctx context.Context, lock Lock) outcome {
 			return missed
 		case <-t.yield:
 			n.log.Info("standing down for a newer version")
+			n.yielded = true
 			return yielded
 		case <-n.wake:
 			for _, m := range n.take() {
@@ -102,10 +109,11 @@ func (n *Node) release(lock Lock) {
 
 // begin starts a term: the registry, the Discord connection and the
 // listener, each on a goroutine of its own.
-func (n *Node) begin(lock Lock) *term {
+func (n *Node) begin(lock Lock, firm bool) *term {
 	t := &term{
 		n:        n,
 		lock:     lock,
+		firm:     firm,
 		discord:  n.discord(),
 		since:    n.clock.Now(),
 		inbox:    make(chan request),
@@ -329,8 +337,12 @@ func (t *term) answer(h protocol.Hello) protocol.Message {
 // outranked reports whether a stand_down from the sender of h is valid,
 // which is when the sender is the newer binary. A welcomed sender is judged
 // by its binary version. A refused one is judged by its protocol version,
-// which this host could not speak if it is newer.
+// which this host could not speak if it is newer. A term that is firm takes
+// none.
 func (t *term) outranked(h protocol.Hello, welcomed bool) bool {
+	if t.firm {
+		return false
+	}
 	if !welcomed {
 		return h.Protocol > protocol.Version
 	}

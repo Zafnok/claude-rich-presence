@@ -385,23 +385,7 @@ func TestAStandDownThatIsNotFromANewerBinaryIsIgnored(t *testing.T) {
 			w, a := hosting(t, version("1.0.0"))
 			q := w.join("other")
 			q.welcomed(theirs)
-			q.say(protocol.StandDown{})
-			// It still answers on that connection, so it has read the
-			// request.
-			if got := q.status().Sessions; got != 1 {
-				t.Errorf("the host reports %d sessions, want 1", got)
-			}
-			// And it is still host after its role loop has come round many
-			// times, any one of which would have ended the term had the
-			// request been taken.
-			for range 16 {
-				a.publish(domain.KindSessionRefreshed)
-				w.clock.Advance(time.Millisecond)
-				w.eventually("the host's own event to be shown", func() bool { return a.holds(a) })
-			}
-			if !a.isHost() || w.lockFree() {
-				t.Errorf("role is %v after a stand_down that is not valid, want host", a.role())
-			}
+			standsFirm(t, w, a, q)
 			a.stop()
 			if got := a.logs.count("standing down"); got != 0 {
 				t.Errorf("the host stood down %d times, want none", got)
