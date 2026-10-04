@@ -45,6 +45,10 @@ func load(t *testing.T, file string, pairs ...string) (config.Config, []config.W
 	return cfg, warnings
 }
 
+func isDefault(cfg config.Config) bool {
+	return reflect.DeepEqual(cfg, config.Default())
+}
+
 func TestDefault(t *testing.T) {
 	want := config.Config{
 		Enabled:              true,
@@ -53,12 +57,13 @@ func TestDefault(t *testing.T) {
 		IdleClearAfter:       15 * time.Minute,
 		MinUpdateInterval:    15 * time.Second,
 		LogLevel:             config.LogWarn,
+		LinkHosts:            []string{"github.com"},
 	}
-	if got := config.Default(); got != want {
+	if got := config.Default(); !reflect.DeepEqual(got, want) {
 		t.Errorf("Default = %+v, want %+v", got, want)
 	}
 	cfg, warnings := load(t, "")
-	if cfg != want || len(warnings) != 0 {
+	if !isDefault(cfg) || len(warnings) != 0 {
 		t.Errorf("Load with nothing set = %+v, %v", cfg, warnings)
 	}
 }
@@ -255,7 +260,7 @@ func TestUnsubstitutedEnvironmentValueIsNotSet(t *testing.T) {
 		key := "RICH_PRESENCE_" + strings.ToUpper(tc.name)
 		for _, value := range []string{"${user_config." + tc.name + "}", "", "   "} {
 			cfg, warnings := load(t, "", key, value)
-			if cfg != config.Default() || len(warnings) != 0 {
+			if !isDefault(cfg) || len(warnings) != 0 {
 				t.Errorf("%s=%q: got %+v, %v", key, value, cfg, warnings)
 			}
 		}
@@ -284,7 +289,7 @@ func TestBadFileYieldsDefaultsAndOneWarning(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cfg, _, warnings := config.Load("linux", env(), tc.files)
 			want := []config.Warning{{Source: config.SourceFile, Setting: "config.json", Problem: tc.problem}}
-			if cfg != config.Default() || !reflect.DeepEqual(warnings, want) {
+			if !isDefault(cfg) || !reflect.DeepEqual(warnings, want) {
 				t.Errorf("got %+v, %v, want defaults and %v", cfg, warnings, want)
 			}
 		})
@@ -300,7 +305,7 @@ func TestBadFileYieldsDefaultsAndOneWarning(t *testing.T) {
 func TestMissingFileIsNormal(t *testing.T) {
 	for _, err := range []error{fs.ErrNotExist, &fs.PathError{Op: "open", Path: "x", Err: fs.ErrNotExist}} {
 		cfg, _, warnings := config.Load("linux", env(), &fakeFiles{err: err})
-		if cfg != config.Default() || len(warnings) != 0 {
+		if !isDefault(cfg) || len(warnings) != 0 {
 			t.Errorf("%v: got %+v, %v", err, cfg, warnings)
 		}
 	}
@@ -311,7 +316,7 @@ func TestMissingFileIsNormal(t *testing.T) {
 	}
 	// JSON null holds no settings.
 	cfg, warnings = load(t, "null")
-	if cfg != config.Default() || len(warnings) != 0 {
+	if !isDefault(cfg) || len(warnings) != 0 {
 		t.Errorf("null: got %+v, %v", cfg, warnings)
 	}
 }
@@ -369,7 +374,7 @@ func TestLoadWithoutAHome(t *testing.T) {
 	want := config.Default()
 	want.LogLevel = config.LogInfo
 	wantW := []config.Warning{{Source: config.SourceEnv, Setting: "home directory", Problem: "is not set, so the configuration file is not read"}}
-	if cfg != want || dirs != (config.Dirs{}) || !reflect.DeepEqual(warnings, wantW) || len(files.read) != 0 {
+	if !reflect.DeepEqual(cfg, want) || dirs != (config.Dirs{}) || !reflect.DeepEqual(warnings, wantW) || len(files.read) != 0 {
 		t.Errorf("got %+v, %+v, %v, read %v", cfg, dirs, warnings, files.read)
 	}
 }

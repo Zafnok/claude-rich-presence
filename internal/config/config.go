@@ -57,6 +57,11 @@ type Config struct {
 	IdleClearAfter    time.Duration
 	MinUpdateInterval time.Duration
 	LogLevel          LogLevel
+	// LinkHosts are the hosts a repository link may name, in lower case.
+	// DefaultLinkHost is always the first.
+	LinkHosts []string
+	// Projects are the project profiles. Read them through Effective.
+	Projects []Profile
 }
 
 // Default returns the configuration used when nothing is set.
@@ -68,6 +73,7 @@ func Default() Config {
 		IdleClearAfter:       15 * time.Minute,
 		MinUpdateInterval:    15 * time.Second,
 		LogLevel:             LogWarn,
+		LinkHosts:            []string{DefaultLinkHost},
 	}
 }
 
@@ -104,7 +110,8 @@ type FileReader interface {
 
 // Load builds the configuration from defaults, then the file, then the
 // environment. It cannot fail: each problem becomes a warning, and the
-// setting keeps the value it had from the sources below.
+// setting keeps the value it had from the sources below. The link hosts and
+// the project profiles come from the file alone.
 func Load(goos string, getenv func(string) string, files FileReader) (Config, Dirs, []Warning) {
 	cfg := Default()
 	var warnings []Warning
@@ -112,7 +119,7 @@ func Load(goos string, getenv func(string) string, files FileReader) (Config, Di
 	if err != nil {
 		warnings = append(warnings, Warning{SourceEnv, "home directory", "is not set, so the configuration file is not read"})
 	} else {
-		warnings = applyFile(&cfg, files, dirs.File)
+		warnings = applyFile(&cfg, goos, files, dirs.File)
 	}
 	return cfg, dirs, append(warnings, applyEnv(&cfg, getenv)...)
 }
@@ -192,7 +199,7 @@ func numeric(v string) bool {
 	return true
 }
 
-func applyFile(cfg *Config, files FileReader, path string) []Warning {
+func applyFile(cfg *Config, goos string, files FileReader, path string) []Warning {
 	data, err := files.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
@@ -217,6 +224,7 @@ func applyFile(cfg *Config, files FileReader, path string) []Warning {
 			warnings = append(warnings, Warning{SourceFile, s.name, problem})
 		}
 	}
+	warnings = append(warnings, applyProfiles(cfg, goos, raw)...)
 	unknown := make([]string, 0, len(raw))
 	for key := range raw {
 		unknown = append(unknown, key)
