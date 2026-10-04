@@ -59,6 +59,7 @@ Also:
 
 ## Notes for the implementer
 
+- The Windows binary links Microsoft's go-winio ([ADR-0017](../../architecture/adr/0017-go-winio-for-windows-pipes.md)). Its MIT notice ships with the Windows artifacts, beside ours and the Go project's.
 - Step 8 writes to `main`. Decide between a direct commit by the workflow and an automatically opened pull request, considering branch protection from CRP-007, and record the choice.
 - Do not introduce a third-party release tool. The Go toolchain, the GitHub CLI and GitHub's own actions are sufficient.
 - Withdrawing a release means pointing the plugin back at the previous bundle, not deleting assets that installed plugins still reference.

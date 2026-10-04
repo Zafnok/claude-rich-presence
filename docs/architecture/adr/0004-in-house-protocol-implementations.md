@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted.
+Accepted. The consequence "No third-party code in the binary" is superseded for Windows by [ADR-0017](0017-go-winio-for-windows-pipes.md).
 
 ## Context
 

@@ -82,7 +82,7 @@ Why this is viable:
 |---|---|---|
 | Something must hold the Discord connection (D2) | The adapter processes already live as long as the sessions do. One of them is the host | Design |
 | No runtime prerequisites | A static Go binary. No Node, Python, or shell | Design |
-| Windows named pipes without third-party code | Go 1.26 opens pipes with overlapped I/O, so deadlines work | Docs (Go release notes), to be exercised in [CRP-021](../tickets/M2-discord/CRP-021-discord-transport.md) |
+| Windows named pipes without third-party code | Not met. Go 1.26 opens pipes with overlapped I/O and deadlines work, but a read and a write in flight together race inside the standard library. Microsoft's go-winio is used instead ([ADR-0017](adr/0017-go-winio-for-windows-pipes.md)) | Observed in [CRP-021](../tickets/done/CRP-021-discord-transport.md) |
 | Delivery into Claude Code without a shell | Plugin references a released MCPB bundle by URL | **Observed** on Windows and Linux, [CRP-001](../research/crp-001-claude-code-adapter.md), against a local HTTPS server. A GitHub release URL is unverified |
 | Delivery into Claude Desktop | The same MCPB bundle, installed as a desktop extension | Docs, to be exercised in [CRP-002](../tickets/done/CRP-002-spike-desktop-extension.md) |
 | 100% coverage and SonarQube | Go has built-in coverage including for compiled binaries. SonarQube Cloud analyses Go and is free for public repositories | Docs |

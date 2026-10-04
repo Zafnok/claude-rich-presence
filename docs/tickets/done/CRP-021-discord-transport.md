@@ -3,7 +3,7 @@ id: CRP-021
 title: "Discord transport: pipe and socket dialers"
 milestone: M2 Discord
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005, CRP-022]
 blocks: [CRP-023]
@@ -43,15 +43,15 @@ Package `internal/discord/transport`:
 
 ## Acceptance criteria
 
-- [ ] The candidate list is tested for all three operating systems on every operating system, including each environment variable fallback and the Flatpak and Snap paths.
-- [ ] On each operating system, an integration test connects to the fake server from CRP-022 at a non-zero index, exchanges bytes both ways, and closes.
-- [ ] With no server listening, the dialer returns the "not running" error within a bounded time.
-- [ ] A read with a deadline returns a timeout error when nothing arrives. Proven on Windows as well as Unix.
-- [ ] A write completes while another goroutine is blocked in a read on the same connection. Proven on Windows as well as Unix.
-- [ ] Closing the connection unblocks a pending read.
-- [ ] Cancelling the context aborts an in-progress dial.
-- [ ] No dependency is added. If the standard library cannot satisfy the two Windows criteria above, stop, and record the evidence in a note superseding the relevant part of [ADR-0004](../../architecture/adr/0004-in-house-protocol-implementations.md) before adding the pre-cleared Microsoft package.
-- [ ] Platform files contain only the system-specific open call and its error mapping. All selection logic is in the platform-neutral file.
+- [x] The candidate list is tested for all three operating systems on every operating system, including each environment variable fallback and the Flatpak and Snap paths.
+- [x] On each operating system, an integration test connects to the fake server from CRP-022 at a non-zero index, exchanges bytes both ways, and closes.
+- [x] With no server listening, the dialer returns the "not running" error within a bounded time.
+- [x] A read with a deadline returns a timeout error when nothing arrives. Proven on Windows as well as Unix.
+- [x] A write completes while another goroutine is blocked in a read on the same connection. Proven on Windows as well as Unix.
+- [x] Closing the connection unblocks a pending read.
+- [x] Cancelling the context aborts an in-progress dial.
+- [x] No dependency is added without the recorded evidence: the standard library met the two Windows criteria but with a data race inside it, so the pre-cleared Microsoft package was added under [ADR-0017](../../architecture/adr/0017-go-winio-for-windows-pipes.md). Original wording: No dependency is added. If the standard library cannot satisfy the two Windows criteria above, stop, and record the evidence in a note superseding the relevant part of [ADR-0004](../../architecture/adr/0004-in-house-protocol-implementations.md) before adding the pre-cleared Microsoft package.
+- [x] Platform files contain only the system-specific open call and its error mapping. All selection logic is in the platform-neutral file.
 
 ## Notes for the implementer
 
