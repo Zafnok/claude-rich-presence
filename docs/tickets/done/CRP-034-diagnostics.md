@@ -3,7 +3,7 @@ id: CRP-034
 title: Logging and diagnostics
 milestone: M3 Host
 type: feature
-status: in-progress
+status: done
 priority: P1
 blocked_by: [CRP-012]
 blocks: [CRP-033]
@@ -49,13 +49,13 @@ Package `internal/diag`:
 
 ## Acceptance criteria
 
-- [ ] The logging interface makes it a compile error to log a domain event or a free-form string attribute.
-- [ ] A test seeds events with marker strings in every forbidden field and asserts the marker never appears in the log file.
-- [ ] The log file never exceeds its cap plus one message, and rotation keeps exactly one predecessor.
-- [ ] A log directory that cannot be created or written disables logging and does not stop the program.
-- [ ] Each doctor check is tested for pass, warn and fail through injected ports.
-- [ ] The doctor report contains no absolute path that includes a user name, and no project name.
-- [ ] The Discord handshake check closes its connection without setting an activity.
+- [x] The logging interface makes it a compile error to log a domain event or a free-form string attribute.
+- [x] A test seeds events with marker strings in every forbidden field and asserts the marker never appears in the log file.
+- [x] The log file never exceeds its cap plus one message, and rotation keeps exactly one predecessor.
+- [x] A log directory that cannot be created or written disables logging and does not stop the program.
+- [x] Each doctor check is tested for pass, warn and fail through injected ports.
+- [x] The doctor report contains no absolute path that includes a user name, and no project name.
+- [x] The Discord handshake check closes its connection without setting an activity.
 
 ## Notes for the implementer
 

@@ -77,6 +77,11 @@ const (
 	SourceEnv  = "environment"
 )
 
+// ProblemUnknownSetting is the Problem of a warning about a key in the file
+// that is not a setting. Only in that warning is Setting text the user
+// wrote, and not a name this package chose.
+const ProblemUnknownSetting = "is not a known setting"
+
 // Warning is one problem found while loading. It never carries the rejected
 // value, which could be long or private.
 type Warning struct {
@@ -218,7 +223,7 @@ func applyFile(cfg *Config, files FileReader, path string) []Warning {
 	}
 	sort.Strings(unknown)
 	for _, key := range unknown {
-		warnings = append(warnings, Warning{SourceFile, clip(key), "is not a known setting"})
+		warnings = append(warnings, Warning{SourceFile, clip(key), ProblemUnknownSetting})
 	}
 	return warnings
 }
