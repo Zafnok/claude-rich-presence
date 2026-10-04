@@ -3,7 +3,7 @@ id: CRP-012
 title: Configuration
 milestone: M1 Core
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-004, CRP-005]
 blocks: [CRP-014, CRP-033, CRP-034, CRP-041]
@@ -48,16 +48,16 @@ Package `internal/config`:
 
 ## Acceptance criteria
 
-- [ ] Each setting is tested for default, file, environment, and environment over file.
-- [ ] Each invalid value falls back to its default and yields exactly one warning that names the setting and the source, without echoing the invalid value if it could be long.
-- [ ] A malformed or unreadable file yields defaults plus one warning.
-- [ ] Unknown keys in the file yield a warning each and are otherwise ignored.
-- [ ] `min_update_interval` below the floor is raised to the floor with a warning.
-- [ ] Directory resolution is tested for Windows, macOS and Linux inputs on every operating system, by passing the environment in.
-- [ ] For a Windows environment, neither resolved directory is under `%APPDATA%` or `%LOCALAPPDATA%`.
-- [ ] An environment value of `${user_config.discord_application_id}` yields the default and no warning.
-- [ ] Reading the file goes through an interface, and read errors other than "not found" are covered.
-- [ ] A fuzz test shows no input can make loading panic.
+- [x] Each setting is tested for default, file, environment, and environment over file.
+- [x] Each invalid value falls back to its default and yields exactly one warning that names the setting and the source, without echoing the invalid value if it could be long.
+- [x] A malformed or unreadable file yields defaults plus one warning.
+- [x] Unknown keys in the file yield a warning each and are otherwise ignored.
+- [x] `min_update_interval` below the floor is raised to the floor with a warning.
+- [x] Directory resolution is tested for Windows, macOS and Linux inputs on every operating system, by passing the environment in.
+- [x] For a Windows environment, neither resolved directory is under `%APPDATA%` or `%LOCALAPPDATA%`.
+- [x] An environment value of `${user_config.discord_application_id}` yields the default and no warning.
+- [x] Reading the file goes through an interface, and read errors other than "not found" are covered.
+- [x] A fuzz test shows no input can make loading panic.
 
 ## Notes for the implementer
 
