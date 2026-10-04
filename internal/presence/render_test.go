@@ -398,6 +398,57 @@ func TestRenderShowsNothing(t *testing.T) {
 	}
 }
 
+// TestClearsInIsTheMomentRenderShowsNothing checks ClearsIn against Render
+// itself: the activity is still shown one step before the moment it names,
+// and is not shown at it.
+func TestClearsInIsTheMomentRenderShowsNothing(t *testing.T) {
+	const period = 15 * time.Minute
+	idle := func(id string, ago time.Duration) domain.Session {
+		return session(id, func(s *domain.Session) {
+			s.Status = domain.StatusIdle
+			s.Start = now.Add(-24 * time.Hour)
+			s.LastActivity = now.Add(-ago)
+		})
+	}
+	working := session("w", func(s *domain.Session) { s.LastActivity = now.Add(-time.Hour) })
+	tests := []struct {
+		name     string
+		sessions []domain.Session
+		period   time.Duration
+		want     time.Duration
+		wantOK   bool
+	}{
+		{"no sessions", nil, period, 0, false},
+		{"clearing off", []domain.Session{idle("a", time.Minute)}, 0, 0, false},
+		{"negative period is off", []domain.Session{idle("a", time.Minute)}, -time.Second, 0, false},
+		{"a session that is not idle", []domain.Session{idle("a", time.Minute), working}, period, 0, false},
+		{"one idle session", []domain.Session{idle("a", time.Minute)}, period, 14*time.Minute + 1, true},
+		{"idle since this moment", []domain.Session{idle("a", 0)}, period, period + 1, true},
+		{"the most recent of several counts", []domain.Session{idle("a", 10*time.Minute), idle("b", 2*time.Minute), idle("c", 5*time.Minute)}, period, 13*time.Minute + 1, true},
+		{"exactly at the threshold", []domain.Session{idle("a", period)}, period, 1, true},
+		{"cleared already", []domain.Session{idle("a", period+1)}, period, 0, false},
+		{"cleared long ago", []domain.Session{idle("a", time.Hour)}, period, period - time.Hour + 1, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			set := presence.Settings{IdleClear: tt.period}
+			got, ok := presence.ClearsIn(tt.sessions, now, set)
+			if ok != tt.wantOK || (ok && got != tt.want) {
+				t.Fatalf("ClearsIn = %v, %v; want %v, %v", got, ok, tt.want, tt.wantOK)
+			}
+			if !ok {
+				return
+			}
+			if _, shown := presence.Render(tt.sessions, now.Add(got-1), set); !shown {
+				t.Errorf("nothing is shown one step before the moment, %v from now", got)
+			}
+			if _, shown := presence.Render(tt.sessions, now.Add(got), set); shown {
+				t.Errorf("an activity is still shown at the moment, %v from now", got)
+			}
+		})
+	}
+}
+
 // TestPhrasesFitDiscord checks every fixed phrase through the renderer: each
 // is long enough for Discord to accept and short enough to read on a card.
 func TestPhrasesFitDiscord(t *testing.T) {

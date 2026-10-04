@@ -79,15 +79,16 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-021](done/CRP-021-discord-transport.md) | Discord transport: pipe and socket dialers | 004, 005, 022 | Opus 5.5 | high | M |
 | [CRP-022](done/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-023](done/CRP-023-discord-session-manager.md) | Discord session manager | 013, 020, 021, 022 | Opus 5.5 | high | M |
+| [CRP-024](M2-discord/CRP-024-prompt-first-activity.md) | Discord session manager: a prompt first activity and the configured interval | 013, 023 | Sonnet 5.5 | high | S |
 | [CRP-030](done/CRP-030-control-protocol.md) | Control protocol | 010 | Sonnet 5.5 | medium | S |
 | [CRP-031](done/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
-| [CRP-032](M3-host/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |
+| [CRP-032](done/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |
 | [CRP-033](M3-host/CRP-033-cli.md) | Command line and composition root | 012, 032, 034, 041 | Sonnet 5.5 | medium | M |
 | [CRP-034](done/CRP-034-diagnostics.md) | Logging and diagnostics | 012 | Sonnet 5.5 | medium | S |
 | [CRP-040](done/CRP-040-mcp-server.md) | Minimal MCP stdio server | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-041](done/CRP-041-code-adapter.md) | Claude Code adapter | 001, 010, 012, 040 | Sonnet 5.5 | high | M |
 | [CRP-042](M4-claude-code/CRP-042-plugin-packaging.md) | Plugin and marketplace packaging | 001, 033, 051 | Sonnet 5.5 | medium | S |
-| [CRP-043](M4-claude-code/CRP-043-end-to-end-tests.md) | End-to-end tests | 022, 033 | Opus 5.5 | high | L |
+| [CRP-043](M4-claude-code/CRP-043-end-to-end-tests.md) | End-to-end tests | 022, 024, 033 | Opus 5.5 | high | L |
 | [CRP-044](done/CRP-044-fallback-command-hooks.md) | Fallback: command hooks and standalone host | 001, 002, 043 | Opus 5.5 | high | L |
 | [CRP-045](M4-claude-code/CRP-045-spike-initial-model.md) | Spike: status line bridge and the model at launch | 042 | Sonnet 5.5 | medium | M |
 | [CRP-046](M4-claude-code/CRP-046-spike-activity-summary.md) | Spike: activity summary written by Claude | 001 | Sonnet 5.5 | high | M |
@@ -135,6 +136,7 @@ flowchart TD
     C021["021 transport"]
     C022["022 fake Discord"]
     C023["023 Discord session"]
+    C024["024 prompt first activity"]
     C030["030 control protocol"]
     C031["031 control transport"]
     C032["032 presence host"]
@@ -191,6 +193,8 @@ flowchart TD
     C020 --> C023
     C021 --> C023
     C022 --> C023
+    C013 --> C024
+    C023 --> C024
     C010 --> C030
     C004 --> C031
     C005 --> C031
@@ -214,6 +218,7 @@ flowchart TD
     C033 --> C042
     C051 --> C042
     C022 --> C043
+    C024 --> C043
     C033 --> C043
     C001 -.-> C044
     C002 -.-> C044
@@ -281,7 +286,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 2 | 006, 007, 010, 012, 013, 022, 031, 040 |
 | 3 | 011, 014, 020, 021, 030, 034, 041 |
 | 4 | 023, 077 |
-| 5 | 032, 078 |
+| 5 | 024, 032, 078 |
 | 6 | 033 |
 | 7 | 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
@@ -320,7 +325,7 @@ Rules for keeping cost down without losing quality:
 4. **Review is cheaper than rework.** Run `/code-review` on every pull request. For the Opus tickets, review with Opus as well.
 5. **Spikes are time-boxed.** A spike that has not answered its questions in its box stops and reports what it found.
 
-By this plan thirty-three tickets run on Sonnet 5.5, ten on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
+By this plan thirty-four tickets run on Sonnet 5.5, ten on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
 
 ## Owner actions
 

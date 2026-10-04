@@ -36,7 +36,7 @@ There is no daemon. One of the adapter processes acts as host.
 - No process spawning, no detachment code, no idle timers.
 - Failover produces a short gap in presence while the new host handshakes with Discord. The elapsed timer is preserved because the start time travels with session state.
 - Each session costs one idle process of a few megabytes. With dozens of sessions that is tens of megabytes in total, small beside the sessions themselves.
-- Election and failover are the hardest code in the project to get right. They get the strongest model and effort in the plan ([CRP-032](../../tickets/M3-host/CRP-032-presence-host.md)) and dedicated end-to-end tests ([CRP-043](../../tickets/M4-claude-code/CRP-043-end-to-end-tests.md)).
+- Election and failover are the hardest code in the project to get right. They get the strongest model and effort in the plan ([CRP-032](../../tickets/done/CRP-032-presence-host.md)) and dedicated end-to-end tests ([CRP-043](../../tickets/M4-claude-code/CRP-043-end-to-end-tests.md)).
 - If the lock file and socket are not visible to all adapters, there will be two hosts and two Discord connections. This degrades to a duplicated or flickering activity, never to a blocked session. [CRP-002](../../research/crp-002-desktop-extension.md) found exactly this at the first Windows location, under Claude Desktop's packaging, and [ADR-0006](0006-control-channel.md) moved the location.
 
 ## If the fallback is adopted

@@ -3,7 +3,7 @@ id: CRP-032
 title: "Presence host: election, serving, failover"
 milestone: M3 Host
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-010, CRP-011, CRP-023, CRP-030, CRP-031]
 blocks: [CRP-033]
@@ -69,19 +69,19 @@ Package `internal/host`:
 
 Unit tests use in-memory implementations of the lock, listener, dialer and Discord session, and the fake clock.
 
-- [ ] A single node becomes host and its published events reach the renderer.
-- [ ] A second node becomes follower, and its session appears in the host's registry after `sync`.
-- [ ] When a follower's connection closes, its sessions disappear and presence is re-rendered.
-- [ ] **Failover**: with one host and two followers, when the host stops, exactly one follower becomes host, the other reconnects to it, and the new host's registry contains both remaining sessions with their original start times.
-- [ ] **Host killed**: the same outcome when the host's connections are cut and its lock released without a clean shutdown.
-- [ ] **Version skew**: a newer follower causes an older host to stand down, the newer node becomes host, and the older node follows it.
-- [ ] A follower that cannot reach any host and cannot take the lock keeps retrying with backoff and never blocks `Publish`.
-- [ ] `Publish` returns in constant time in every role and every transition, including while the outgoing queue is full. Shown by a test that calls it with all I/O stalled.
-- [ ] A queue overflow results in a `sync`, and the host's view converges to the follower's state.
-- [ ] An invalid first message, an oversized line, and a mid-message disconnect are each handled without affecting other followers.
-- [ ] Shutdown happens in the specified order and leaves no goroutine, verified in a test.
-- [ ] A randomised test runs many nodes that start, publish and stop in random order under the fake clock and asserts after each step: at most one host; when the system is quiet, the host's registry equals the union of live nodes' sessions.
-- [ ] All tests pass under the race detector, repeatedly.
+- [x] A single node becomes host and its published events reach the renderer.
+- [x] A second node becomes follower, and its session appears in the host's registry after `sync`.
+- [x] When a follower's connection closes, its sessions disappear and presence is re-rendered.
+- [x] **Failover**: with one host and two followers, when the host stops, exactly one follower becomes host, the other reconnects to it, and the new host's registry contains both remaining sessions with their original start times.
+- [x] **Host killed**: the same outcome when the host's connections are cut and its lock released without a clean shutdown.
+- [x] **Version skew**: a newer follower causes an older host to stand down, the newer node becomes host, and the older node follows it.
+- [x] A follower that cannot reach any host and cannot take the lock keeps retrying with backoff and never blocks `Publish`.
+- [x] `Publish` returns in constant time in every role and every transition, including while the outgoing queue is full. Shown by a test that calls it with all I/O stalled.
+- [x] A queue overflow results in a `sync`, and the host's view converges to the follower's state.
+- [x] An invalid first message, an oversized line, and a mid-message disconnect are each handled without affecting other followers.
+- [x] Shutdown happens in the specified order and leaves no goroutine, verified in a test.
+- [x] A randomised test runs many nodes that start, publish and stop in random order under the fake clock and asserts after each step: at most one host; when the system is quiet, the host's registry equals the union of live nodes' sessions.
+- [x] All tests pass under the race detector, repeatedly.
 
 ## Notes for the implementer
 
