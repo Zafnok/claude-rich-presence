@@ -548,6 +548,50 @@ func TestEveryStateToStoppedWhenTheContextEnds(t *testing.T) {
 	})
 }
 
+func TestAConnectionAcceptedWhileTheConnectionsAreClosedIsClosedToo(t *testing.T) {
+	w := newWorld(t)
+	a := w.spawn("a").open().run()
+	w.eventually("a to become host", a.isHost)
+
+	// A follower is connected. At the moment the host closes that
+	// connection as it shuts down, another arrives and is accepted: too late
+	// to be closed with the others, and before the listener is closed.
+	var late *conn
+	a.set(func(k *knobs) {
+		k.onAccept = func(served *conn) {
+			served.onClose = func() {
+				a.set(func(k *knobs) { k.onAccept = nil })
+				c, err := w.connect("late")
+				if err != nil {
+					t.Errorf("connecting while the connections are closed: %v", err)
+					return
+				}
+				late = c
+				_ = protocol.Encode(c, protocol.Hello{Protocol: protocol.Version, Version: "1.0.0"})
+				// Once it is answered, the host is serving it.
+				m, err := protocol.NewDecoder(c).Next()
+				if want := (protocol.Refuse{Reason: protocol.ReasonStandingDown}); err != nil || m != want {
+					t.Errorf("the late hello was answered with %#v, %v; want %#v", m, err, want)
+				}
+			}
+		}
+	})
+	follower := w.join("follower")
+	follower.welcomed("1.0.0")
+
+	// The host stops all the same, and has closed the late connection.
+	a.stop()
+	if late == nil {
+		t.Fatal("no connection was made while the connections were being closed")
+	}
+	if _, err := late.Read(make([]byte, 1)); err == nil {
+		t.Error("the late connection is still open")
+	}
+	if !w.lockFree() {
+		t.Error("the lock is still held")
+	}
+}
+
 // failover is the scenario of a host with two followers, ended by end. One
 // follower takes over and the other follows it.
 func failover(t *testing.T, end func(*proc)) {

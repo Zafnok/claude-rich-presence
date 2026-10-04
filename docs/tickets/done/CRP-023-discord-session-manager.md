@@ -6,7 +6,7 @@ type: feature
 status: done
 priority: P0
 blocked_by: [CRP-013, CRP-020, CRP-021, CRP-022]
-blocks: [CRP-032]
+blocks: [CRP-024, CRP-032]
 model: claude-opus-5-5
 effort: high
 size: M
