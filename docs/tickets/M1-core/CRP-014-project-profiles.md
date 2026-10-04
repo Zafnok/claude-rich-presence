@@ -3,7 +3,7 @@ id: CRP-014
 title: Project profiles in configuration
 milestone: M1 Core
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-012]
 blocks: [CRP-047, CRP-048, CRP-073]
