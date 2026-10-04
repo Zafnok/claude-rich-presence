@@ -5,7 +5,7 @@ milestone: M4 Claude Code
 type: feature
 status: todo
 priority: P1
-blocked_by: [CRP-014, CRP-042]
+blocked_by: [CRP-014, CRP-042, CRP-077]
 blocks: []
 model: claude-sonnet-5-5
 effort: high
@@ -27,7 +27,7 @@ Two things are not yet known and are settled here on a real Discord: how a butto
 ## Scope
 
 - **Domain** (`internal/domain`): a session carries an optional link. It is set when the session opens, from the effective settings, and never from an event field.
-- **Adapter** (`internal/adapter/code`): resolve the session's effective settings from its working directory and attach the link. The link never comes from tool input.
+- **Adapter** (`internal/adapter/code`): add the link to the settings the adapter resolves for the session's working directory, which CRP-077 built, and attach it. The link never comes from tool input.
 - **Protocol** (`internal/control/protocol`): an additive link field on the session. The host validates it again with the same function and drops it if invalid.
 - **Renderer** (`internal/presence`): when the focus session has a link, add one button. The label names the host, for example "View on GitHub", from a fixed table keyed by host with a generic fallback.
 - **Codec** (`internal/discord/codec`): encode buttons on the activity, at most two, within Discord's limits.
