@@ -79,7 +79,8 @@ type Config struct {
 	Settings presence.Settings
 	Clock    Clock
 	// Jitter returns a number from 0 to 1, which places each wait between
-	// half of the backoff delay and all of it.
+	// half of the backoff delay and all of it. It is called from more than
+	// one goroutine.
 	Jitter   func() float64
 	Counters *diag.Counters
 	// Logger receives changes of role and classes of error, never an event.

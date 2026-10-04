@@ -145,27 +145,14 @@ func TestAnEventEndsASession(t *testing.T) {
 	})
 }
 
-func TestASessionBelongsToTheConnectionThatNamedItLast(t *testing.T) {
-	for name, claim := range map[string]func(*world) protocol.Message{
-		"in a sync": func(w *world) protocol.Message {
-			return protocol.Sync{Session: sessionAt("session-one", w.clock.Now())}
-		},
-		"in an event": func(w *world) protocol.Message {
-			return eventOf("session-one", domain.KindSessionRefreshed, w.clock.Now())
-		},
-	} {
-		t.Run(name, func(t *testing.T) { sessionMovesToTheLaterConnection(t, claim) })
-	}
-}
-
-func sessionMovesToTheLaterConnection(t *testing.T, claim func(*world) protocol.Message) {
+func TestASyncMovesASessionToTheConnectionThatSentIt(t *testing.T) {
 	w, a := hosting(t)
 	first := follower(w, a, "one")
 	// The same follower connects again before the host has seen its first
-	// connection close.
+	// connection close, and syncs as a follower does on every connection.
 	second := w.join("one-again")
 	second.welcomed("1.0.0")
-	second.say(claim(w))
+	second.say(protocol.Sync{Session: sessionAt("session-one", w.clock.Now())})
 	mark(w, a, second, a.rendersSinceLock())
 
 	first.c.Close()
@@ -177,6 +164,41 @@ func sessionMovesToTheLaterConnection(t *testing.T, claim func(*world) protocol.
 
 	second.c.Close()
 	w.eventually("the session to end with the connection that had it", holdsIDs(a, "session-a"))
+}
+
+func TestAnEventForAnotherConnectionsSessionIsDropped(t *testing.T) {
+	w, a := hosting(t)
+	owner := follower(w, a, "one")
+	other := w.join("other")
+	other.welcomed("1.0.0")
+	before := a.counters.Snapshot().EventsDropped
+	held := a.held()[1]
+
+	// What another connection says of the session changes nothing: neither
+	// its state, nor whose it is, nor whether it exists. That is what a late
+	// event on a connection the follower has left behind looks like.
+	renders := a.rendersSinceLock()
+	other.say(eventOf("session-one", domain.KindTurnStarted, w.clock.Now().Add(time.Minute)))
+	other.say(eventOf("session-one", domain.KindSessionEnded, w.clock.Now().Add(time.Minute)))
+	if got := mark(w, a, other, renders); got != 0 {
+		t.Errorf("rendered %d times for events on a session of another connection, want none", got)
+	}
+	if got := a.held()[2]; got != held {
+		t.Errorf("the session is now %+v, want it unchanged, %+v", got, held)
+	}
+	if got := a.counters.Snapshot().EventsDropped - before; got != 2 {
+		t.Errorf("%d events counted as dropped, want 2", got)
+	}
+
+	// It still ends with the connection it belongs to, and with no other.
+	other.c.Close()
+	w.eventually("the host to see the other connection close", closedByHost(w, 2))
+	mark(w, a, owner, a.rendersSinceLock())
+	if !holdsIDs(a, "session-a", "session-mark", "session-one")() {
+		t.Fatalf("the host holds %v after the other connection closed", ids(a.held()))
+	}
+	owner.c.Close()
+	w.eventually("the session to end with its connection", holdsIDs(a, "session-a"))
 }
 
 func TestAConnectionThatDoesNotBeginWithAValidHelloIsClosed(t *testing.T) {
@@ -429,9 +451,8 @@ func TestAPanicWhileServingAConnectionCostsOnlyThatConnection(t *testing.T) {
 	served.panicOnRead()
 	q.hearEnd()
 	w.eventually("the session of that connection to end", func() bool { return a.holds(a, b) })
-	if got := a.logs.count("recovered from a panic"); got != 1 {
-		t.Errorf("the panic was logged %d times, want once", got)
-	}
+	// The connection is closed before the panic is logged.
+	w.eventually("the panic to be logged", func() bool { return a.logs.count("recovered from a panic") == 1 })
 	if !a.isHost() || !b.isFollower() {
 		t.Errorf("after the panic a has role %v and b has %v", a.role(), b.role())
 	}
@@ -541,9 +562,23 @@ func TestAListenerThatFailsIsOpenedAgain(t *testing.T) {
 	b.publish(domain.KindTurnStarted)
 	w.eventually("b's event to arrive", func() bool { return a.holds(a, b) })
 
-	w.clock.Advance(w.lastWait())
+	if got := w.lastWait(); got != host.RetryBase {
+		t.Fatalf("waiting %v to open the socket again, want %v", got, host.RetryBase)
+	}
+	w.clock.Advance(host.RetryBase)
 	c := w.spawn("c").open().run()
 	w.settle("c to follow on the new listener", func() bool { return c.isFollower() && a.holds(a, b, c) })
+
+	// The new listener worked, so when it fails in its turn, that is
+	// reported again and retried as soon as the first time.
+	w.socket().fail()
+	w.sleeping(1)
+	if got := w.lastWait(); got != host.RetryBase {
+		t.Errorf("waiting %v after the second failure, want %v", got, host.RetryBase)
+	}
+	if got := a.logs.count("the control socket is not available"); got != 2 {
+		t.Errorf("the failures were reported %d times, want twice", got)
+	}
 }
 
 func TestALockThatIsNotReleasedCleanlyIsReported(t *testing.T) {

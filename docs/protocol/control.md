@@ -24,7 +24,7 @@ Current protocol version: **1**.
 
 A follower may send `sync` again at any time. It replaces what the host holds for that connection.
 
-A session exists on the host exactly while its follower's connection is open. There is no "goodbye" message: closing the connection is the signal. A session belongs to the connection that named it last, in a `sync` or an `event`, and is removed when that connection closes. So a follower that reconnects before the host has seen its old connection close keeps its session.
+A session exists on the host exactly while its follower's connection is open. There is no "goodbye" message: closing the connection is the signal. A session belongs to one connection: the one whose `event` created it, or the last to `sync` it. It is removed when that connection closes. Only a `sync` moves a session to another connection, and an `event` for a session that belongs to another connection is ignored. So a follower that reconnects before the host has seen its old connection close keeps its session, and whatever the host still reads from the old connection can neither take the session back nor end it.
 
 After a `refuse` the only message the host still reads is `stand_down`. The follower sends it or not, and closes the connection. The host does not wait for long: it closes a connection that has not been welcomed one second after accepting it, whether the connection was refused or has said nothing.
 
@@ -164,9 +164,9 @@ A follower sends it once on a connection, straight after a `welcome` whose binar
 
 Any other `stand_down` is ignored. The host judges for itself, so two processes can never ask each other to stand down in turn.
 
-A host that stands down refuses every `hello` with `standing_down` from then on, closes its connections, releases the lock, and waits 800 milliseconds before it tries the lock again. A follower that has just lost its host tries the lock within 100 milliseconds, so the one that asked has time to win. A sender that means to take over must try the lock within that time.
+A host that stands down refuses every `hello` with `standing_down` from then on, closes its connections, releases the lock, and waits 800 milliseconds before it tries the lock again. A sender that means to take over must try the lock within that time, and before the other followers do: a follower that has lost its host first tries the lock 50 to 100 milliseconds later. This binary, when it has asked and then loses the host, tries six times in the first 40 milliseconds.
 
-If nobody took the lock in that time, the host that stood down takes it back, and from then on ignores `stand_down` for as long as it stays host: whoever asked could not take over, and standing down again would only clear presence again. It listens to `stand_down` once more after another process has held the lock.
+A process that has stood down ignores `stand_down` in every later term as host until it has followed a newer binary. If no newer binary became host, whoever asked did not take over, and standing down again would only clear presence again. This bounds what a sender that never takes the lock can cause: each older process stands down for it once.
 
 ```json
 {"type":"stand_down"}

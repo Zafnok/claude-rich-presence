@@ -420,6 +420,155 @@ func TestANodeThatStoodDownForAnotherStandsDownAgainLater(t *testing.T) {
 	}
 }
 
+func TestANodeThatStoodDownAndThenFollowedOneNoNewerStaysWhenAskedAgain(t *testing.T) {
+	w := newWorld(t)
+	a := w.spawn("a", version("1.0.0")).open().run()
+	w.eventually("a to become host", a.isHost)
+	c := w.spawn("c", version("1.0.0")).open().run()
+	w.settle("c to follow", func() bool { return c.isFollower() && a.holds(a, c) })
+
+	// A newer binary asks and does not take over. The other old node does.
+	q := w.join("newer")
+	q.welcomed("1.1.0")
+	q.say(protocol.StandDown{})
+	w.settle("c to take over and a to follow it", func() bool { return c.isHost() && a.isFollower() && c.holds(a, c) })
+
+	// That one has not stood down before, so it does when asked, and the
+	// first is host again.
+	q = w.join("newer")
+	q.welcomed("1.1.0")
+	q.say(protocol.StandDown{})
+	w.settle("a to take over and c to follow it", func() bool { return a.isHost() && c.isFollower() && a.holds(a, c) })
+
+	// It stood down once and no newer node became host. Now it stays, so
+	// the old nodes cannot go on handing the lock round for ever.
+	q = w.join("newer")
+	q.welcomed("1.1.0")
+	standsFirm(t, w, a, q)
+}
+
+func TestANewerNodeIsTheOneToTakeOverFromAnOlderHost(t *testing.T) {
+	w := newWorld(t)
+	a := w.spawn("a", version("1.0.0")).open().run()
+	w.eventually("a to become host", a.isHost)
+	old := []*proc{a}
+	for _, name := range []string{"c1", "c2", "c3", "c4", "c5"} {
+		c := w.spawn(name, version("1.0.0")).open().run()
+		w.settle(name+" to follow", c.isFollower)
+		old = append(old, c)
+	}
+	w.eventually("a to hold them all", func() bool { return a.holds(old...) })
+
+	// The newer node joins and asks, and the host stands down. All six that
+	// followed it lose it at the same moment.
+	b := w.spawn("b", version("1.1.0")).open().run()
+	w.eventually("a to give up the lock", w.lockFree)
+	// Seven waits: the host's, five followers', and the newer node's, which
+	// is the shortest by far.
+	w.sleeping(7)
+	w.clock.Advance(host.HasteWait)
+	w.eventually("the newer node to become host", b.isHost)
+
+	all := append([]*proc{b}, old...)
+	w.settle("everyone else to follow it", func() bool { return w.quiet(all) })
+	if w.soleHost(all) != b {
+		t.Fatal("the newer node is no longer host")
+	}
+	// One stand-down and one change of host, however many old followers
+	// there were.
+	stoodDown, failovers := 0, int64(0)
+	for _, p := range all {
+		stoodDown += p.logs.count("standing down for a newer version")
+		failovers += p.counters.Snapshot().Failovers
+	}
+	if stoodDown != 1 || failovers != 1 {
+		t.Errorf("%d stand-downs and %d failovers, want one of each", stoodDown, failovers)
+	}
+}
+
+func TestANodeInAHurryFallsBackToTheUsualBackoff(t *testing.T) {
+	w := newWorld(t)
+	s := w.stubHost().listen()
+	b := w.spawn("b", version("2.0.0")).open().run()
+	q, _ := s.greeted("1.0.0")
+	if got := q.hear(); got != (protocol.StandDown{}) {
+		t.Fatalf("the first message after the welcome is %#v, want stand_down", got)
+	}
+
+	// The host drops the node and keeps the lock, so the hurry is in vain.
+	s.l.Close()
+	q.c.Close()
+	for i := range host.HasteTries {
+		w.sleeping(1)
+		if got := w.lastWait(); got != host.HasteWait {
+			t.Fatalf("try %d waits %v, want %v", i+1, got, host.HasteWait)
+		}
+		w.clock.Advance(host.HasteWait)
+	}
+	// All of that fits in the shortest wait any other follower has.
+	if spent := time.Duration(host.HasteTries) * host.HasteWait; spent >= host.Jittered(host.RetryBase, 0) {
+		t.Errorf("the hurried tries take %v, want less than %v", spent, host.Jittered(host.RetryBase, 0))
+	}
+	for _, want := range []time.Duration{host.RetryBase, 2 * host.RetryBase} {
+		w.sleeping(1)
+		if got := w.lastWait(); got != want {
+			t.Fatalf("waiting %v after the hurry, want %v", got, want)
+		}
+		w.clock.Advance(want)
+	}
+	if got := b.role(); got != host.RoleNone {
+		t.Errorf("role is %v, want none", got)
+	}
+}
+
+func TestTheHurryEndsWhenTheNodeHasAHostAgain(t *testing.T) {
+	// hurried returns a world in which node b has asked an older host,
+	// played by the test, to stand down, has lost it, and is on the first
+	// of its hurried waits.
+	hurried := func(t *testing.T) (*world, *stub, *proc) {
+		w := newWorld(t)
+		s := w.stubHost().listen()
+		b := w.spawn("b", version("2.0.0")).open().run()
+		q, _ := s.greeted("1.0.0")
+		q.hear()
+		q.c.Close()
+		w.sleeping(1)
+		if got := w.lastWait(); got != host.HasteWait {
+			t.Fatalf("waiting %v after losing the host it asked, want %v", got, host.HasteWait)
+		}
+		return w, s, b
+	}
+	t.Run("by following one", func(t *testing.T) {
+		w, s, b := hurried(t)
+		// The next host is no older than the node, so it is not asked. When
+		// it is lost in its turn, the node waits as any follower does.
+		w.clock.Advance(host.HasteWait)
+		q, _ := s.greeted("2.0.0")
+		q.hear()
+		w.eventually("b to follow", b.isFollower)
+		q.c.Close()
+		w.eventually("b to see the connection close", func() bool { return b.role() == host.RoleNone })
+		w.sleeping(1)
+		if got := w.lastWait(); got != host.RetryBase {
+			t.Errorf("waiting %v after losing a host it did not ask, want %v", got, host.RetryBase)
+		}
+	})
+	t.Run("by being host", func(t *testing.T) {
+		w, s, b := hurried(t)
+		s.leave()
+		w.clock.Advance(host.HasteWait)
+		w.eventually("b to become host", func() bool { return b.isHost() && b.holds(b) })
+		// Its term ends badly. It waits as after any round that failed.
+		b.set(func(k *knobs) { k.renderPanics = true })
+		b.publish(domain.KindTurnStarted)
+		w.eventually("b to give up the lock", w.lockFree)
+		w.sleeping(1)
+		if got := w.lastWait(); got != host.RetryBase {
+			t.Errorf("waiting %v after a term that failed, want %v", got, host.RetryBase)
+		}
+	})
+}
+
 func TestANodeThatCannotTryTheLockDoesNotAskAHostToStandDown(t *testing.T) {
 	w := newWorld(t)
 	s := w.stubHost().listen()

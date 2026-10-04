@@ -27,14 +27,20 @@ func (n *Node) follow(ctx context.Context, mayAsk bool) outcome {
 		n.log.Debug("the presence host did not welcome this process")
 		return missed
 	}
-	if mayAsk && newer(n.version, welcome.Version) {
+	asked := mayAsk && newer(n.version, welcome.Version)
+	if asked {
 		// Asked once. A host that does not agree it is older carries on,
 		// and so does this node, as its follower.
 		n.log.Info("asked an older presence host to stand down", diag.Version("host_version", welcome.Version))
 		_ = protocol.Encode(conn, protocol.StandDown{})
 	}
+	if newer(welcome.Version, n.version) {
+		// If this node stood down, it was not for nothing.
+		n.yielded = false
+	}
 	n.log.Info("following the presence host", diag.Version("host_version", welcome.Version))
 	n.followed = true
+	n.haste = 0
 	n.attach(RoleFollower, nil, welcome.Version)
 
 	// The reader hears what the host says. It ends when the connection does.
@@ -48,6 +54,11 @@ func (n *Node) follow(ctx context.Context, mayAsk bool) outcome {
 		<-heard
 		n.detach()
 		n.log.Info("stopped following the presence host")
+		if asked {
+			// Whether the host stood down or is gone for another reason,
+			// the newer node is the one that should take over.
+			n.haste = hasteTries
+		}
 	}()
 	for {
 		select {

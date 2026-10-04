@@ -31,10 +31,12 @@ type request struct {
 // used from one goroutine and has no lock.
 type registry struct {
 	sessions *domain.Registry
-	// owners maps a session id to the source that last synced it or sent an
-	// event for it. A session belongs to one source: the latest to name it,
-	// so that a follower that reconnects before its old connection is seen
-	// to close does not lose its session when that happens.
+	// owners maps a session id to the source it belongs to: the one whose
+	// event created it, or the latest to sync it. Only a sync moves a
+	// session to another source. So a follower that reconnects before its
+	// old connection is seen to close keeps its session, and what is still
+	// to be read on the old connection can neither take the session back
+	// nor end it.
 	owners map[string]uint64
 }
 
@@ -46,14 +48,19 @@ func (r *registry) apply(req request, counters *diag.Counters) (changed bool) {
 	switch req.op {
 	case opEvent:
 		counters.EventReceived()
+		id := req.event.SessionID
+		if owner, owned := r.owners[id]; owned && owner != req.source {
+			counters.EventDropped()
+			return false
+		}
 		if _, err := r.sessions.Apply(req.event); err != nil {
 			counters.EventDropped()
 			return false
 		}
 		if req.event.Kind == domain.KindSessionEnded {
-			delete(r.owners, req.event.SessionID)
+			delete(r.owners, id)
 		} else {
-			r.owners[req.event.SessionID] = req.source
+			r.owners[id] = req.source
 		}
 		return true
 	case opSync:

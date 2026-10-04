@@ -52,11 +52,16 @@
 // several times retryBase, so that every follower has retried the lock before
 // the node that gave it up does.
 //
+// A node that is newer than the host it has just lost, having asked it to
+// stand down, tries the lock a few times in quick succession, sooner than
+// any other follower's first wait can end, so that it is the one to take
+// over.
+//
 // Standing down must not turn into giving the lock up over and over for a
-// node that cannot take it. So a node that cannot try the lock does not ask
-// a host to stand down, and a node that stood down and then got the lock
-// back, with nobody having held it in between, does not stand down again in
-// that term.
+// node that does not take it. So a node that cannot try the lock does not
+// ask a host to stand down, and a node that has stood down does not do so
+// again until it has followed a newer host: until then, each term it serves
+// ignores stand_down.
 //
 // # The node's own session
 //
@@ -84,8 +89,9 @@
 //     opened, or fails, it tries again with backoff, and meanwhile the node
 //     hosts its own session alone.
 //   - One goroutine per connection reads its lines, so a follower that
-//     stalls delays nobody else. A connection owns the sessions it has
-//     synced or sent events for, and they are removed when it closes.
+//     stalls delays nobody else. A connection owns the sessions its events
+//     created and the session it synced last, and they are removed when it
+//     closes. Only a sync moves a session from one connection to another.
 //
 // A stand_down is valid when it comes from a newer binary: on a welcomed
 // connection, one whose hello carried a newer binary version, and on a

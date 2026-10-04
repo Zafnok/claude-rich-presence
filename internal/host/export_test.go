@@ -7,6 +7,8 @@ const (
 	RetryCap       = retryCap
 	StandDownDelay = standDownDelay
 	GreetTimeout   = greetTimeout
+	HasteWait      = hasteWait
+	HasteTries     = hasteTries
 	QueueSize      = queueSize
 )
 

@@ -25,6 +25,12 @@ const (
 	// two and four times retryBase, so by then every follower has tried the
 	// lock three times, and the one that asked has had its chance to win.
 	standDownDelay = 8 * retryBase
+	// hasteWait and hasteTries are how a node that is newer than the host
+	// it has just lost gets to the lock first: it tries hasteTries times,
+	// hasteWait apart, all within the half of retryBase that is the least
+	// any other follower waits.
+	hasteWait  = retryBase / 16
+	hasteTries = 6
 	// greetTimeout is how long a connection has to be welcomed. One that
 	// says nothing, or is refused, is closed when it has passed.
 	greetTimeout = 10 * retryBase
@@ -113,9 +119,11 @@ type Node struct {
 
 	// The rest belongs to the goroutine in Run.
 	followed bool // a host has been followed since this node was last host
-	// yielded says this node stood down and has not seen the lock held by
-	// another since: so far, it stood down for nobody.
-	yielded    bool
+	// yielded says this node stood down and has not followed a newer host
+	// since: so far, it stood down for nothing.
+	yielded bool
+	// haste is how many rounds are still to be tried in a hurry.
+	haste      int
 	lockWarned bool // a lock that cannot be tried has been reported
 }
 
@@ -238,7 +246,12 @@ func (n *Node) Run(ctx context.Context) {
 			delay = retryBase
 		}
 		wait := standDownDelay
-		if out != yielded {
+		switch {
+		case out == yielded:
+		case n.haste > 0:
+			n.haste--
+			wait = hasteWait
+		default:
 			wait = jittered(delay, n.jitter())
 			delay = min(2*delay, retryCap)
 		}
@@ -256,10 +269,6 @@ func (n *Node) round(ctx context.Context) outcome {
 		return n.host(ctx, lock)
 	}
 	held := errors.Is(err, ErrLocked)
-	if held {
-		// If this node stood down, somebody took the lock after it.
-		n.yielded = false
-	}
 	if !held && !n.lockWarned {
 		n.lockWarned = true
 		n.log.Warn("the host lock cannot be tried, so this process can only follow a host", diag.ErrorClass("lock_failed"))

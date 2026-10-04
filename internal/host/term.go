@@ -70,12 +70,14 @@ func (n *Node) host(ctx context.Context, lock Lock) outcome {
 	// The deferred calls run in the order a term ends in: everything else
 	// first, and the lock last.
 	defer n.release(lock)
-	// A node that stood down and has the lock back, with nobody having held
-	// it in between, stood down for a node that could not take over. Doing
-	// so again would only clear presence again, so this term it stays.
+	// A node that stood down and has the lock again, without having
+	// followed a newer host in between, stood down for a node that did not
+	// take over. Doing so again would only clear presence again, so this
+	// term it stays.
 	t := n.begin(lock, n.yielded)
 	defer t.end()
 
+	n.haste = 0
 	if n.followed {
 		n.followed = false
 		n.counters.FailedOver()
@@ -198,8 +200,10 @@ func (t *term) listen() {
 	delay := retryBase
 	warned := false
 	for {
-		if listener, err := t.lock.Listen(); err == nil {
-			t.accept(listener)
+		if listener, err := t.lock.Listen(); err == nil && t.accept(listener) {
+			// The socket worked. Its next failure is a new one.
+			delay = retryBase
+			warned = false
 		}
 		if t.listening.Err() != nil {
 			return
@@ -217,21 +221,24 @@ func (t *term) listen() {
 
 // accept serves each connection on a goroutine of its own, until the
 // listener fails or the term stops listening. The listener is closed when
-// it returns.
-func (t *term) accept(l Listener) {
+// it returns. It reports whether any connection was accepted.
+func (t *term) accept(l Listener) (served bool) {
 	defer closeWith(t.listening, l)()
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			return
+			return served
 		}
+		served = true
 		id := t.admit(conn)
 		t.handlers.Add(1)
 		go func() {
 			defer t.handlers.Done()
-			defer t.dismiss(id, conn)
 			// A panic costs this connection and no other.
-			t.n.protect(func() { t.converse(id, conn) })
+			t.n.protect(func() {
+				defer t.dismiss(id, conn)
+				t.converse(id, conn)
+			})
 		}()
 	}
 }
