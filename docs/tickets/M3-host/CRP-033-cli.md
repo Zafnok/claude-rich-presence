@@ -66,7 +66,7 @@ Commands:
   - `Dial`: `transport.Dial` with the socket path and a timeout of a second or two.
   - `Discord`: a function that makes a new `session.Manager` each time it is called, wrapped so that `State` maps the manager's state to the protocol's: ready is `connected`, connecting is `connecting`, disconnected is `disconnected`, anything else is `unknown`. The node calls it once per term as host, and calls `Run` on each result once.
   - `Render`: `presence.Render`. `Settings`: the idle period from the configuration.
-  - `Clock`: `time.Now` and `time.AfterFunc`. `Jitter`: `rand.Float64`. `Counters` and `Logger` from `internal/diag`.
+  - `Clock`: `time.Now` and `time.AfterFunc`. `Jitter`: `rand.Float64` from `math/rand/v2`, which several goroutines may call at once; a source of your own would need a lock. `Counters` and `Logger` from `internal/diag`.
 - `Node.Publish` has the signature the Claude Code adapter's `Publisher` wants. `Node.Status` returns at once from memory, as the adapter's `StatusSource` requires; map its role and Discord state to the adapter's words. For a follower it is what the host last said, so it can be a moment old.
 - The `status` command is not a node. It dials, says `hello`, sends `status`, reads one `status_result` and closes, with the codec in `internal/control/protocol`.
 

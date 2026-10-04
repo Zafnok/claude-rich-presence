@@ -82,7 +82,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-024](M2-discord/CRP-024-prompt-first-activity.md) | Discord session manager: a prompt first activity and the configured interval | 013, 023 | Sonnet 5.5 | high | S |
 | [CRP-030](done/CRP-030-control-protocol.md) | Control protocol | 010 | Sonnet 5.5 | medium | S |
 | [CRP-031](done/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
-| [CRP-032](M3-host/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |
+| [CRP-032](done/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |
 | [CRP-033](M3-host/CRP-033-cli.md) | Command line and composition root | 012, 032, 034, 041 | Sonnet 5.5 | medium | M |
 | [CRP-034](done/CRP-034-diagnostics.md) | Logging and diagnostics | 012 | Sonnet 5.5 | medium | S |
 | [CRP-040](done/CRP-040-mcp-server.md) | Minimal MCP stdio server | 004, 005 | Sonnet 5.5 | high | M |
