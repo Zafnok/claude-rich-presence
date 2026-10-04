@@ -81,6 +81,32 @@ func allIdleSince(sessions []domain.Session, now time.Time, period time.Duration
 	return true
 }
 
+// ClearsIn returns how long after now Render first shows nothing for these
+// sessions, if none of them changes. It reports false when that moment does
+// not come, because there are no sessions, one of them is not idle or the
+// activity is never cleared, and when it has passed already.
+//
+// The host arms a timer with it, so that the activity is cleared when the
+// idle period ends and not at the next event.
+func ClearsIn(sessions []domain.Session, now time.Time, set Settings) (time.Duration, bool) {
+	if len(sessions) == 0 || set.IdleClear <= 0 {
+		return 0, false
+	}
+	var last time.Time
+	for _, s := range sessions {
+		if s.Status != domain.StatusIdle {
+			return 0, false
+		}
+		if s.LastActivity.After(last) {
+			last = s.LastActivity
+		}
+	}
+	// Render clears once more than the period has passed, so the moment is
+	// the smallest step after it.
+	wait := last.Add(set.IdleClear).Sub(now) + 1
+	return wait, wait > 0
+}
+
 // line joins the parts that are not empty into one text line within
 // Discord's limits. A line that is too long is cut between characters and
 // ends with an ellipsis; one that is too short is left out.
