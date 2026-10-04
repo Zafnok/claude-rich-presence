@@ -110,7 +110,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-074](M7-personalisation/CRP-074-status-line-bridge.md) | Status line bridge | 045, 071 | Sonnet 5.5 | high | M |
 | [CRP-075](M7-personalisation/CRP-075-moments.md) | Moments: just shipped | 042 | Sonnet 5.5 | medium | S |
 | [CRP-076](M7-personalisation/CRP-076-spike-wsl.md) | Spike: Claude Code in WSL with Discord on Windows | 033 | Opus 5.5 | high | M |
-| [CRP-077](M7-personalisation/CRP-077-per-project-settings-in-adapter.md) | Per-project privacy level and display name in the Claude Code adapter | 014, 041 | Sonnet 5.5 | high | M |
+| [CRP-077](done/CRP-077-per-project-settings-in-adapter.md) | Per-project privacy level and display name in the Claude Code adapter | 014, 041 | Sonnet 5.5 | high | M |
 
 ## Dependency graph
 

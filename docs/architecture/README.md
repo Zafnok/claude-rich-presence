@@ -179,7 +179,7 @@ Privacy levels, set per adapter and enforced before anything is sent to the host
 |---|---|
 | `minimal` | That Claude is in use, and for how long |
 | `standard`, the default | Plus status, model family, session count |
-| `full` | Plus the project name, which is the last element of the working directory |
+| `full` | Plus the project name, which is the display name from the project's profile or else the last element of the working directory |
 | `summary`, opt-in, proposed | Plus one short phrase describing the work, written by Claude |
 
 Exact strings, truncation to Discord's limits and the tool-kind vocabulary are specified in [CRP-011](../tickets/done/CRP-011-presence-renderer.md).

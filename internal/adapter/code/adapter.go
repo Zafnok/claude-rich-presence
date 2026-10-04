@@ -1,6 +1,7 @@
 package code
 
 import (
+	"cmp"
 	"encoding/json"
 	"errors"
 	"sync"
@@ -50,10 +51,19 @@ type Clock interface {
 	Now() time.Time
 }
 
-// Options configures an Adapter. Every field is required.
+// Options configures an Adapter. Every field but Resolve is required.
 type Options struct {
-	// Privacy is how much of the session may leave the adapter.
+	// Privacy is how much of the session may leave the adapter before a hook
+	// has supplied a working directory, and for the whole session when Resolve
+	// is nil.
 	Privacy domain.Privacy
+	// Resolve gives the level and the project's display name for a working
+	// directory. When it is set, the working directory is read at every level,
+	// used to resolve and then discarded, and the level of the session follows
+	// the directory of the latest hook that carries one. When it is nil, Privacy
+	// applies throughout. It runs on the path Claude waits on and must perform
+	// no I/O: see Resolver.
+	Resolve Resolver
 	// ProvisionalID names the session until a hook supplies the real id. It
 	// must be unique to this process. CLAUDE_CODE_SESSION_ID must not be used
 	// for it: it is stale after a clear and wrong under --continue.
@@ -70,7 +80,10 @@ type Options struct {
 // Make one with New, call Open when the client has initialized, and call
 // Close when the server's input closes or the process is told to stop.
 type Adapter struct {
+	// privacy is the level the session opens at, and the one that applies
+	// without a resolver. The level in force is session.privacy.
 	privacy domain.Privacy
+	resolve Resolver
 	status  StatusSource
 	clock   Clock
 	pub     Publisher
@@ -98,11 +111,17 @@ type Adapter struct {
 }
 
 // session is what the adapter remembers of its session between calls. It is
-// what a rebind carries over to the new id.
+// what a rebind carries over to the new id. The settings resolved from the
+// latest working directory are part of it, so that a call whose batch is
+// dropped leaves them as they were.
 type session struct {
 	id      string
 	model   string
 	project string
+	// privacy is the level in force, and name the display name resolved for
+	// it, which is empty unless the level is full.
+	privacy domain.Privacy
+	name    string
 }
 
 // New checks the options, builds an adapter and starts its pump. The caller
@@ -122,12 +141,13 @@ func New(opts Options) (*Adapter, error) {
 	}
 	a := &Adapter{
 		privacy: opts.Privacy,
+		resolve: opts.Resolve,
 		status:  opts.Status,
 		clock:   opts.Clock,
 		pub:     opts.Publisher,
 		queue:   make(chan []domain.Event, queueSize),
 		done:    make(chan struct{}),
-		session: session{id: opts.ProvisionalID},
+		session: session{id: opts.ProvisionalID, privacy: opts.Privacy},
 		agents:  map[string]struct{}{},
 	}
 	go a.pump()
@@ -224,7 +244,9 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 	if fromModel(meta) {
 		return false
 	}
-	h, ok := parseHook(arguments, a.privacy == domain.PrivacyFull)
+	// The directory is read when it can matter: to resolve the settings, and
+	// to name the project at full.
+	h, ok := parseHook(arguments, a.resolve != nil || a.privacy == domain.PrivacyFull)
 	if !ok {
 		return false
 	}
@@ -239,23 +261,41 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 	agents := a.agents
 	var batch []domain.Event
 
-	project := projectName(h.get(fieldCwd))
-	renamed := project != "" && project != next.project
-	if renamed {
+	cwd := h.get(fieldCwd)
+	if a.resolve != nil && cwd != "" {
+		settings := a.resolveSettings(cwd)
+		next.privacy, next.name = settings.Privacy, settings.Name
+	}
+	raised := rank(next.privacy) > rank(a.session.privacy)
+	lowered := rank(next.privacy) < rank(a.session.privacy)
+
+	// The project is published at full only. Below it the session holds none,
+	// so that a rebuilt session cannot have one either.
+	renamed := false
+	if next.privacy != domain.PrivacyFull {
+		next.project = ""
+	} else if project := cmp.Or(next.name, projectName(cwd)); project != "" && project != next.project {
 		next.project = project
+		renamed = true
 	}
 	moved := h.get(fieldSessionID) != next.id
-	if id := h.get(fieldSessionID); moved {
-		// A new id, as the first hook brings and as a clear does. The session
-		// moves to it: the old id ends, and the new one opens with the same
-		// start time, so no second session appears and none is left behind.
+	if id := h.get(fieldSessionID); moved || lowered {
+		// A new id, as the first hook brings and as a clear does, or a lower
+		// level. The session moves to the new id, or reopens under the same
+		// one: the old session ends, and the new one opens with the same start
+		// time, so no second session appears and none is left behind. Ending
+		// is how the host forgets what was published at the higher level,
+		// because no event takes a project or a model away.
 		batch = append(batch, a.event(next.id, domain.KindSessionEnded, now))
 		next.id = id
 		agents = map[string]struct{}{}
 		batch = append(batch, a.openedEvent(next))
-	} else if renamed {
+	} else if renamed || raised {
 		refresh := a.event(next.id, domain.KindSessionRefreshed, now)
 		refresh.Project = next.project
+		if raised {
+			refresh.Privacy = next.privacy
+		}
 		batch = append(batch, refresh)
 	}
 
@@ -294,7 +334,7 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 			e.Kind = ""
 		}
 	}
-	if e.Kind == "" && moved {
+	if e.Kind == "" && (moved || lowered) {
 		// The session reopened at its original start time. Without an event
 		// at the present, it would look idle since then.
 		e = a.event(next.id, domain.KindSessionRefreshed, now)
@@ -303,7 +343,9 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 		batch = append(batch, e)
 	}
 
-	batch = restrict(a.privacy, batch)
+	// Every event of the call is restricted at the level this call resolved,
+	// and so no batch spans a change of level.
+	batch = restrict(next.privacy, batch)
 	if len(batch) > 0 {
 		select {
 		case a.queue <- batch:
@@ -344,8 +386,8 @@ func (a *Adapter) openedEvent(s session) domain.Event {
 	e := a.event(s.id, domain.KindSessionOpened, a.start)
 	e.Model = s.model
 	e.Project = s.project
-	e.Privacy = a.privacy
-	return restrictEvent(a.privacy, e)
+	e.Privacy = s.privacy
+	return restrictEvent(s.privacy, e)
 }
 
 // restrict applies the privacy level to a batch of events. It is the last

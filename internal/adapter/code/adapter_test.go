@@ -604,51 +604,67 @@ func TestNothingLeaks(t *testing.T) {
 		domain.PrivacyStandard: {marker, "home", "Users", "parentdir", "leafdir"},
 		domain.PrivacyFull:     {marker, "home", "Users", "parentdir"},
 	}
-	for level, forbidden := range fragments {
-		t.Run(string(level), func(t *testing.T) {
-			h := newHarness(t, level)
-			h.a.Open()
-			calls := 0
-			for round := 0; round < 3; round++ {
-				for _, row := range allowlist {
-					arguments := map[string]any{}
-					for k, v := range content {
-						arguments[k] = v
-					}
-					arguments[fieldEvent] = row.name
-					for _, field := range row.fields {
-						if values, ok := allowed[field]; ok {
-							arguments[field] = values[round%len(values)]
-						}
-					}
-					arguments[fieldSessionID] = "s" + strconv.Itoa(round)
-					encoded, err := json.Marshal(arguments)
-					if err != nil {
-						t.Fatal(err)
-					}
-					h.call(string(encoded))
-					calls++
+	// With a resolver the directory is read at every level, to choose the level
+	// and no more. It answers with the level the test is at, and no name.
+	atLevel := func(level domain.Privacy) Resolver {
+		return func(string) Settings { return Settings{Privacy: level} }
+	}
+	for _, resolve := range []bool{false, true} {
+		for level, forbidden := range fragments {
+			name := string(level)
+			if resolve {
+				name += " with a resolver"
+			}
+			t.Run(name, func(t *testing.T) {
+				var h *harness
+				if resolve {
+					h = newProfileHarness(t, level, atLevel(level))
+				} else {
+					h = newHarness(t, level)
 				}
-			}
-			status := h.a.handleStatus(nil)
-			h.a.Close()
-			if got := h.a.ignored.Load(); got != 0 {
-				t.Errorf("%d of %d calls were ignored, so their fields were not read", got, calls)
-			}
-			if len(h.rec.events) < calls/2 {
-				t.Errorf("only %d events from %d calls", len(h.rec.events), calls)
-			}
-			sawProject := false
-			for _, e := range h.rec.events {
-				sawProject = sawProject || e.Project == "leafdir"
-				checkClean(t, fmt.Sprintf("%+v", e), forbidden)
-			}
-			checkClean(t, fmt.Sprintf("%+v", status), forbidden)
-			checkClean(t, fmt.Sprintf("%+v", status), []string{"leafdir", "/", `\`})
-			if want := level == domain.PrivacyFull; sawProject != want {
-				t.Errorf("project published: %v, want %v", sawProject, want)
-			}
-		})
+				h.a.Open()
+				calls := 0
+				for round := 0; round < 3; round++ {
+					for _, row := range allowlist {
+						arguments := map[string]any{}
+						for k, v := range content {
+							arguments[k] = v
+						}
+						arguments[fieldEvent] = row.name
+						for _, field := range row.fields {
+							if values, ok := allowed[field]; ok {
+								arguments[field] = values[round%len(values)]
+							}
+						}
+						arguments[fieldSessionID] = "s" + strconv.Itoa(round)
+						encoded, err := json.Marshal(arguments)
+						if err != nil {
+							t.Fatal(err)
+						}
+						h.call(string(encoded))
+						calls++
+					}
+				}
+				status := h.a.handleStatus(nil)
+				h.a.Close()
+				if got := h.a.ignored.Load(); got != 0 {
+					t.Errorf("%d of %d calls were ignored, so their fields were not read", got, calls)
+				}
+				if len(h.rec.events) < calls/2 {
+					t.Errorf("only %d events from %d calls", len(h.rec.events), calls)
+				}
+				sawProject := false
+				for _, e := range h.rec.events {
+					sawProject = sawProject || e.Project == "leafdir"
+					checkClean(t, fmt.Sprintf("%+v", e), forbidden)
+				}
+				checkClean(t, fmt.Sprintf("%+v", status), forbidden)
+				checkClean(t, fmt.Sprintf("%+v", status), []string{"leafdir", "/", `\`})
+				if want := level == domain.PrivacyFull; sawProject != want {
+					t.Errorf("project published: %v, want %v", sawProject, want)
+				}
+			})
+		}
 	}
 }
 
@@ -1017,7 +1033,13 @@ func FuzzEventTool(f *testing.F) {
 	f.Fuzz(func(t *testing.T, arguments, meta []byte) {
 		for _, level := range []domain.Privacy{domain.PrivacyMinimal, domain.PrivacyStandard, domain.PrivacyFull} {
 			rec := &recorder{}
-			a, err := New(Options{Privacy: level, ProvisionalID: provisional, Publisher: rec, Status: fixedStatus{}, Clock: fakeclock.New(epoch)})
+			// Half the runs have a resolver, which reads the directory at every
+			// level and answers with the level the run is at.
+			var resolve Resolver
+			if len(arguments)%2 == 1 {
+				resolve = func(string) Settings { return Settings{Privacy: level} }
+			}
+			a, err := New(Options{Privacy: level, ProvisionalID: provisional, Publisher: rec, Status: fixedStatus{}, Clock: fakeclock.New(epoch), Resolve: resolve})
 			if err != nil {
 				t.Fatal(err)
 			}
