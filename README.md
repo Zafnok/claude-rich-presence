@@ -34,6 +34,7 @@ One small native program, `rich-presence`, is started by Claude itself as a loca
 | [docs/architecture/quality-strategy.md](docs/architecture/quality-strategy.md) | Testing, 100% coverage, SonarQube |
 | [docs/architecture/repository-layout.md](docs/architecture/repository-layout.md) | The target folder structure |
 | [docs/architecture/risks.md](docs/architecture/risks.md) | Open risks and what retires each one |
+| [docs/configuration.md](docs/configuration.md) | Every setting, where it is read from, and project profiles |
 | [docs/tickets/](docs/tickets/README.md) | The work plan: tickets, blockers, acceptance criteria, recommended model and effort |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to work in this repository |
 

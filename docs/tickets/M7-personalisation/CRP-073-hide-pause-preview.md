@@ -5,7 +5,7 @@ milestone: M7 Personalisation
 type: feature
 status: todo
 priority: P1
-blocked_by: [CRP-014, CRP-042]
+blocked_by: [CRP-014, CRP-042, CRP-077]
 blocks: []
 model: claude-sonnet-5-5
 effort: medium

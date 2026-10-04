@@ -38,6 +38,7 @@ Commands:
 - In `mcp` mode, standard output carries protocol messages only. Everything else goes to the log.
 - When `enabled` is false, or `CLAUDE_CODE_REMOTE` is `true`, `mcp` still serves MCP correctly but starts no host node and publishes nothing.
 - On input closing or a termination signal, shut down in order and exit 0.
+- If the Claude Code adapter's options accept a resolver of per-directory settings when this ticket starts, which CRP-077 adds, pass one built from `Config.Effective` and the running operating system. If they do not, pass nothing; CRP-077 adds it here.
 - The surface is chosen from the client name in the MCP `initialize` request. Until CRP-050 lands, an unrecognised client is treated as Claude Code.
 
 ## Out of scope

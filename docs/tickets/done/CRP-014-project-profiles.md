@@ -3,10 +3,10 @@ id: CRP-014
 title: Project profiles in configuration
 milestone: M1 Core
 type: feature
-status: todo
+status: done
 priority: P1
 blocked_by: [CRP-012]
-blocks: [CRP-047, CRP-048, CRP-073]
+blocks: [CRP-047, CRP-048, CRP-073, CRP-077]
 model: claude-sonnet-5-5
 effort: medium
 size: M
@@ -50,16 +50,16 @@ Profiles are read from the user's configuration file only. Environment variables
 
 ## Acceptance criteria
 
-- [ ] Matching is covered by a table test: exact path, nested path, sibling with a common prefix that must not match, nested profiles where the longest wins, trailing separators, mixed separators and case differences on Windows, and no match.
-- [ ] A session in a worktree directory under a profiled project matches that profile.
-- [ ] A profile can lower the privacy level as well as raise it.
-- [ ] The link validator has a table test with at least: a valid GitHub link, `http`, a credential in the URL, a query string, a fragment, an extra path segment, a host not on the allowlist, a look-alike host such as one that merely ends with or contains the allowed name, an over-long value, and a link with a trailing `.git`.
-- [ ] A fuzz test shows the validator never accepts a URL containing `@`, `?` or `#`, and never panics.
-- [ ] The areas list is covered for: over the entry cap, an over-long entry, duplicates differing only in case or spacing, and entries that are empty after cleaning.
-- [ ] A rejected link produces one warning that names the profile and does not echo the value.
-- [ ] An invalid or duplicate profile entry is skipped with one warning, and the rest load.
-- [ ] No code path reads a file inside a project directory.
-- [ ] The configuration reference lists the new settings with an example.
+- [x] Matching is covered by a table test: exact path, nested path, sibling with a common prefix that must not match, nested profiles where the longest wins, trailing separators, mixed separators and case differences on Windows, and no match.
+- [x] A session in a worktree directory under a profiled project matches that profile.
+- [x] A profile can lower the privacy level as well as raise it.
+- [x] The link validator has a table test with at least: a valid GitHub link, `http`, a credential in the URL, a query string, a fragment, an extra path segment, a host not on the allowlist, a look-alike host such as one that merely ends with or contains the allowed name, an over-long value, and a link with a trailing `.git`.
+- [x] A fuzz test shows the validator never accepts a URL containing `@`, `?` or `#`, and never panics.
+- [x] The areas list is covered for: over the entry cap, an over-long entry, duplicates differing only in case or spacing, and entries that are empty after cleaning.
+- [x] A rejected link produces one warning that names the profile and does not echo the value.
+- [x] An invalid or duplicate profile entry is skipped with one warning, and the rest load.
+- [x] No code path reads a file inside a project directory.
+- [x] The configuration reference lists the new settings with an example.
 
 ## Notes for the implementer
 
