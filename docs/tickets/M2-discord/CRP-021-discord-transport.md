@@ -3,7 +3,7 @@ id: CRP-021
 title: "Discord transport: pipe and socket dialers"
 milestone: M2 Discord
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-004, CRP-005, CRP-022]
 blocks: [CRP-023]
