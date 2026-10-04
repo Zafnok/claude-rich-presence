@@ -20,6 +20,7 @@ An ADR records one decision, why it was made, and what it costs. Accepted ADRs a
 | [0014](0014-personalities.md) | Personalities: a voice for Claude's summaries and a matching vocabulary for the fixed text | Proposed, pending CRP-046 and CRP-072 |
 | [0015](0015-status-line-bridge.md) | An opt-in status line bridge for model, context, cost and usage limits; never the login token | Proposed, pending CRP-045 |
 | [0016](0016-windows-file-locations.md) | On Windows, nothing of ours lives directly under `AppData` | Accepted |
+| [0017](0017-go-winio-for-windows-pipes.md) | Microsoft's go-winio for the Discord pipe on Windows; supersedes part of 0004 | Accepted |
 
 ## Format
 

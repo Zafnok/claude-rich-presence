@@ -32,7 +32,7 @@ Contributions are accepted under the same license, inbound equals outbound, with
 Code that is compiled into the released binary.
 
 1. **Pre-approved**: the Go standard library, and `golang.org/x/*` modules maintained by the Go project.
-2. **Conditionally approved**: `github.com/Microsoft/go-winio` (MIT, owned by Microsoft), only if the standard-library named-pipe path proves inadequate in [CRP-021](../../tickets/M2-discord/CRP-021-discord-transport.md), and only by a superseding note on [ADR-0004](0004-in-house-protocol-implementations.md).
+2. **Conditionally approved**: `github.com/Microsoft/go-winio` (MIT, owned by Microsoft), only if the standard-library named-pipe path proves inadequate in [CRP-021](../../tickets/done/CRP-021-discord-transport.md), and only by a superseding note on [ADR-0004](0004-in-house-protocol-implementations.md).
 3. **Everything else requires an ADR** that shows all of:
    - a license on the allowlist below;
    - an organisation or at least three active maintainers behind it, with a release in the past twelve months;

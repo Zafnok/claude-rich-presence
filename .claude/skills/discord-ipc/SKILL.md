@@ -105,7 +105,8 @@ Two official figures exist: five updates per 20 seconds, and one update per 15 s
 | Activity set, nothing visible | The user turned off activity sharing in Discord's settings, a text line is under 2 characters, or the asset key does not exist |
 | Presence disappears | Our connection closed |
 | Updates seem ignored | Rate limited |
-| On Windows, a write hangs while a read is pending | The pipe was opened for synchronous I/O. It must be opened for overlapped I/O (CRP-021) |
+| On Windows, a write hangs while a read is pending | The pipe was opened for synchronous I/O. It must be opened for overlapped I/O, which go-winio does (ADR-0017) |
+| On Windows, the race detector reports `internal/poll.(*FD).addOffset` | The pipe was opened with the standard library's `os.OpenFile`, whose file type races when a read and a write overlap. Use the transport package (ADR-0017) |
 
 ## Unverified
 
@@ -134,5 +135,7 @@ Two official figures exist: five updates per 20 seconds, and one update per 15 s
 ## In this repository
 
 - Decision to implement in-house: `docs/architecture/adr/0004-in-house-protocol-implementations.md`
+- The Windows pipe is opened by Microsoft's go-winio: `docs/architecture/adr/0017-go-winio-for-windows-pipes.md`
+- Dialling and endpoint discovery: `internal/discord/transport`. A timeout on the connection is recognised by its `Timeout` method, not by comparing with a standard library error
 - Tickets: CRP-013, CRP-020, CRP-021, CRP-022, CRP-023, CRP-048, CRP-070, CRP-071
 - Application id and artwork: CRP-003

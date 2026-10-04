@@ -48,6 +48,7 @@ The policy allows only the standard library and `golang.org/x/*` at runtime with
 
 ## Notes for the implementer
 
+- The allowlist file starts with one entry: `github.com/Microsoft/go-winio`, approved by [ADR-0017](../../architecture/adr/0017-go-winio-for-windows-pipes.md). It is linked on Windows only, so run the license check for Windows as well as for the runner's own operating system.
 - The module check can be a few lines of Go over the output of the standard module listing command. Keep it in `tools/` so it is tested like everything else.
 - Branch protection needs the owner's repository permissions. Write the exact settings down and ask the owner to apply them.
 

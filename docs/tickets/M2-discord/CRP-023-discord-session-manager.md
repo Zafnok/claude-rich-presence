@@ -59,6 +59,8 @@ Each proven against the fake server from CRP-022, with the fake clock:
 
 ## Notes for the implementer
 
+- The connection from `internal/discord/transport` is go-winio's on Windows ([ADR-0017](../../architecture/adr/0017-go-winio-for-windows-pipes.md)). Recognise a deadline by the error's `Timeout` method, not by comparing with a standard library value, and expect a different error value after close on each operating system. go-winio keeps one goroutine of its own running; a leak check must allow for it on Windows.
+- The dialer returns `transport.ErrNotRunning` when nothing is listening, the context's error when cancelled, and any other error for a failure such as a permission problem. All three mean "try again later".
 - One goroutine owns the connection. A reader goroutine feeds it frames. Nothing else touches the stream.
 - Think through shutdown while a dial is in progress, while the handshake is pending, and while a write is blocked. Each needs a test.
 - Do not log activity contents. Log state changes and error classes.

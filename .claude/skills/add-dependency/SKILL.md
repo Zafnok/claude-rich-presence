@@ -11,7 +11,7 @@ The policy is ADR-0003. The default answer is no. The owner asked for no copylef
 
 Ask in this order.
 
-1. Is it in the Go standard library? Check before assuming it is not. The standard library covers JSON, Unix sockets on every operating system, named pipes with deadlines on Windows, structured logging, fuzzing, coverage, and flag parsing.
+1. Is it in the Go standard library? Check before assuming it is not. The standard library covers JSON, Unix sockets on every operating system, structured logging, fuzzing, coverage, and flag parsing.
 2. Is it in `golang.org/x/*`? Those are pre-approved.
 3. Is what you need small? A few dozen lines you own and test are cheaper over time than a module you must watch.
 
@@ -48,7 +48,7 @@ A candidate that fails the license rows is rejected. There is no exception for c
 |---|---|
 | Any third-party Discord presence library | Rejected. All are single-maintainer. See ADR-0004 |
 | Discord's Social SDK | Rejected. Closed binary, restrictive terms, needs cgo |
-| `github.com/Microsoft/go-winio` | Pre-cleared as a fallback for Windows named pipes only, and only if the standard library proves inadequate in CRP-021 |
+| `github.com/Microsoft/go-winio` | Accepted for the Discord pipe on Windows only, imported by `internal/discord/transport` alone. See ADR-0017 |
 | The official MCP Go SDK | Not used now. It is the upgrade path if we need more of MCP. See ADR-0004 |
 | Assertion and mocking libraries | Not needed. Use the standard `testing` package |
 | TOML or YAML parsers | Not needed. Configuration is JSON |

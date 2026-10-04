@@ -42,7 +42,7 @@ One small native program, `rich-presence`, is started by Claude itself as a loca
 - **Never get in Claude's way.** Presence is cosmetic. It must not slow, block or break a session.
 - **Documented interfaces only.** No transcript reading, log scraping, window inspection or private files.
 - **Private by default.** No prompts, file paths or tool inputs, ever. Project names, the activity summary and repository links are opt-in, per project. No telemetry, no network access.
-- **No third-party runtime dependencies** unless an ADR justifies one.
+- **No third-party runtime dependencies** unless an ADR justifies one. There is one: Microsoft's go-winio, for the Discord pipe on Windows.
 - **Every line tested.** 100% statement coverage, enforced in CI.
 
 ## License
