@@ -24,11 +24,11 @@ Current protocol version: **1**.
 
 A follower may send `sync` again at any time. It replaces what the host holds for that connection.
 
-A session exists on the host exactly while its follower's connection is open. There is no "goodbye" message: closing the connection is the signal.
+A session exists on the host exactly while its follower's connection is open. There is no "goodbye" message: closing the connection is the signal. A session belongs to one connection: the one whose `event` created it, or the last to `sync` it. It is removed when that connection closes. Only a `sync` moves a session to another connection, and an `event` for a session that belongs to another connection is ignored. So a follower that reconnects before the host has seen its old connection close keeps its session, and whatever the host still reads from the old connection can neither take the session back nor end it.
 
-After a `refuse` the only message the host still reads is `stand_down`. The follower sends it or not, and closes the connection. The host does not wait for long: it closes a refused connection that stays silent.
+After a `refuse` the only message the host still reads is `stand_down`. The follower sends it or not, and closes the connection. The host does not wait for long: it closes a connection that has not been welcomed one second after accepting it, whether the connection was refused or has said nothing.
 
-`status` and `stand_down` are requests that can be sent on any connection after `welcome`. The `status` command opens a connection of its own, says `hello`, asks, reads the answer and closes without ever sending a `sync`.
+`status` and `stand_down` are requests that can be sent on any connection after `welcome`. The `status` command opens a connection of its own, says `hello`, asks, reads the answer and closes without ever sending a `sync`. A follower may ask for `status` as often as it likes. This binary asks after each thing it sends, so that what it reports of its host is recent.
 
 ## Messages
 
@@ -155,6 +155,19 @@ Tool kinds: `editing`, `running`, `reading`, `searching`, `browsing`, `delegatin
 
 Asks the host to give up the lock, so that a newer binary can win the election ([ADR-0005](../architecture/adr/0005-presence-host-election.md), "Version skew"). It has no fields and no reply. Every protocol version has it.
 
+A follower sends it once on a connection, straight after a `welcome` whose binary version is older than its own, and then carries on as any follower. A follower that could not take over, because its own attempt at the lock failed for a reason other than the lock being held, does not send it. The host acts on it only when the sender is the newer binary:
+
+| Connection | The sender is newer when |
+|---|---|
+| Welcomed | The binary version in its `hello` is [newer](#binary-version) than the host's own |
+| Refused | The protocol version in its `hello` is higher than the highest the host speaks |
+
+Any other `stand_down` is ignored. The host judges for itself, so two processes can never ask each other to stand down in turn.
+
+A host that stands down refuses every `hello` with `standing_down` from then on, closes its connections, releases the lock, and waits 800 milliseconds before it tries the lock again. A sender that means to take over must try the lock within that time, and before the other followers do: a follower that has lost its host first tries the lock 50 to 100 milliseconds later. This binary, when it has asked and then loses the host, tries six times in the first 40 milliseconds.
+
+A process that has stood down ignores `stand_down` in every later term as host until it has followed a newer binary. If no newer binary became host, whoever asked did not take over, and standing down again would only clear presence again. This bounds what a sender that never takes the lock can cause: each older process stands down for it once.
+
 ```json
 {"type":"stand_down"}
 ```
@@ -194,6 +207,10 @@ The host's summary of itself. It says nothing about any session: no project name
 ### Binary version
 
 A string of 1 to 64 bytes from the letters `A` to `Z` and `a` to `z`, the digits, and `.` `-` `+` `_` `(` `)`. That covers a release such as `1.4.0`, a version the Go toolchain derives such as `v0.0.0-20261003120000-0123456789ab+dirty`, and `(devel)`. It cannot hold a path separator or a space.
+
+Two versions are ordered as follows, to decide which binary is newer. A leading `v` and everything from a `+` on are ignored. What is left is numbers separated by dots, then optionally a hyphen and pre-release identifiers separated by dots. Numbers compare as numbers, and a missing one counts as zero, so `1.4` and `1.4.0` are the same. A pre-release is older than its release. Pre-release identifiers compare one by one: numbers as numbers, a number before anything else, the rest as text, and a shorter list before a longer one that begins with it. That is the order of semantic versioning, and it puts two versions derived by the Go toolchain in the order of their timestamps.
+
+A version that does not read that way, such as `(devel)`, is neither newer nor older than any other. Two such builds never ask each other to stand down.
 
 ### Times
 
