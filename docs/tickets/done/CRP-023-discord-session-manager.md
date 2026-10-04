@@ -3,7 +3,7 @@ id: CRP-023
 title: Discord session manager
 milestone: M2 Discord
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-013, CRP-020, CRP-021, CRP-022]
 blocks: [CRP-032]
@@ -45,17 +45,17 @@ Package `internal/discord/session`:
 
 Each proven against the fake server from CRP-022, with the fake clock:
 
-- [ ] With Discord absent at start, the manager connects and shows the current activity once the server appears, with no caller involvement.
-- [ ] When the server closes the connection, the manager reconnects and resends the current activity.
-- [ ] When the server stops responding during the handshake, the attempt times out and is retried.
-- [ ] Backoff delays grow to the cap and reset after a successful ready.
-- [ ] A handshake rejected for an invalid application id results in retries at the cap and exactly one log line at warning level until the state changes.
-- [ ] A ping is answered with a pong.
-- [ ] "Set desired activity" returns immediately in every state, including while a write is blocked.
-- [ ] On stop while ready, the server records a clear before the connection closes. On stop while disconnected, stop returns promptly.
-- [ ] After stop, no goroutines remain, verified in a test.
-- [ ] No activity is sent faster than the scheduler allows, including across a reconnect.
-- [ ] All tests pass under the race detector.
+- [x] With Discord absent at start, the manager connects and shows the current activity once the server appears, with no caller involvement.
+- [x] When the server closes the connection, the manager reconnects and resends the current activity.
+- [x] When the server stops responding during the handshake, the attempt times out and is retried.
+- [x] Backoff delays grow to the cap and reset after a successful ready.
+- [x] A handshake rejected for an invalid application id results in retries at the cap and exactly one log line at warning level until the state changes.
+- [x] A ping is answered with a pong.
+- [x] "Set desired activity" returns immediately in every state, including while a write is blocked.
+- [x] On stop while ready, the server records a clear before the connection closes. On stop while disconnected, stop returns promptly.
+- [x] After stop, no goroutines remain, verified in a test.
+- [x] No activity is sent faster than the scheduler allows, including across a reconnect.
+- [x] All tests pass under the race detector.
 
 ## Notes for the implementer
 

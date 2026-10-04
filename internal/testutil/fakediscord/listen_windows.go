@@ -5,13 +5,13 @@ import (
 	"errors"
 	"io"
 	"net"
-	"os"
 
+	"github.com/Microsoft/go-winio"
 	"golang.org/x/sys/windows"
 )
 
-// This file is the only one that uses golang.org/x/sys. The standard library
-// can open a named pipe as a client but cannot create one.
+// This file is the only one that uses golang.org/x/sys and go-winio. The
+// standard library can open a named pipe as a client but cannot create one.
 
 // Named pipes share one namespace per machine, so the location is a random
 // name prefix rather than a directory.
@@ -155,9 +155,11 @@ func (l *pipeListener) Accept() (io.ReadWriteCloser, error) {
 	}
 	l.instances[slot] = next
 	_ = windows.CloseHandle(in.overlapped.HEvent)
-	// The handle is overlapped, so the file uses the runtime's poller and
-	// closing it unblocks a pending read.
-	return os.NewFile(uintptr(in.handle), l.name), nil
+	// The standard library's file type races with itself when a read and a
+	// write overlap on one pipe handle (ADR-0017), which a server-initiated
+	// send during a pending read is. go-winio's does not, and closing it
+	// unblocks a pending read.
+	return winio.NewOpenFile(in.handle)
 }
 
 func (l *pipeListener) Interrupt() { _ = windows.SetEvent(l.stop) }
