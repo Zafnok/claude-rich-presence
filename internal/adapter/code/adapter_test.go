@@ -169,6 +169,8 @@ var malformed = []struct {
 	{"empty session id", `{"event":"Stop","session_id":""}`},
 	{"null session id", `{"event":"Stop","session_id":null}`},
 	{"session id of the wrong type", `{"event":"Stop","session_id":12}`},
+	{"session id with a line break", `{"event":"Stop","session_id":"s\n2"}`},
+	{"session id with a byte that is not text", `{"event":"Stop","session_id":"s�2"}`},
 	{"session id too long", `{"event":"Stop","session_id":"` + strings.Repeat("s", domain.MaxIDLen+1) + `"}`},
 	{"tool started with no tool", `{"event":"PreToolUse","session_id":"s2"}`},
 	{"tool started with an empty tool", `{"event":"PreToolUse","session_id":"s2","tool_name":""}`},
@@ -417,6 +419,17 @@ func TestAModelThatCannotBeReadIsNotCarriedOver(t *testing.T) {
 		`{"event":"Stop","session_id":"s2"}`,
 	)
 	wantEvents(t, got, "model_changed s1 model=Opus 5.5", "session_ended s1", "session_opened s2 privacy=standard", "turn_finished s2")
+}
+
+func TestAMoveWithNoEventOfItsOwnStillCountsAsActivity(t *testing.T) {
+	for _, call := range []string{
+		`{"event":"SubagentStop","session_id":"s2","agent_id":"compaction"}`,
+		`{"event":"Notification","session_id":"s2","notification_type":"auth_success"}`,
+		`{"event":"PostModelSwitch","session_id":"s2","to_model":"mystery"}`,
+	} {
+		got := afterBind(t, domain.PrivacyStandard, call, `{"event":"SubagentStop","session_id":"s2","agent_id":"compaction"}`)
+		wantEvents(t, got, "session_ended s1", "session_opened s2 privacy=standard", "session_refreshed s2")
+	}
 }
 
 func TestTheProjectNameAtTheFullLevel(t *testing.T) {

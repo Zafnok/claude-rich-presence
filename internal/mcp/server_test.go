@@ -421,6 +421,8 @@ func TestToolCallMeta(t *testing.T) {
 		{"empty object", `{"name":"event","_meta":{}}`, `{}`},
 		{"absent", `{"name":"event","arguments":{"a":1}}`, `absent`},
 		{"null", `{"name":"event","_meta":null}`, `absent`},
+		{"a string", `{"name":"event","_meta":"x"}`, `absent`},
+		{"an array", `{"name":"event","_meta":[{}]}`, `absent`},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -445,22 +447,6 @@ func TestToolCallMeta(t *testing.T) {
 				t.Errorf("handler saw %q, want [%q]", seen, c.want)
 			}
 		})
-	}
-}
-
-func TestToolCallMetaMustBeAnObject(t *testing.T) {
-	called := false
-	opts := withTools(newTool(t, "event", func(json.RawMessage) mcp.Result {
-		called = true
-		return mcp.Result{}
-	}))
-	got := serve(t, initLine+`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"event","_meta":"x"}}`+"\n", opts)
-	if len(got) != 2 {
-		t.Fatalf("got %d replies, want 2", len(got))
-	}
-	wantError(t, got[1], "1", -32602)
-	if called {
-		t.Error("the handler ran")
 	}
 }
 

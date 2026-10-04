@@ -27,7 +27,8 @@
 // advertises the tools capability and nothing else. tools/list is never
 // paged. A tool result is one text item and an optional error flag. A tool
 // made with NewMetaTool is also given the _meta object of each call, which is
-// how a client marks where a call came from.
+// how a client marks where a call came from. A _meta that is not an object
+// is treated as absent.
 //
 // Notifications: notifications/initialized and notifications/cancelled are
 // accepted. Every other notification is ignored, and so is a response,
@@ -46,8 +47,8 @@
 //	        initialize
 //	-32601  the method is not one of the four above
 //	-32602  params is not an object or lacks what the method needs; the tool
-//	        is unknown; a call's arguments or _meta is not an object; a
-//	        cursor was sent
+//	        is unknown; a call's arguments are not an object; a cursor was
+//	        sent
 //
 // An error for a message whose id could not be read carries a null id.
 // Otherwise the id is echoed byte for byte. ping and unknown methods are

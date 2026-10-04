@@ -214,12 +214,11 @@ func (s *server) callTool(params json.RawMessage) (any, *rpcError) {
 	if arguments != nil && arguments[0] != '{' {
 		return nil, invalidParams("arguments must be an object")
 	}
+	// A _meta that is not an object is dropped, not refused: it is not the
+	// tool's input, and a call must not fail over it.
 	meta := p.Meta
-	if string(meta) == "null" {
-		meta = nil
-	}
 	if meta != nil && meta[0] != '{' {
-		return nil, invalidParams("_meta must be an object")
+		meta = nil
 	}
 	for _, t := range s.tools {
 		if t.name == p.Name {

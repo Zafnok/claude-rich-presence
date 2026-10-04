@@ -244,7 +244,8 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 	if renamed {
 		next.project = project
 	}
-	if id := h.get(fieldSessionID); id != next.id {
+	moved := h.get(fieldSessionID) != next.id
+	if id := h.get(fieldSessionID); moved {
 		// A new id, as the first hook brings and as a clear does. The session
 		// moves to it: the old id ends, and the new one opens with the same
 		// start time, so no second session appears and none is left behind.
@@ -292,6 +293,11 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 			agentStopped = ""
 			e.Kind = ""
 		}
+	}
+	if e.Kind == "" && moved {
+		// The session reopened at its original start time. Without an event
+		// at the present, it would look idle since then.
+		e = a.event(next.id, domain.KindSessionRefreshed, now)
 	}
 	if e.Kind != "" {
 		batch = append(batch, e)

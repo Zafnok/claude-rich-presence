@@ -3,7 +3,7 @@ id: CRP-041
 title: Claude Code adapter
 milestone: M4 Claude Code
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-001, CRP-010, CRP-012, CRP-040]
 blocks: [CRP-033]
@@ -79,18 +79,18 @@ Package `internal/adapter/code`:
 
 ## Acceptance criteria
 
-- [ ] Every row of the event table has a test from tool input to the published presence event.
-- [ ] The tool-kind table and the model-label mapping are covered row by row, including unknown inputs.
-- [ ] **Leak test**: every field that could carry user content is seeded with a marker string. At every privacy level, the marker never appears in any published event. At `minimal` and `standard`, no part of the working directory appears either.
-- [ ] At `full`, only the last path element of the working directory is published, for both slash styles and for a trailing separator.
-- [ ] Unknown event names, missing fields, wrong types and oversized values all produce the constant success result and publish nothing.
-- [ ] The result is byte-identical for every input, shown by a test over all the cases above.
-- [ ] An empty string in any field is handled as the field being absent.
-- [ ] A `SubagentStop` with no matching start leaves the count unchanged.
-- [ ] With the publish interface stalled, the tool handler still returns immediately.
-- [ ] The provisional id is replaced by the real one without creating a second session, and a changed id rebinds without leaving the old session behind.
-- [ ] `presence_status` output contains no project name and no path.
-- [ ] The handler performs no I/O. Shown by construction: it has only the publish interface and pure functions.
+- [x] Every row of the event table has a test from tool input to the published presence event.
+- [x] The tool-kind table and the model-label mapping are covered row by row, including unknown inputs.
+- [x] **Leak test**: every field that could carry user content is seeded with a marker string. At every privacy level, the marker never appears in any published event. At `minimal` and `standard`, no part of the working directory appears either.
+- [x] At `full`, only the last path element of the working directory is published, for both slash styles and for a trailing separator.
+- [x] Unknown event names, missing fields, wrong types and oversized values all produce the constant success result and publish nothing.
+- [x] The result is byte-identical for every input, shown by a test over all the cases above.
+- [x] An empty string in any field is handled as the field being absent.
+- [x] A `SubagentStop` with no matching start leaves the count unchanged.
+- [x] With the publish interface stalled, the tool handler still returns immediately.
+- [x] The provisional id is replaced by the real one without creating a second session, and a changed id rebinds without leaving the old session behind.
+- [x] `presence_status` output contains no project name and no path.
+- [x] The handler performs no I/O. Shown by construction: it has only the publish interface and pure functions.
 
 ## Notes for the implementer
 

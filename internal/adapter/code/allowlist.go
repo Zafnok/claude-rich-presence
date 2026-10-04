@@ -123,7 +123,8 @@ func (h hook) get(field string) string {
 
 // parseHook reads the arguments of a call to the event tool. It reports false
 // when they are malformed: not an object, an unknown event name, a field of
-// the wrong type or too long, or a missing required field.
+// the wrong type or too long, a session id that is not plain text, or a
+// missing required field.
 //
 // Only the fields the event's row names are decoded. The working directory is
 // decoded only when readCwd is set, so that below the full privacy level it
@@ -160,7 +161,7 @@ func parseHook(arguments json.RawMessage, readCwd bool) (hook, bool) {
 		}
 		h.values[field] = value
 	}
-	if h.get(fieldSessionID) == "" {
+	if id := h.get(fieldSessionID); id == "" || !printable(id) {
 		return hook{}, false
 	}
 	for _, field := range h.row.required {

@@ -91,6 +91,17 @@ scan:
 	return strings.ToUpper(family[:1]) + family[1:] + " " + strings.Join(version, ".")
 }
 
+// printable reports whether s is free of control characters and of bytes
+// that are not text.
+func printable(s string) bool {
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f || r == utf8.RuneError {
+			return false
+		}
+	}
+	return true
+}
+
 func isLetter(r rune) bool { return r >= 'a' && r <= 'z' }
 
 func isDigit(r rune) bool { return r >= '0' && r <= '9' }
@@ -116,10 +127,8 @@ func projectName(cwd string) string {
 	if name == "" || name == "." || name == ".." || strings.HasSuffix(name, ":") {
 		return ""
 	}
-	for _, r := range name {
-		if r < 0x20 || r == 0x7f || r == utf8.RuneError {
-			return ""
-		}
+	if !printable(name) {
+		return ""
 	}
 	for len(name) > domain.MaxProjectLen {
 		_, size := utf8.DecodeLastRuneInString(name)
