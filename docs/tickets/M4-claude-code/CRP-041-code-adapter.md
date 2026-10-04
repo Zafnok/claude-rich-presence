@@ -3,7 +3,7 @@ id: CRP-041
 title: Claude Code adapter
 milestone: M4 Claude Code
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-001, CRP-010, CRP-012, CRP-040]
 blocks: [CRP-033]
