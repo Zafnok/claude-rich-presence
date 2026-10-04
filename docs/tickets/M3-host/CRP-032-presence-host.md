@@ -93,6 +93,7 @@ Unit tests use in-memory implementations of the lock, listener, dialer and Disco
 - Run the randomised test with a fixed seed in CI and print the seed on failure.
 - Include a burst: a dozen nodes started within the same second. CRP-001 saw exactly that when a plugin was installed while Claude Desktop had thirteen Code-tab sessions open, each of which started an adapter at once.
 - Ask for review with Opus 5.5 as well, focused on races and shutdown.
+- The host and follower behaviour the wire format relies on is in [docs/protocol/control.md](../../protocol/control.md), under "Conversation", "Errors" and "Compatibility". Three points from it that this ticket does not spell out: a refused follower may send `stand_down` on the refused connection before closing it, and the host closes a refused connection that stays silent; an event or session with a word the domain does not know is skipped and the connection stays open; a line that is malformed, incomplete or out of range is skipped, and only an oversized line or a bad `hello` closes the connection.
 
 ## Why this model and effort
 
@@ -104,3 +105,4 @@ Distributed-systems behaviour in miniature: election, failover, replay and versi
 - [Architecture: the presence host](../../architecture/README.md#the-presence-host)
 - [Architecture: failure behaviour](../../architecture/README.md#failure-behaviour)
 - [Risk register](../../architecture/risks.md), R10
+- [Control protocol](../../protocol/control.md)
