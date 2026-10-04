@@ -1,0 +1,100 @@
+name: Supply chain
+
+# The licence and vulnerability halves of the dependency policy of ADR-0003.
+# The module allowlist and the action pinning checks run in ci.yml, where they
+# also provide the coverage of tools/policycheck.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # New advisories appear without any change here, so main is checked weekly.
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Tools are pinned to an exact version (ADR-0003). Both come from the Go
+  # project or Google, and the go command verifies them against the Go
+  # checksum database.
+  GO_VERSION: "1.27.1"
+  GO_LICENSES_VERSION: v2.0.1
+  GOVULNCHECK_VERSION: v1.8.0
+  # The licence allowlist of ADR-0003.
+  ALLOWED_LICENSES: MIT,BSD-2-Clause,BSD-3-Clause,ISC,Apache-2.0,0BSD,Unlicense
+  RELEASE_TARGETS: windows/amd64 darwin/amd64 darwin/arm64 linux/amd64
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  licenses:
+    name: Licenses
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      # Installed, not run with go run, because go run builds for GOOS and
+      # the tool has to run on this machine whatever target it checks.
+      - name: Install go-licenses
+        run: go install "github.com/google/go-licenses/v2@$GO_LICENSES_VERSION"
+
+      # Each target links different modules: go-winio is linked on Windows
+      # and nowhere else.
+      - name: Check the licenses of every release target
+        run: |
+          for target in $RELEASE_TARGETS; do
+            echo "checking $target"
+            GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 \
+              go-licenses check ./... --allowed_licenses="$ALLOWED_LICENSES"
+          done
+
+  vulnerabilities:
+    name: Vulnerabilities (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      - name: govulncheck
+        run: go run "golang.org/x/vuln/cmd/govulncheck@$GOVULNCHECK_VERSION" ./...
+
+  # One check that stands for the whole workflow, so that branch protection
+  # has a single name to require.
+  supply-chain:
+    name: Supply chain
+    if: always()
+    needs: [licenses, vulnerabilities]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Every check passed
+        env:
+          RESULTS: ${{ needs.licenses.result }} ${{ needs.vulnerabilities.result }}
+        run: test "$RESULTS" = "success success"

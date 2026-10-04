@@ -55,7 +55,7 @@ Not allowed in anything linked: GPL, LGPL, AGPL, MPL, EPL, CDDL, SSPL, BUSL, Com
 
 ### Enforcement
 
-CI fails if `go.mod` gains a module outside the pre-approved set without a matching ADR, if any linked module's license is off the allowlist, or if `govulncheck` reports a reachable vulnerability. Implemented in [CRP-007](../../tickets/M0-foundation/CRP-007-supply-chain-policy.md).
+CI fails if `go.mod` gains a module outside the pre-approved set without a matching ADR, if any linked module's license is off the allowlist, or if `govulncheck` reports a reachable vulnerability. Implemented in [CRP-007](../../tickets/done/CRP-007-supply-chain-policy.md).
 
 ### Cost
 

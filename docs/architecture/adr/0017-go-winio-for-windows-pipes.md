@@ -42,7 +42,7 @@ The owner accepted the module on 2026-10-03 on the grounds that Microsoft mainta
 
 ## Consequences
 
-- The Windows binary contains third-party code, and the release must ship Microsoft's MIT notice beside ours and the Go project's ([CRP-060](../../tickets/M6-release/CRP-060-release-pipeline.md)). The supply-chain check must list the module with this ADR ([CRP-007](../../tickets/M0-foundation/CRP-007-supply-chain-policy.md)).
+- The Windows binary contains third-party code, and the release must ship Microsoft's MIT notice beside ours and the Go project's ([CRP-060](../../tickets/M6-release/CRP-060-release-pipeline.md)). The supply-chain check must list the module with this ADR ([CRP-007](../../tickets/done/CRP-007-supply-chain-policy.md)).
 - We depend on a module whose tagged releases are infrequent. A fix we need may exist only on its main branch.
 - go-winio starts one goroutine of its own, for its completion port, the first time a pipe is opened, and never stops it. A test that asserts no goroutine is left must allow for it on Windows.
 - A deadline error from the Windows connection is go-winio's own value, and an error after close is too. Callers must test for a timeout through the `Timeout` method, which both platforms provide, not by comparing with a standard library value.
