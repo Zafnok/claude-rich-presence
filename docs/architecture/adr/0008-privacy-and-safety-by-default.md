@@ -18,7 +18,7 @@ Hook events contain prompt text, tool inputs and outputs, assistant messages and
 2. That tool always returns the same success result, which carries no information: the constant text `{}`. Presence failures are logged, never reported to Claude. (Clarified 2026-10-03. This read "an empty success result". [CRP-001](../../research/crp-001-claude-code-adapter.md) found that Claude Code adds a line to the model's context when the result is literally empty and adds nothing for `{}`. The decision is unchanged: the result never varies and never tells Claude anything.)
 3. Every hook has an explicit short timeout.
 4. A panic in any goroutine is recovered, logged, and does not take down the MCP server loop.
-5. The end-to-end tests assert a latency budget on the tool call ([CRP-043](../../tickets/M4-claude-code/CRP-043-end-to-end-tests.md)).
+5. The end-to-end tests assert a latency budget on the tool call ([CRP-043](../../tickets/done/CRP-043-end-to-end-tests.md)).
 
 ### 2. Documented interfaces only
 

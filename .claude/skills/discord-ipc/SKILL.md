@@ -20,6 +20,8 @@ We implement this protocol ourselves (ADR-0004). This is the working reference. 
 
 The Flatpak and Snap locations are not in Discord's documentation. They come from another project's source.
 
+`RICH_PRESENCE_DISCORD_ENDPOINT`, when set, replaces all of the above with one name, to which `N` is added ([ADR-0018](../../../docs/architecture/adr/0018-discord-endpoint-override.md)). The end-to-end tests set it so that the built binary reaches the fake Discord and never a real one.
+
 ## Frame
 
 | Bytes | Content |

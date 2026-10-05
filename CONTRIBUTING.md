@@ -116,6 +116,18 @@ CGO_ENABLED=1 go test -race ./...
 
 `gofmt -l .` must print nothing. The static analyser is [Staticcheck](https://staticcheck.dev/), pinned to the version in [the workflow](.github/workflows/ci.yml); use the same one.
 
+### End-to-end tests
+
+`go test ./...` includes them. To run them alone:
+
+```bash
+go test -count=1 ./test/e2e
+```
+
+They build the binary themselves and start it as real processes, with a fake Claude Code and a fake Discord. Each scenario has its own runtime directory, home directory and Discord endpoint name, so they never touch a presence host or a Discord that is running on your machine. A scenario that fails prints what the fake Discord recorded, the product's log and what each process wrote to standard error.
+
+The latency scenario allows the event tool 10 milliseconds at the 99th percentile on your machine and 100 in CI, where the `CI` environment variable is set. The reason for the difference is written beside the two numbers in [latency_test.go](test/e2e/latency_test.go).
+
 ### Fuzz
 
 Every fuzz target runs briefly in CI. To run the ones in a package you touched:
@@ -128,22 +140,15 @@ pkg=./tools/covercheck; for t in $(go test -list '^Fuzz' $pkg | grep '^Fuzz'); d
 
 Statement coverage must be 100.0% of the measured set, which is every package except those under `internal/testutil`. That rule is written once, in [tools/covercheck](tools/covercheck/main.go), and the test command takes its package list from there.
 
-`main` cannot be called from a test, so it is covered by running binaries built with coverage instrumentation. The gate reads the unit-test profile and the profile of those runs together.
+`main` cannot be called from a test, so it is covered by running binaries built with coverage instrumentation. The end-to-end tests in [test/e2e](test/e2e/doc.go) build the product that way and run it as real processes, and the two tools are run by hand below. The gate reads the unit-test profile and the profile of those runs together.
 
 ```bash
 rm -rf coverage && mkdir -p coverage/e2e
-go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck ./tools/mcpb ./tools/policycheck
+go build -cover -covermode=atomic -o bin/ ./tools/covercheck ./tools/mcpb ./tools/policycheck
 measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
-CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
-export GOCOVERDIR=coverage/e2e RICH_PRESENCE_RUNTIME_DIR="$(mktemp -d)/rich-presence"
-expect_exit() { want=$1; shift; code=0; "$@" || code=$?; [ "$code" -eq "$want" ] || { echo "$*: exit $code, want $want"; return 1; }; }
-expect_exit 0 bin/rich-presence version
-expect_exit 0 bin/rich-presence help
-expect_exit 2 bin/rich-presence frobnicate
-expect_exit 3 bin/rich-presence status
-expect_exit 2 bin/mcpb
-expect_exit 1 bin/rich-presence doctor   # no Discord is running in CI; with one, expect 0 or 1
-printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"claude-code","version":"2.0.0"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | expect_exit 0 bin/rich-presence mcp
+export RICH_PRESENCE_E2E_COVERDIR="$(go list -m -f '{{.Dir}}')/coverage/e2e"
+CGO_ENABLED=1 go test -count=1 -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
+code=0; GOCOVERDIR=coverage/e2e bin/mcpb || code=$?; test "$code" -eq 2   # no command is a usage error, which covers its main function
 for target in windows/amd64 darwin/amd64 darwin/arm64 linux/amd64; do
   GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go list -deps -test -json ./... |
     GOCOVERDIR=coverage/e2e bin/policycheck modules .github/allowed-modules.txt
@@ -153,6 +158,8 @@ go tool covdata textfmt -i=coverage/e2e -o coverage/e2e.txt
 { cat coverage/unit.txt; tail -n +2 coverage/e2e.txt; } > coverage/profile.txt
 go run ./tools/covercheck check -module "$(go list -m)" coverage/profile.txt
 ```
+
+`RICH_PRESENCE_E2E_COVERDIR` must be an absolute path. `-count=1` is there because a cached result of the end-to-end tests starts no process, and so writes no coverage.
 
 The last command prints each uncovered block as `file:line` and fails unless coverage is 100.0%. To see a file line by line:
 
