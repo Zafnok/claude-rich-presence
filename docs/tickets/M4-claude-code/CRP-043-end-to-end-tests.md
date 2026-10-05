@@ -3,7 +3,7 @@ id: CRP-043
 title: End-to-end tests
 milestone: M4 Claude Code
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-022, CRP-024, CRP-033]
 blocks: [CRP-044, CRP-050, CRP-060, CRP-062]
