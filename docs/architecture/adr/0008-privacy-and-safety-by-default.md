@@ -29,7 +29,7 @@ We use hook events, the plugin manifest, MCP, MCPB and Discord IPC as documented
 1. Adapters accept an **allowlist** of fields per event. Anything else is not parsed.
 2. Never read, held, logged or forwarded: prompt text, tool inputs, tool outputs, assistant messages, file paths, transcript paths, session titles.
 3. Tool names are mapped to a small fixed vocabulary of kinds such as editing, running commands, searching. The raw name is not forwarded.
-4. The working directory is reduced to its last path element inside the adapter, and only when the privacy level is `full`. At other levels it is discarded on receipt.
+4. The working directory is reduced to its last path element inside the adapter, and only when the privacy level is `full`. At other levels it is discarded on receipt. (Clarified 2026-10-04. With project profiles ([ADR-0012](0012-project-profiles-and-repository-link.md)) the level cannot be known without the working directory, so when the adapter has been given a profile resolver, the directory is read at every level. It is used once, in memory, to choose the level and the display name for the call, and is then discarded: never stored, logged or forwarded. Without a resolver nothing changes. The decision is unchanged: at levels other than `full` the directory, and anything derived from it but the level, leaves no trace in what the adapter publishes.)
 5. The privacy level is enforced in the adapter, before the control channel. The host cannot show what it was never sent.
 
 ### 4. Privacy levels

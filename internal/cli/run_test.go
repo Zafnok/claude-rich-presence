@@ -11,7 +11,6 @@ func noEnv(string) string { return "" }
 
 func TestRun(t *testing.T) {
 	wantVersion := BinaryName + " " + resolveVersion(version, debug.ReadBuildInfo) + "\n"
-	usage := "usage: " + BinaryName + " <command>\n\ncommands:\n  version  print the version\n"
 
 	tests := []struct {
 		name       string
@@ -26,6 +25,10 @@ func TestRun(t *testing.T) {
 			wantCode:   0,
 			wantStdout: wantVersion,
 		},
+		{name: "no command prints usage", args: nil, wantCode: 0, wantStdout: usage},
+		{name: "help prints usage", args: []string{"help"}, wantCode: 0, wantStdout: usage},
+		{name: "-h prints usage", args: []string{"-h"}, wantCode: 0, wantStdout: usage},
+		{name: "--help prints usage", args: []string{"--help"}, wantCode: 0, wantStdout: usage},
 		{
 			name:       "unknown command prints usage to standard error",
 			args:       []string{"frobnicate"},
@@ -33,10 +36,22 @@ func TestRun(t *testing.T) {
 			wantStderr: BinaryName + ": unknown command \"frobnicate\"\n" + usage,
 		},
 		{
-			name:       "no command prints usage to standard error",
-			args:       nil,
+			name:       "a command that takes no arguments refuses one",
+			args:       []string{"version", "extra"},
 			wantCode:   2,
-			wantStderr: BinaryName + ": no command given\n" + usage,
+			wantStderr: BinaryName + ": version takes no arguments\n" + usage,
+		},
+		{
+			name:       "an unknown flag is a usage error",
+			args:       []string{"doctor", "-bogus"},
+			wantCode:   2,
+			wantStderr: "flag provided but not defined: -bogus\nusage: " + BinaryName + " doctor\n",
+		},
+		{
+			name:       "asking a command for help prints its usage and succeeds",
+			args:       []string{"status", "-h"},
+			wantCode:   0,
+			wantStderr: "usage: " + BinaryName + " status\n",
 		},
 	}
 	for _, tt := range tests {
@@ -53,6 +68,23 @@ func TestRun(t *testing.T) {
 				t.Errorf("stderr = %q, want %q", got, tt.wantStderr)
 			}
 		})
+	}
+}
+
+func TestUsageListsEveryCommand(t *testing.T) {
+	for _, command := range []string{"mcp", "status", "doctor", "version", "help"} {
+		if !strings.Contains(usage, "  "+command+" ") {
+			t.Errorf("usage does not list %q", command)
+		}
+	}
+}
+
+func TestRunEndsWithAFixedMessageOnAPanic(t *testing.T) {
+	w := newWorld(t)
+	w.sys.files = panickingFiles{}
+	code, stdout, stderr := w.run("doctor")
+	if code != 1 || stdout != "" || stderr != BinaryName+": internal error\n" {
+		t.Errorf("got code %d, stdout %q, stderr %q; want 1, nothing, and a fixed message", code, stdout, stderr)
 	}
 }
 

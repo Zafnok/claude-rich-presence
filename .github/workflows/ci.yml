@@ -94,7 +94,26 @@ jobs:
       # scenarios here.
       - name: End-to-end coverage
         run: |
-          GOCOVERDIR=coverage/e2e bin/rich-presence version
+          # Every command of the product, with the exit code it must give. The
+          # runtime directory is the job's own, so that nothing here can meet
+          # a host that is running on the machine.
+          export GOCOVERDIR=coverage/e2e
+          export RICH_PRESENCE_RUNTIME_DIR="$RUNNER_TEMP/rich-presence-e2e"
+          expect_exit() { want=$1; shift; code=0; "$@" || code=$?; if [ "$code" -ne "$want" ]; then echo "$*: exit $code, want $want"; return 1; fi; }
+          expect_exit 0 bin/rich-presence version
+          expect_exit 0 bin/rich-presence help
+          expect_exit 2 bin/rich-presence frobnicate
+          expect_exit 3 bin/rich-presence status
+          # No Discord is running here, so the doctor reports a problem.
+          expect_exit 1 bin/rich-presence doctor
+          # The server answers initialize and lists its tools, and ends with
+          # its input.
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"claude-code","version":"2.0.0"}}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |
+            expect_exit 0 bin/rich-presence mcp > coverage/mcp-out.txt
+          grep -q presence_status coverage/mcp-out.txt
+          unset RICH_PRESENCE_RUNTIME_DIR
           # The dependency policy of ADR-0003. Running the real checks on the
           # real files is also what covers the main function of policycheck.
           # Windows is listed too: go-winio is linked there and nowhere else.

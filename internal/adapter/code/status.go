@@ -82,10 +82,13 @@ func (a *Adapter) handleStatus(json.RawMessage) (result mcp.Result) {
 		}
 	}()
 	s := a.status.Status()
+	a.mu.Lock()
+	level := a.session.privacy
+	a.mu.Unlock()
 	return mcp.Result{Text: "Role: " + word(roleText, s.Role) + "\n" +
 		"Discord: " + word(discordText, s.Discord) + "\n" +
 		"Sessions: " + strconv.Itoa(s.Sessions) + "\n" +
-		"Privacy: " + string(a.privacy) + "\n" +
+		"Privacy: " + string(level) + "\n" +
 		"Events ignored: " + strconv.FormatInt(a.ignored.Load(), 10) + "\n" +
 		"Events dropped: " + strconv.FormatInt(a.dropped.Load(), 10)}
 }

@@ -72,7 +72,7 @@ A hook handler may carry `if`, written in permission-rule syntax such as a patte
 
 ### Events we use, and the fields we read
 
-Every event carries `session_id`, `cwd`, `hook_event_name`, and inside a subagent `agent_id` and `agent_type`. We read `session_id` always, and `cwd` only to take its last element at the `full` privacy level. Below that level `cwd` is not decoded at all.
+Every event carries `session_id`, `cwd`, `hook_event_name`, and inside a subagent `agent_id` and `agent_type`. We read `session_id` always, and `cwd` only to take its last element at the `full` privacy level. Below that level `cwd` is not decoded at all, unless the adapter was given a project-profile resolver (CRP-077): then it is decoded at every level, used once to choose the level and the display name, and discarded. `cwd` follows Claude into a worktree and after a `cd` (hooks reference, read 2026-10-04), so the level can change during a session.
 
 This table mirrors the allowlist in `internal/adapter/code/allowlist.go` as CRP-041 built it. The code is the definition.
 
