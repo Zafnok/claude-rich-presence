@@ -69,7 +69,6 @@ func runTests(m *testing.M) int {
 		fmt.Fprintln(os.Stderr, "e2e:", err)
 		return 1
 	}
-	defer func() { _ = os.RemoveAll(dir) }()
 	built.dir = dir
 	built.coverDir = os.Getenv(EnvCoverDir)
 	if built.coverDir == "" {
@@ -84,8 +83,13 @@ func runTests(m *testing.M) int {
 		return 1
 	}
 	// The second build is started now, so that it is made while the first
-	// is, and not while the scenario that needs it waits.
+	// is, and not while the scenario that needs it waits. It is waited for
+	// before the directory it writes to is removed.
 	go func() { _, _ = newerBinary() }()
+	defer func() {
+		_, _ = newerBinary()
+		_ = os.RemoveAll(dir)
+	}()
 	if built.current, err = build(versionCurrent); err != nil {
 		fmt.Fprintln(os.Stderr, "e2e:", err)
 		return 1
@@ -131,8 +135,20 @@ func mergeCoverage() error {
 		if output, err := cmd.CombinedOutput(); err != nil {
 			return fmt.Errorf("merging the coverage data: %v\n%s", err, output)
 		}
-		if err := os.CopyFS(built.coverDir, os.DirFS(merged)); err != nil {
-			return fmt.Errorf("merging the coverage data: %v", err)
+		// A file that is already there, from an earlier run into the same
+		// directory, is replaced: the same name means the same build.
+		files, err := os.ReadDir(merged)
+		if err != nil {
+			return err
+		}
+		for _, file := range files {
+			data, err := os.ReadFile(filepath.Join(merged, file.Name()))
+			if err == nil {
+				err = os.WriteFile(filepath.Join(built.coverDir, file.Name()), data, 0o644)
+			}
+			if err != nil {
+				return fmt.Errorf("merging the coverage data: %v", err)
+			}
 		}
 	}
 	for _, dir := range dirs {
