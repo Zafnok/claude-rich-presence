@@ -29,7 +29,7 @@ A workflow triggered by a tag of the form `vMAJOR.MINOR.PATCH`:
 1. Verify the tag is on `main` and that CI passed for that commit.
 2. Build every target from [ADR-0002](../../architecture/adr/0002-implementation-language.md) with cgo disabled, trimmed paths, and the version set from the tag.
 3. Merge the Mac universal binary on a Mac runner.
-4. Assemble the bundle with the build step from CRP-051.
+4. Assemble the bundle with `tools/mcpb` from CRP-051. The `bundle-darwin` and `bundle` jobs of `ci.yml` are the working recipe, including the ad hoc re-signing after `lipo`. The version is the tag, and it must equal the `VERSION` file at that commit, which is also the version in the plugin manifest; fail the release if not.
 5. Produce a checksums file covering every asset.
 6. Produce a build provenance attestation for every asset, using GitHub's attestation action.
 7. Create the GitHub Release with the bundle, the standalone binaries, the checksums, the license, and third-party notices.

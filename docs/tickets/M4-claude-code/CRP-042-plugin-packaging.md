@@ -55,6 +55,7 @@ The plugin is JSON and Markdown only. It points at the MCPB bundle and declares 
 - [ ] A test checks that the server address in the hook file matches the bundle manifest's `name`.
 - [ ] Changing the privacy setting through Claude Code's plugin configuration changes what is published, after a session restart.
 - [ ] Disabling the plugin stops the server and clears presence.
+- [ ] A test checks that the plugin manifest's `version` equals the contents of the repository's `VERSION` file, which is also the version in the bundle manifest and in the binaries ([CRP-051](../done/CRP-051-mcpb-bundle.md)).
 - [ ] The minimum Claude Code version the plugin needs is determined, stated in the plugin description and in the README.
 
 ## Notes for the implementer

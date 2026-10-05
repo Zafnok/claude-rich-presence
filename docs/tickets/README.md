@@ -70,6 +70,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-005](done/CRP-005-ci-pipeline.md) | CI pipeline and the coverage gate | 004 | Sonnet 5.5 | medium | M |
 | [CRP-006](M0-foundation/CRP-006-sonarqube-cloud.md) | SonarQube Cloud integration | 005 | Sonnet 5.5 | low | S |
 | [CRP-007](done/CRP-007-supply-chain-policy.md) | Supply-chain policy enforcement | 005 | Sonnet 5.5 | low | S |
+| [CRP-008](M0-foundation/CRP-008-flaky-tests.md) | Fix two flaky tests in the scheduler and the session manager | 005, 013, 023, 024 | Opus 5.5 | high | S |
 | [CRP-010](done/CRP-010-domain-model.md) | Domain model: events, sessions, registry | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-011](done/CRP-011-presence-renderer.md) | Presence renderer | 010 | Sonnet 5.5 | medium | M |
 | [CRP-012](done/CRP-012-configuration.md) | Configuration | 004, 005 | Sonnet 5.5 | medium | M |
@@ -128,6 +129,7 @@ flowchart TD
     C005["005 CI"]
     C006["006 Sonar"]
     C007["007 supply chain"]
+    C008["008 flaky tests"]
     C010["010 domain"]
     C011["011 renderer"]
     C012["012 config"]
@@ -175,6 +177,10 @@ flowchart TD
     C004 --> C005
     C005 --> C006
     C005 --> C007
+    C005 --> C008
+    C013 --> C008
+    C023 --> C008
+    C024 --> C008
     C004 --> C010
     C005 --> C010
     C010 --> C011
@@ -290,7 +296,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 3 | 011, 014, 020, 021, 030, 034, 041 |
 | 4 | 023, 077 |
 | 5 | 024, 032, 078 |
-| 6 | 033 |
+| 6 | 008, 033 |
 | 7 | 035, 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
 | 9 | 045, 047, 048, 052, 060, 073, 075 |
