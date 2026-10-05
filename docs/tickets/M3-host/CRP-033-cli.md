@@ -3,7 +3,7 @@ id: CRP-033
 title: Command line and composition root
 milestone: M3 Host
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-012, CRP-032, CRP-034, CRP-041]
 blocks: [CRP-042, CRP-043, CRP-050, CRP-051, CRP-076]
