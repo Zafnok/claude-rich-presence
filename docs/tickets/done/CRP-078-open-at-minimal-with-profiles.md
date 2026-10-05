@@ -3,7 +3,7 @@ id: CRP-078
 title: Open a profiled session at the lowest level until its first hook
 milestone: M7 Personalisation
 type: feature
-status: todo
+status: done
 priority: P2
 blocked_by: [CRP-077]
 blocks: []
@@ -43,12 +43,12 @@ In `internal/adapter/code`:
 
 ## Acceptance criteria
 
-- [ ] With a resolver set and the global level `full`, the event `Open` publishes carries the level `minimal` and no project, model, tool or name.
-- [ ] With a nil resolver, every existing test of the adapter passes unchanged, including the one that shows `Open` publishing the global level.
-- [ ] With a resolver set and the global level `standard`, a session whose first hook is in a directory with no profile is published at `standard` from that hook on, shown by applying the published events to a `domain` registry.
-- [ ] With a resolver set and the global level `full`, a session whose first hook is in a `minimal` profile is at `minimal` in the registry before and after that hook, and no event published up to that hook carries a level above `minimal`.
-- [ ] With a resolver set, a first hook with no working directory leaves the session at `minimal`.
-- [ ] `presence_status` prints `minimal` before the first hook with a working directory and the resolved level after it.
+- [x] With a resolver set and the global level `full`, the event `Open` publishes carries the level `minimal` and no project, model, tool or name.
+- [x] With a nil resolver, every existing test of the adapter passes unchanged, including the one that shows `Open` publishing the global level.
+- [x] With a resolver set and the global level `standard`, a session whose first hook is in a directory with no profile is published at `standard` from that hook on, shown by applying the published events to a `domain` registry.
+- [x] With a resolver set and the global level `full`, a session whose first hook is in a `minimal` profile is at `minimal` in the registry before and after that hook, and no event published up to that hook carries a level above `minimal`.
+- [x] With a resolver set, a first hook with no working directory leaves the session at `minimal`.
+- [x] `presence_status` prints `minimal` before the first hook with a working directory and the resolved level after it.
 
 ## Notes for the implementer
 

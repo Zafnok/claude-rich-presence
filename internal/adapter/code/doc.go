@@ -21,8 +21,10 @@
 // directory is resolved to the settings for it: a level and a display name.
 // The directory is read at every level for this, used once and discarded; it
 // is never stored. The settings last resolved hold until a hook carries
-// another directory. The Privacy option is the level before the first, and
-// throughout when there is no resolver.
+// another directory. Until the first hook that carries one, the session is at
+// minimal, because the directory may name a profile more private than the
+// global level. The Privacy option is the level for a directory with no
+// profile, and for the whole session when there is no resolver.
 //
 // A move to a higher level is announced with a refresh that carries the level
 // and the project. A move to a lower one ends the session and opens it again

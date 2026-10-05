@@ -53,9 +53,9 @@ type Clock interface {
 
 // Options configures an Adapter. Every field but Resolve is required.
 type Options struct {
-	// Privacy is how much of the session may leave the adapter before a hook
-	// has supplied a working directory, and for the whole session when Resolve
-	// is nil.
+	// Privacy is the level for the whole session when Resolve is nil. When
+	// Resolve is set it is the level for a directory that matches no profile,
+	// and the session is at minimal until a hook supplies a working directory.
 	Privacy domain.Privacy
 	// Resolve gives the level and the project's display name for a working
 	// directory. When it is set, the working directory is read at every level,
@@ -80,8 +80,10 @@ type Options struct {
 // Make one with New, call Open when the client has initialized, and call
 // Close when the server's input closes or the process is told to stop.
 type Adapter struct {
-	// privacy is the level the session opens at, and the one that applies
-	// without a resolver. The level in force is session.privacy.
+	// privacy is the level that applies without a resolver, and the one a
+	// resolver's settings fall back to for a directory with no profile. The
+	// level in force is session.privacy, which is minimal until a hook with a
+	// working directory has been resolved.
 	privacy domain.Privacy
 	resolve Resolver
 	status  StatusSource
@@ -147,11 +149,22 @@ func New(opts Options) (*Adapter, error) {
 		pub:     opts.Publisher,
 		queue:   make(chan []domain.Event, queueSize),
 		done:    make(chan struct{}),
-		session: session{id: opts.ProvisionalID, privacy: opts.Privacy},
+		session: session{id: opts.ProvisionalID, privacy: openingLevel(opts)},
 		agents:  map[string]struct{}{},
 	}
 	go a.pump()
 	return a, nil
+}
+
+// openingLevel is the level a session is published at before any hook has
+// supplied a working directory. With a resolver the directory decides the
+// level, and until it is known the session may be in a profile more private
+// than Privacy, so it opens at minimal.
+func openingLevel(opts Options) domain.Privacy {
+	if opts.Resolve != nil {
+		return domain.PrivacyMinimal
+	}
+	return opts.Privacy
 }
 
 // Tools returns the event tool and the status tool.
