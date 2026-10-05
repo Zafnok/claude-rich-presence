@@ -115,8 +115,8 @@ func TestAProfileLowersTheLevelForOneProject(t *testing.T) {
 	h.call(hookAt("Notification", dirMinimal, `"notification_type":"permission_prompt"`))
 	got := h.finish()
 	wantEvents(t, got,
-		// The session opens at the global level, before any directory is known.
-		"session_opened "+provisional+" privacy=full",
+		// The session opens at minimal, before any directory is known.
+		"session_opened "+provisional+" privacy=minimal",
 		"session_ended "+provisional,
 		"session_opened s1 privacy=minimal",
 		"session_refreshed s1",
@@ -131,7 +131,7 @@ func TestAProfileLowersTheLevelForOneProject(t *testing.T) {
 	}
 }
 
-func TestAnOpeningAtAHigherLevelCarriesNothingMore(t *testing.T) {
+func TestAnOpeningWithAResolverIsAtMinimal(t *testing.T) {
 	h := newProfileHarness(t, domain.PrivacyFull, profiles(domain.PrivacyFull))
 	h.a.Open()
 	h.a.Close()
@@ -139,7 +139,7 @@ func TestAnOpeningAtAHigherLevelCarriesNothingMore(t *testing.T) {
 		t.Fatalf("published %+v", h.rec.events)
 	}
 	opened := h.rec.events[0]
-	want := domain.Event{SessionID: provisional, Surface: domain.SurfaceCode, At: epoch, Kind: domain.KindSessionOpened, Privacy: domain.PrivacyFull}
+	want := domain.Event{SessionID: provisional, Surface: domain.SurfaceCode, At: epoch, Kind: domain.KindSessionOpened, Privacy: domain.PrivacyMinimal}
 	if opened != want {
 		t.Errorf("opening = %+v, want %+v", opened, want)
 	}
@@ -166,7 +166,7 @@ func TestADisplayNameReplacesTheDirectoryNameAtFullOnly(t *testing.T) {
 			h := newProfileHarness(t, domain.PrivacyStandard, func(string) Settings { return c.settings })
 			h.a.Open()
 			h.call(hookAt("UserPromptSubmit", dir))
-			want := append([]string{"session_opened " + provisional + " privacy=standard", "session_ended " + provisional}, c.want...)
+			want := append([]string{"session_opened " + provisional + " privacy=minimal", "session_ended " + provisional}, c.want...)
 			wantEvents(t, h.finish(), append(want, "session_ended s1")...)
 		})
 	}
@@ -215,7 +215,7 @@ func TestMovingToAHigherLevelRefreshesTheSession(t *testing.T) {
 		h.call(hookAt("UserPromptSubmit", dirOther))
 		h.call(hookAt("Stop", dirFull))
 		wantEvents(t, h.finish(),
-			"session_opened "+provisional+" privacy=standard",
+			"session_opened "+provisional+" privacy=minimal",
 			"session_ended "+provisional,
 			"session_opened s1 privacy=standard",
 			"turn_started s1",
@@ -239,7 +239,7 @@ func TestMovingToALowerLevelEndsAndReopensTheSession(t *testing.T) {
 	h.call(hookAt("Notification", dirMinimal, `"notification_type":"auth_success"`))
 	got := h.finish()
 	wantEvents(t, got,
-		"session_opened "+provisional+" privacy=full",
+		"session_opened "+provisional+" privacy=minimal",
 		"session_ended "+provisional,
 		"session_opened s1 project=Visions of Shuyi privacy=full",
 		"session_refreshed s1 model=Opus 5.5",
@@ -296,7 +296,7 @@ func TestAHookWithoutADirectoryKeepsTheSettingsLastResolved(t *testing.T) {
 		h.call(`{"event":"PreToolUse","session_id":"s1","tool_name":"Edit"}`)
 		h.call(`{"event":"SessionStart","session_id":"s1","model":"claude-opus-5-5"}`)
 		wantEvents(t, h.finish(),
-			"session_opened "+provisional+" privacy=full",
+			"session_opened "+provisional+" privacy=minimal",
 			"session_ended "+provisional,
 			"session_opened s1 privacy=minimal",
 			"session_refreshed s1",
@@ -309,7 +309,7 @@ func TestAHookWithoutADirectoryKeepsTheSettingsLastResolved(t *testing.T) {
 		h := newProfileHarness(t, domain.PrivacyStandard, profiles(domain.PrivacyStandard))
 		h.a.Open()
 		h.call(`{"event":"UserPromptSubmit","session_id":"s1"}`)
-		wantEvents(t, h.finish(), append(bound(domain.PrivacyStandard), "session_ended s1")...)
+		wantEvents(t, h.finish(), append(bound(domain.PrivacyMinimal), "session_ended s1")...)
 	})
 }
 
@@ -334,7 +334,7 @@ func TestMovingBetweenProjectsAtFullRenamesTheSession(t *testing.T) {
 	h.call(hookAt("UserPromptSubmit", dirNamed))
 	h.call(hookAt("PostToolUse", dirFull))
 	wantEvents(t, h.finish(),
-		"session_opened "+provisional+" privacy=full",
+		"session_opened "+provisional+" privacy=minimal",
 		"session_ended "+provisional,
 		"session_opened s1 project=Visions of Shuyi privacy=full",
 		"turn_started s1",
@@ -365,7 +365,7 @@ func TestAFailingResolverIsTreatedAsMinimal(t *testing.T) {
 			h.call(`{"event":"PostToolUse","session_id":"s1"}`)
 			status := h.a.handleStatus(nil)
 			wantEvents(t, h.finish(),
-				"session_opened "+provisional+" privacy=full",
+				"session_opened "+provisional+" privacy=minimal",
 				"session_ended "+provisional,
 				"session_opened s1 privacy=minimal",
 				"session_refreshed s1",
@@ -483,4 +483,49 @@ func TestWithAResolverTheWorkingDirectoryIsReadAtEveryLevel(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Before the first hook with a working directory, a session with a resolver
+// is at minimal in the registry whatever the global level, so a profile more
+// private than the global level is never exceeded.
+func TestASessionWithAResolverNeverShowsMoreThanItsProfileAllows(t *testing.T) {
+	t.Run("a minimal profile under a full global level", func(t *testing.T) {
+		h := newProfileHarness(t, domain.PrivacyFull, profiles(domain.PrivacyFull))
+		h.a.Open()
+		h.a.Close()
+		if s := finalSession(t, h.rec.events); s.Privacy != domain.PrivacyMinimal {
+			t.Errorf("before the first hook, session = %+v", s)
+		}
+
+		h = newProfileHarness(t, domain.PrivacyFull, profiles(domain.PrivacyFull))
+		h.a.Open()
+		h.call(hookAt("UserPromptSubmit", dirMinimal))
+		h.finish()
+		if s := finalSession(t, h.rec.events); s.Privacy != domain.PrivacyMinimal {
+			t.Errorf("after the first hook, session = %+v", s)
+		}
+		for _, e := range h.rec.events {
+			if e.Privacy != "" && e.Privacy != domain.PrivacyMinimal {
+				t.Errorf("event %+v is above minimal", e)
+			}
+		}
+	})
+	t.Run("a directory with no profile under a standard global level", func(t *testing.T) {
+		h := newProfileHarness(t, domain.PrivacyStandard, profiles(domain.PrivacyStandard))
+		h.a.Open()
+		h.call(hookAt("UserPromptSubmit", dirOther))
+		h.finish()
+		if s := finalSession(t, h.rec.events); s.Privacy != domain.PrivacyStandard {
+			t.Errorf("after the first hook, session = %+v", s)
+		}
+	})
+	t.Run("a first hook without a directory", func(t *testing.T) {
+		h := newProfileHarness(t, domain.PrivacyFull, profiles(domain.PrivacyFull))
+		h.a.Open()
+		h.call(`{"event":"UserPromptSubmit","session_id":"s1"}`)
+		h.finish()
+		if s := finalSession(t, h.rec.events); s.Privacy != domain.PrivacyMinimal {
+			t.Errorf("session = %+v", s)
+		}
+	})
 }
