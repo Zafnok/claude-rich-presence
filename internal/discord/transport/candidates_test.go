@@ -24,6 +24,11 @@ func TestPrefixes(t *testing.T) {
 		{"windows", "windows", env(), []string{`\\?\pipe\discord-ipc-`}},
 		{"windows ignores the environment", "windows", env(all...), []string{`\\?\pipe\discord-ipc-`}},
 
+		{"windows, override", "windows", env(EnvEndpoint, `\\.\pipe\mine-discord-ipc-`), []string{`\\.\pipe\mine-discord-ipc-`}},
+		{"linux, override replaces the whole search", "linux", env(append([]string{EnvEndpoint, "/elsewhere/discord-ipc-"}, all...)...), []string{"/elsewhere/discord-ipc-"}},
+		{"darwin, override", "darwin", env(EnvEndpoint, "/elsewhere/discord-ipc-"), []string{"/elsewhere/discord-ipc-"}},
+		{"darwin, an empty override counts as not set", "darwin", env(EnvEndpoint, "", "TMP", "/var/tmp"), []string{"/var/tmp/discord-ipc-"}},
+
 		{"darwin, every variable set", "darwin", env(all...), []string{"/run/user/1000/discord-ipc-"}},
 		{"darwin, TMPDIR", "darwin", env(all[2:]...), []string{"/var/tmpdir/discord-ipc-"}},
 		{"darwin, TMP", "darwin", env(all[4:]...), []string{"/var/tmp/discord-ipc-"}},

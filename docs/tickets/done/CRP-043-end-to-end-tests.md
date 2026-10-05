@@ -3,10 +3,10 @@ id: CRP-043
 title: End-to-end tests
 milestone: M4 Claude Code
 type: feature
-status: todo
+status: done
 priority: P0
 blocked_by: [CRP-022, CRP-024, CRP-033]
-blocks: [CRP-044, CRP-050, CRP-060, CRP-062]
+blocks: [CRP-044, CRP-050, CRP-060, CRP-062, CRP-079]
 model: claude-opus-5-5
 effort: high
 size: L
@@ -53,14 +53,14 @@ Scenarios:
 
 ## Acceptance criteria
 
-- [ ] E1 to E12 and E14 pass on Linux, macOS and Windows in CI. E13 is added by CRP-050.
-- [ ] Each test uses its own runtime directory and its own Discord endpoint name, so tests run in parallel and leave nothing behind.
-- [ ] Time-dependent scenarios run with a shortened minimum interval set through configuration, so the suite finishes in under two minutes per operating system.
-- [ ] E10 asserts a budget of 10 milliseconds at the 99th percentile on a developer machine and a relaxed bound in CI, both stated in the test, with the reason for the relaxation.
-- [ ] E9 captures control-socket traffic by acting as the host in the test.
-- [ ] With these runs merged, coverage of `cmd/rich-presence` and `internal/cli` is 100.0% on each operating system.
-- [ ] A failed scenario prints the fake Discord server's record and the binary's log.
-- [ ] No test relies on a fixed sleep to wait for a state. Each polls a condition with a deadline.
+- [x] E1 to E12 and E14 pass on Linux, macOS and Windows in CI. E13 is added by CRP-050.
+- [x] Each test uses its own runtime directory and its own Discord endpoint name, so tests run in parallel and leave nothing behind.
+- [x] Time-dependent scenarios run with a shortened minimum interval set through configuration, so the suite finishes in under two minutes per operating system.
+- [x] E10 asserts a budget of 10 milliseconds at the 99th percentile on a developer machine and a relaxed bound in CI, both stated in the test, with the reason for the relaxation.
+- [x] E9 captures control-socket traffic by acting as the host in the test.
+- [x] With these runs merged, coverage of `cmd/rich-presence` and `internal/cli` is 100.0% on each operating system.
+- [x] A failed scenario prints the fake Discord server's record and the binary's log.
+- [x] No test relies on a fixed sleep to wait for a state. Each polls a condition with a deadline.
 
 ## Notes for the implementer
 

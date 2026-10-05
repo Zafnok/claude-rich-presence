@@ -31,13 +31,24 @@ var sandboxDirs = []string{
 	"app/com.discordapp.DiscordCanary",
 }
 
+// EnvEndpoint names the environment variable that replaces the whole search
+// with one endpoint name, given without its index. It is for tests of the
+// built binary, which must reach a fake Discord under a name of their own and
+// never a real one, and for unusual setups. Windows has no other way to do
+// that: the pipe name is fixed and no variable moves it.
+const EnvEndpoint = "RICH_PRESENCE_DISCORD_ENDPOINT"
+
 // Prefixes lists, in the order to try them, the endpoint names without their
 // index, for an operating system named as runtime.GOOS names it and an
-// environment. An environment variable that is empty counts as not set.
+// environment. An environment variable that is empty counts as not set. When
+// EnvEndpoint is set, its value is the only prefix.
 //
 // It is a pure function, so every operating system's list can be tested on
 // any other. Unix paths are always joined with a forward slash.
 func Prefixes(goos string, getenv func(string) string) []string {
+	if override := getenv(EnvEndpoint); override != "" {
+		return []string{override}
+	}
 	if goos == "windows" {
 		return []string{windowsPrefix}
 	}

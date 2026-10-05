@@ -33,6 +33,8 @@ The file is JSON. Its location:
 | `link_hosts` | A list of host names | None | No, file only |
 | `projects` | A list of project profiles | None | No, file only |
 
+Two more environment variables exist for tests and unusual setups. They are not settings and have no entry in the file. `RICH_PRESENCE_RUNTIME_DIR` moves the directory of the control socket ([ADR-0006](architecture/adr/0006-control-channel.md)). `RICH_PRESENCE_DISCORD_ENDPOINT` replaces the search for Discord with one endpoint name ([ADR-0018](architecture/adr/0018-discord-endpoint-override.md)).
+
 What each privacy level publishes is in [ADR-0008](architecture/adr/0008-privacy-and-safety-by-default.md).
 
 ## Project profiles

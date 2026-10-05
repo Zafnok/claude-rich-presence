@@ -58,6 +58,6 @@
 // because the transport returns concrete types and the node asks for
 // interfaces.
 //
-// The wiring is covered by the unit tests and by end-to-end runs of the built
-// binary, which CI makes for every command (CONTRIBUTING.md).
+// The wiring is covered by the unit tests and by the end-to-end tests in
+// test/e2e, which run every command of the built binary as a real process.
 package cli
