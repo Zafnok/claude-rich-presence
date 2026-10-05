@@ -375,7 +375,7 @@ func TestCheckRejectsAnArchiveThatIsNotAZip(t *testing.T) {
 func TestCheckReportsAnEntryThatCannotBeRead(t *testing.T) {
 	// Entries are stored, so changing a byte of one breaks the checksum of
 	// that entry alone.
-	for _, marker := range []string{"manifest_version", "ELF"} {
+	for _, marker := range []string{"manifest_version", string(elfFile(62)[:4])} {
 		archive := zipOf(t, entriesOf(t, keep, sameMode))
 		i := bytes.Index(archive, []byte(marker))
 		if i < 0 {
