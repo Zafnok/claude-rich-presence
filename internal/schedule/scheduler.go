@@ -27,14 +27,24 @@ type Clock interface {
 // delivered when the interval has passed. A value equal to the one the
 // consumer last received is not delivered again.
 //
+// A consumer that cannot use a value says so by returning false. The value is
+// then as if it had not been delivered: it is not recorded as shown, and does
+// not count towards the interval. Nothing is retried; the value is delivered
+// again after the next Submit, Clear or Reset, if it is still the current one.
+//
 // All methods are safe for use from several goroutines and none of them
 // blocks on the consumer.
 type Scheduler[T comparable] struct {
 	clock Clock
-	emit  func(value T, show bool)
+	emit  func(value T, show bool) bool
 
 	mu      sync.Mutex
 	limiter limiter[T]
+
+	// delivering is held from the moment the loop looks at the limiter until
+	// the consumer has answered, so that Settle can wait for a delivery that
+	// is under way, or just decided.
+	delivering sync.Mutex
 
 	wake     chan struct{}
 	stop     chan struct{}
@@ -45,11 +55,11 @@ type Scheduler[T comparable] struct {
 // New starts a scheduler. The caller owns it and must call Stop.
 //
 // Updates are delivered by calling emit, with show false and the zero value
-// for "show nothing". emit is called from the scheduler's own goroutine, one
-// call at a time. It may take as long as it likes: submissions made meanwhile
-// are coalesced, and the interval is measured from the start of each call. It
-// must not call Stop.
-func New[T comparable](clock Clock, interval time.Duration, emit func(value T, show bool)) *Scheduler[T] {
+// for "show nothing". emit returns whether it took the update. It is called
+// from the scheduler's own goroutine, one call at a time. It may take as long
+// as it likes: submissions made meanwhile are coalesced, and the interval is
+// measured from the start of each call. It must not call Stop.
+func New[T comparable](clock Clock, interval time.Duration, emit func(value T, show bool) bool) *Scheduler[T] {
 	s := &Scheduler[T]{
 		clock:   clock,
 		emit:    emit,
@@ -88,6 +98,17 @@ func (s *Scheduler[T]) Reset() {
 	s.limiter.reset()
 	s.mu.Unlock()
 	s.signal()
+}
+
+// Settle returns once the delivery that is under way, if there is one, has
+// finished: the consumer has answered and the answer is recorded. Calls to
+// Submit, Clear and Reset made before it are then all taken into account by
+// any delivery that follows. It is for a caller that must know that no
+// delivery decided before its Reset is still on its way to the consumer. It
+// must not be called from the consumer.
+func (s *Scheduler[T]) Settle() {
+	s.delivering.Lock()
+	defer s.delivering.Unlock()
 }
 
 // Stop releases the scheduler's timer and waits for its goroutine to end,
@@ -137,6 +158,7 @@ func (s *Scheduler[T]) run() {
 		case <-s.wake:
 		}
 
+		s.delivering.Lock()
 		s.mu.Lock()
 		u, emit, wait := s.limiter.next(s.clock.Now())
 		s.mu.Unlock()
@@ -149,14 +171,18 @@ func (s *Scheduler[T]) run() {
 			if armed == nil || armed.fired.Load() {
 				armed = s.arm(wait)
 			}
+			s.delivering.Unlock()
 			continue
 		}
 		if armed != nil {
 			armed.stop()
 			armed = nil
 		}
-		if emit {
-			s.emit(u.value, u.show)
+		if emit && !s.emit(u.value, u.show) {
+			s.mu.Lock()
+			s.limiter.refused()
+			s.mu.Unlock()
 		}
+		s.delivering.Unlock()
 	}
 }

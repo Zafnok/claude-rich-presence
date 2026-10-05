@@ -22,9 +22,8 @@ const (
 	backoffMax = 60 * time.Second
 	// handshakeTimeout is how long Discord has to answer the handshake.
 	handshakeTimeout = 5 * time.Second
-	// writeTimeout is how long one write may take. It is shorter than the
-	// scheduler's interval, so a write is never still pending when the next
-	// activity is due.
+	// writeTimeout is how long one write may take. A write still pending when
+	// the next activity is due only delays it: updates wait in a box of one.
 	writeTimeout = 5 * time.Second
 	// clearTimeout is how long shutdown waits for Discord to take and
 	// acknowledge the final clear.
@@ -47,6 +46,11 @@ type Config struct {
 	ApplicationID string
 	Dial          DialFunc
 	Clock         schedule.Clock
+	// Interval is the least time between two activity updates written to
+	// Discord. It is MinUpdateInterval of the configuration. A value that is
+	// not positive is a programming error, and is read as
+	// schedule.DiscordInterval.
+	Interval time.Duration
 	// Jitter returns a number from 0 to 1, which places each wait between
 	// half of the backoff delay and all of it.
 	Jitter func() float64
@@ -76,8 +80,16 @@ type Manager struct {
 	// by the scheduler's goroutine and only while the state is Ready.
 	box chan update
 
+	// mu guards the fields below, and is held while the scheduler is told
+	// about a change of either of them, so that the scheduler never sees a
+	// value that the state does not allow.
 	mu     sync.Mutex
 	status Status
+	// desired is what Set and Clear last asked for, and wanted is whether
+	// they have been called. The scheduler is given it only while the state is
+	// Ready.
+	desired update
+	wanted  bool
 
 	// The rest belongs to the goroutine in Run.
 	nonces uint64
@@ -87,6 +99,10 @@ type Manager struct {
 // New returns a manager and starts its scheduler. The caller must call Run,
 // once, which is also what releases the scheduler.
 func New(cfg Config) *Manager {
+	interval := cfg.Interval
+	if interval <= 0 {
+		interval = schedule.DiscordInterval
+	}
 	m := &Manager{
 		applicationID: cfg.ApplicationID,
 		dial:          cfg.Dial,
@@ -96,16 +112,38 @@ func New(cfg Config) *Manager {
 		pid:           os.Getpid(),
 		box:           make(chan update, 1),
 	}
-	m.sched = schedule.New(cfg.Clock, schedule.DiscordInterval, m.emit)
+	m.sched = schedule.New(cfg.Clock, interval, m.emit)
 	return m
 }
 
 // Set makes a the activity to show. It returns at once in every state. After
 // Run has returned it does nothing.
-func (m *Manager) Set(a domain.Activity) { m.sched.Submit(a) }
+func (m *Manager) Set(a domain.Activity) { m.want(update{a, true}) }
 
 // Clear asks for no activity to be shown. It returns at once in every state.
-func (m *Manager) Clear() { m.sched.Clear() }
+func (m *Manager) Clear() { m.want(update{}) }
+
+// want records what is to be shown, and passes it on if there is a connection
+// to show it on. Without one it waits: it goes to the scheduler when the
+// connection is ready, so that an update which cannot be written never uses up
+// any of the interval.
+func (m *Manager) want(u update) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.desired, m.wanted = u, true
+	if m.status.State == Ready {
+		m.submit(u)
+	}
+}
+
+// submit gives u to the scheduler. The caller holds mu.
+func (m *Manager) submit(u update) {
+	if u.show {
+		m.sched.Submit(u.activity)
+	} else {
+		m.sched.Clear()
+	}
+}
 
 // Status returns a snapshot for diagnostics. It touches nothing but memory.
 func (m *Manager) Status() Status {
@@ -115,12 +153,17 @@ func (m *Manager) Status() Status {
 }
 
 // emit is the scheduler's consumer. It never blocks: the update replaces any
-// that is still waiting, or is dropped when there is no connection to send it
-// on. A dropped update is sent after all when the connection is ready, because
-// the scheduler is reset then.
-func (m *Manager) emit(a domain.Activity, show bool) {
+// that is still waiting. The scheduler is only given an update while the state
+// is Ready, but the connection can be lost before the scheduler delivers it.
+// Then the update is refused, which tells the scheduler that it was never
+// sent, and the connection that follows is given the current activity when it
+// is ready. An update that is out of date is refused in the same way.
+func (m *Manager) emit(a domain.Activity, show bool) bool {
 	m.mu.Lock()
-	ready := m.status.State == Ready
+	// An update is stale when something newer has been asked for since the
+	// scheduler decided on it. The newer one is on its way to the scheduler,
+	// which delivers it next.
+	ready := m.status.State == Ready && m.desired == update{a, show}
 	if ready {
 		select {
 		case <-m.box:
@@ -130,18 +173,32 @@ func (m *Manager) emit(a domain.Activity, show bool) {
 	}
 	m.mu.Unlock()
 	if !ready {
-		m.log.Debug("activity update dropped while not connected")
+		m.log.Debug("activity update refused")
 	}
+	return ready
 }
 
 // setState records a state. An update left waiting from the state before is
-// discarded with it.
+// discarded with it. Becoming Ready is what hands the scheduler the activity:
+// Discord has forgotten what it was showing, so the scheduler is told to send
+// the current activity again, at once unless one was written to Discord less
+// than an interval ago.
 func (m *Manager) setState(s State) {
+	if s == Ready {
+		// Whatever the scheduler decided before now was decided for a
+		// connection that is gone. It is let finish, while the state still
+		// refuses it, before the scheduler is told to start again.
+		m.sched.Reset()
+		m.sched.Settle()
+	}
 	m.mu.Lock()
 	m.status.State = s
 	select {
 	case <-m.box:
 	default:
+	}
+	if s == Ready && m.wanted {
+		m.submit(m.desired)
 	}
 	m.mu.Unlock()
 	m.log.Info("discord connection state changed", stateAttrs[s])
@@ -285,9 +342,6 @@ func (m *Manager) setActivity(u update) (codec.Frame, string) {
 func (m *Manager) serve(ctx context.Context, l *link) failure {
 	m.warned = false
 	m.setState(Ready)
-	// Discord has forgotten what it was showing. The scheduler sends it
-	// again, no sooner than its interval allows.
-	m.sched.Reset()
 	var awaiting string // the nonce of the last activity sent
 	for {
 		var out []codec.Frame

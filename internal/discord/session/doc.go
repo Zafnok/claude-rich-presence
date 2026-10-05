@@ -14,13 +14,24 @@
 // the stream. A second goroutine per connection reads frames and hands them to
 // the first. Nothing else touches the stream.
 //
-// The update scheduler sits between Set and the connection. What it emits
-// while Discord is not connected is dropped, and the scheduler is reset when
-// the connection is ready, so the current activity is sent again. The dropped
-// emission still counts towards the rate limit: an activity set less than the
-// scheduler's interval before Discord became reachable is shown when that
-// interval has passed, not at once. That errs on the side of the limit, across
-// a reconnect as well.
+// The update scheduler sits between Set and the connection, and enforces the
+// interval between two updates written to Discord. The manager keeps the
+// desired activity itself and gives it to the scheduler only while the
+// connection is ready, so nothing is held back for a connection that is not
+// there. If the connection is lost in the moment between the scheduler's
+// decision and the hand-over, or something newer has been asked for, the
+// manager refuses the update, and a refused update is as if it had not been
+// made: it does not count towards the interval.
+//
+// When a connection becomes ready, Discord has forgotten what it was showing,
+// so the current activity is sent at once. The one exception is the limit: if
+// an activity was written to Discord, on this connection or an earlier one,
+// less than an interval ago, the current activity is sent when that interval
+// has passed. An activity set before the first connection, or while Discord is
+// absent, is therefore shown as soon as the handshake is done. Before the state
+// becomes ready the scheduler is reset and then waited for, so that nothing it
+// decided for the earlier connection reaches the new one. The interval is the
+// one in [Config].
 //
 // # Time
 //

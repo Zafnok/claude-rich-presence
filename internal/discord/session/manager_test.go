@@ -24,21 +24,28 @@ func TestShowsTheActivityOnceDiscordAppears(t *testing.T) {
 	h.wantStatus(session.Disconnected, session.ErrorNotRunning)
 
 	h.m.Set(activity("a"))
-	eventually(t, "the update to be dropped", func() bool { return h.logs.count("activity update dropped") == 1 })
+	if h.clock.Timers() != 1 {
+		t.Fatalf("%d timers armed after Set while Discord is absent, want only the retry", h.clock.Timers())
+	}
 
 	srv := h.serve(fakediscord.Behavior{})
 	h.clock.Advance(time.Second)
 	h.ready(1)
 
-	// The dropped update counted towards the rate limit, so the activity is
-	// due one interval after it was set.
-	h.timers(1)
-	h.clock.Advance(interval - 2*time.Second)
-	if n := count(srv, fakediscord.KindSetActivity); n != 0 {
-		t.Fatalf("%d activities sent before the interval had passed", n)
-	}
-	h.clock.Advance(time.Second)
+	// Nothing was written to Discord, so none of the interval was used: the
+	// activity is written as soon as the connection is ready, with the clock
+	// not moved since.
 	ev := srv.Await(fakediscord.KindSetActivity, 1)[0]
+	h.timers(0)
+	// The scheduler is given nothing while Discord is absent. Were it given
+	// the activity it would have tried to deliver it, and that would be in the
+	// log by now: the scheduler delivers in order, and this write came later.
+	if n := h.logs.count("activity update refused"); n != 0 {
+		t.Errorf("%d updates reached the scheduler while Discord was absent, want none", n)
+	}
+	if !ev.Time.Equal(start.Add(time.Second)) {
+		t.Errorf("activity written at %v, want the moment Discord was ready, %v", ev.Time, start.Add(time.Second))
+	}
 	if !strings.Contains(string(ev.Activity), "details-a") {
 		t.Errorf("activity sent is %s, want the one that was set", ev.Activity)
 	}
@@ -48,9 +55,134 @@ func TestShowsTheActivityOnceDiscordAppears(t *testing.T) {
 	if got := srv.Await(fakediscord.KindHandshake, 1)[0].ClientID; got != applicationID {
 		t.Errorf("handshake carried application id %q, want %q", got, applicationID)
 	}
-	want := start.Add(interval)
+	want := start.Add(time.Second)
 	eventually(t, "the acknowledgement", func() bool { return h.m.Status().LastUpdate.Equal(want) })
 	h.wantStatus(session.Ready, session.ErrorNotRunning)
+}
+
+func TestOnlyTheLatestActivitySetWhileDiscordIsAbsentIsWritten(t *testing.T) {
+	h := newHarness(t)
+	h.start()
+	h.inBackoff(1, 0)
+
+	h.m.Set(activity("a"))
+	h.m.Set(activity("b"))
+	h.m.Set(activity("c"))
+	srv := h.serve(fakediscord.Behavior{})
+	h.clock.Advance(time.Second)
+	h.ready(1)
+
+	sent := srv.Await(fakediscord.KindSetActivity, 1)
+	h.timers(0)
+	if !strings.Contains(string(sent[0].Activity), "details-c") {
+		t.Errorf("activity sent is %s, want the latest", sent[0].Activity)
+	}
+	// Anything else would have been written by now, with the clock not moved.
+	// Move it a whole interval to be sure of that.
+	h.clock.Advance(interval)
+	h.m.Set(activity("d"))
+	srv.Await(fakediscord.KindSetActivity, 2)
+	if n := count(srv, fakediscord.KindSetActivity); n != 2 {
+		t.Errorf("%d activities written, want 2", n)
+	}
+}
+
+func TestAClearSetWhileDiscordIsAbsentIsWrittenWhenItAppears(t *testing.T) {
+	h := newHarness(t)
+	h.start()
+	h.inBackoff(1, 0)
+
+	h.m.Clear()
+	srv := h.serve(fakediscord.Behavior{})
+	h.clock.Advance(time.Second)
+	h.ready(1)
+
+	ev := srv.Await(fakediscord.KindClearActivity, 1)[0]
+	if !ev.Time.Equal(start.Add(time.Second)) {
+		t.Errorf("clear written at %v, want the moment Discord was ready, %v", ev.Time, start.Add(time.Second))
+	}
+}
+
+func TestNothingIsWrittenWhenNothingWasSet(t *testing.T) {
+	h := newHarness(t)
+	srv := h.serve(fakediscord.Behavior{})
+	h.start()
+	h.ready(1)
+	h.timers(0)
+	if n := count(srv, fakediscord.KindSetActivity) + count(srv, fakediscord.KindClearActivity); n != 0 {
+		t.Errorf("%d updates written, want none", n)
+	}
+}
+
+func TestAClearAfterAnActivityWaitsForTheIntervalAcrossAReconnect(t *testing.T) {
+	h := newHarness(t)
+	srv := h.serve(fakediscord.Behavior{})
+	h.start()
+	h.ready(1)
+	h.m.Set(activity("a"))
+	srv.Await(fakediscord.KindSetActivity, 1)
+
+	if err := srv.Disconnect(); err != nil {
+		t.Fatal(err)
+	}
+	h.inBackoff(1, 0)
+	h.m.Clear()
+	h.clock.Advance(time.Second)
+	h.ready(2)
+	h.timers(1)
+	h.clock.Advance(interval - time.Second - 1)
+	if n := count(srv, fakediscord.KindClearActivity); n != 0 {
+		t.Fatalf("the clear was written %v after the activity, before the interval had passed", interval-1)
+	}
+	h.clock.Advance(1)
+	ev := srv.Await(fakediscord.KindClearActivity, 1)[0]
+	if gap := ev.Time.Sub(start); gap != interval {
+		t.Errorf("the clear was written %v after the activity, want %v", gap, interval)
+	}
+}
+
+func TestTheIntervalIsTheOneInTheConfiguration(t *testing.T) {
+	h := newHarnessWithInterval(t, 4*time.Second)
+	srv := h.serve(fakediscord.Behavior{})
+	h.start()
+	h.ready(1)
+
+	h.m.Set(activity("a"))
+	srv.Await(fakediscord.KindSetActivity, 1)
+	h.clock.Advance(time.Second)
+	h.m.Set(activity("b"))
+	h.timers(1)
+	h.clock.Advance(3*time.Second - 1)
+	if n := count(srv, fakediscord.KindSetActivity); n != 1 {
+		t.Fatalf("%d activities written before the interval had passed, want 1", n)
+	}
+	h.clock.Advance(1)
+	sent := srv.Await(fakediscord.KindSetActivity, 2)
+	if gap := sent[1].Time.Sub(sent[0].Time); gap != 4*time.Second {
+		t.Errorf("activities were written %v apart, want 4s", gap)
+	}
+}
+
+func TestAnIntervalThatIsNotPositiveIsTheDiscordLimit(t *testing.T) {
+	for _, d := range []time.Duration{0, -time.Second} {
+		t.Run(d.String(), func(t *testing.T) {
+			h := newHarnessWithInterval(t, d)
+			srv := h.serve(fakediscord.Behavior{})
+			h.start()
+			h.ready(1)
+
+			h.m.Set(activity("a"))
+			srv.Await(fakediscord.KindSetActivity, 1)
+			h.m.Set(activity("b"))
+			h.timers(1)
+			h.clock.Advance(schedule.DiscordInterval - 1)
+			if n := count(srv, fakediscord.KindSetActivity); n != 1 {
+				t.Fatalf("%d activities written before %v had passed, want 1", n, schedule.DiscordInterval)
+			}
+			h.clock.Advance(1)
+			srv.Await(fakediscord.KindSetActivity, 2)
+		})
+	}
 }
 
 func TestReconnectsAndResendsNoFasterThanTheSchedulerAllows(t *testing.T) {
@@ -87,6 +219,47 @@ func TestReconnectsAndResendsNoFasterThanTheSchedulerAllows(t *testing.T) {
 	}
 	if gap := sent[1].Time.Sub(sent[0].Time); gap != interval {
 		t.Errorf("activities were sent %v apart, want %v", gap, interval)
+	}
+}
+
+func TestAnUpdateDueWhileTheConnectionIsLostIsRefusedAndDoesNotCount(t *testing.T) {
+	h := newHarness(t)
+	release := make(chan struct{})
+	dials := 0
+	h.dialer = func(ctx context.Context) (io.ReadWriteCloser, error) {
+		if dials++; dials == 2 {
+			<-release
+		}
+		return h.dial(ctx)
+	}
+	srv := h.serve(fakediscord.Behavior{})
+	h.start()
+	h.ready(1)
+	h.m.Set(activity("a"))
+	srv.Await(fakediscord.KindSetActivity, 1)
+	h.m.Set(activity("b"))
+	h.timers(1)
+
+	// The connection is lost with the second activity waiting for its
+	// interval, and the interval ends before there is a new connection.
+	if err := srv.Disconnect(); err != nil {
+		t.Fatal(err)
+	}
+	h.inBackoff(1, 1)
+	h.clock.Advance(interval)
+	eventually(t, "the update to be refused", func() bool { return h.logs.count("activity update refused") == 1 })
+	h.timers(0)
+
+	// It was never written, so it used none of the interval: the activity is
+	// written when the connection is ready, with the clock not moved.
+	close(release)
+	h.ready(2)
+	ev := srv.Await(fakediscord.KindSetActivity, 2)[1]
+	if !ev.Time.Equal(start.Add(interval)) {
+		t.Errorf("activity written at %v, want the moment Discord was ready, %v", ev.Time, start.Add(interval))
+	}
+	if !strings.Contains(string(ev.Activity), "details-b") {
+		t.Errorf("activity sent is %s, want the latest", ev.Activity)
 	}
 }
 
