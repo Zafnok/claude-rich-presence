@@ -132,7 +132,7 @@ Statement coverage must be 100.0% of the measured set, which is every package ex
 
 ```bash
 rm -rf coverage && mkdir -p coverage/e2e
-go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck ./tools/policycheck
+go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck ./tools/mcpb ./tools/policycheck
 measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
 CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
 export GOCOVERDIR=coverage/e2e RICH_PRESENCE_RUNTIME_DIR="$(mktemp -d)/rich-presence"
@@ -141,6 +141,7 @@ expect_exit 0 bin/rich-presence version
 expect_exit 0 bin/rich-presence help
 expect_exit 2 bin/rich-presence frobnicate
 expect_exit 3 bin/rich-presence status
+expect_exit 2 bin/mcpb
 expect_exit 1 bin/rich-presence doctor   # no Discord is running in CI; with one, expect 0 or 1
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"claude-code","version":"2.0.0"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | expect_exit 0 bin/rich-presence mcp
 for target in windows/amd64 darwin/amd64 darwin/arm64 linux/amd64; do
@@ -166,3 +167,28 @@ The unit tests must write their profile with `-coverprofile`. A package that no 
 ### Continuous integration
 
 [The workflow](.github/workflows/ci.yml) runs the steps above, in that order, on Linux, macOS and Windows for every pull request and every push to `main`. Each operating system must reach 100.0% over the files it compiles. Its coverage profile is kept as an artifact named `coverage-` followed by the runner name. The check named `CI` passes only when all three pass.
+
+### The bundle
+
+`rich-presence.mcpb` is the one archive that Claude Code fetches through the plugin and Claude Desktop installs as an extension ([ADR-0007](docs/architecture/adr/0007-integration-and-distribution.md)). Its parts are in [extension/](extension/): the manifest, the icon (a placeholder until [CRP-003](docs/tickets/M0-foundation/CRP-003-naming-branding-discord-app.md) supplies one) and the third-party notices. [tools/mcpb](tools/mcpb/main.go) assembles it and checks it.
+
+The version has one source, the [VERSION](VERSION) file. `mcpb build` writes it into the manifest in place of `@VERSION@`, and the binaries get it from the linker. The plugin manifest of [CRP-052](docs/tickets/M5-claude-desktop/CRP-052-desktop-validation.md) and the release pipeline of [CRP-060](docs/tickets/M6-release/CRP-060-release-pipeline.md) read the same file.
+
+```bash
+version=$(cat VERSION)
+ldflags="-s -w -buildid= -X $(go list -m)/internal/cli.version=$version"
+mkdir -p dist
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o dist/rich-presence.exe ./cmd/rich-presence
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o dist/rich-presence-linux ./cmd/rich-presence
+```
+
+The Mac binary is universal and must be merged on a Mac, with `lipo -create -output dist/rich-presence-darwin` over the two `darwin` builds and then `codesign --force --sign - dist/rich-presence-darwin`. The `bundle-darwin` job of CI does exactly that. Then:
+
+```bash
+go run ./tools/mcpb build -version "$version" -out dist/rich-presence.mcpb   -manifest extension/manifest.json -icon extension/icon.png   -license LICENSE.md -notices extension/THIRD-PARTY-NOTICES.md   -windows dist/rich-presence.exe -darwin dist/rich-presence-darwin -linux dist/rich-presence-linux
+go run ./tools/mcpb check -version "$version" dist/rich-presence.mcpb
+```
+
+`check` is this repository's check against the published manifest schema (version 0.3), plus the decisions of the ADRs: the layout, the server name, the settings, the executable bit of the Unix binaries and the architectures inside each binary. It is used instead of the official validator, which would be a new tool in CI under the dependency policy.
+
+The archive is reproducible: the same binaries give the same bytes. The Windows and Linux binaries are too, since they are built with `-trimpath` and no build id. The Mac binary is signed ad hoc on the runner, and whether `codesign` gives the same bytes twice is not checked, so CI compares two assemblies of the Windows and Linux builds only.

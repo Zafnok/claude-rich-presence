@@ -104,6 +104,8 @@ jobs:
           expect_exit 0 bin/rich-presence help
           expect_exit 2 bin/rich-presence frobnicate
           expect_exit 3 bin/rich-presence status
+          # The bundle tool refuses to run without a command.
+          expect_exit 2 bin/mcpb
           # No Discord is running here, so the doctor reports a problem.
           expect_exit 1 bin/rich-presence doctor
           # The server answers initialize and lists its tools, and ends with
@@ -135,17 +137,116 @@ jobs:
       - name: Coverage gate
         run: go run ./tools/covercheck check -module "$(go list -m)" coverage/profile.txt
 
+  # The bundle of ADR-0007. Its Mac binary is universal, merged from the two
+  # architecture builds with lipo, which exists only on a Mac. The version
+  # has one source, the VERSION file: it goes into the manifest and, through
+  # the linker, into every binary.
+  bundle-darwin:
+    name: Bundle (universal Mac binary)
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      - name: Build, merge and sign
+        run: |
+          version=$(cat VERSION)
+          ldflags="-s -w -buildid= -X $(go list -m)/internal/cli.version=$version"
+          mkdir -p dist
+          for arch in amd64 arm64; do
+            GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o "dist/rich-presence-$arch" ./cmd/rich-presence
+          done
+          lipo -create -output dist/rich-presence-darwin dist/rich-presence-amd64 dist/rich-presence-arm64
+          chmod +x dist/rich-presence-darwin
+          # Say whether merging kept the slices' ad hoc signatures, then sign
+          # the merged file again either way. The refusal to run an unsigned
+          # binary on Apple silicon is why the signature matters.
+          if codesign --verify dist/rich-presence-darwin; then echo "merge kept the signatures"; else echo "merge invalidated the signatures"; fi
+          codesign --force --sign - dist/rich-presence-darwin
+          codesign --verify --verbose=2 dist/rich-presence-darwin
+          archs=$(lipo -archs dist/rich-presence-darwin)
+          echo "architectures: $archs"
+          case "$archs" in *x86_64*arm64* | *arm64*x86_64*) ;; *) echo "not universal"; exit 1 ;; esac
+          # The architecture this runner has runs it. The other is checked by
+          # the archs line above and again by mcpb check.
+          test "$(dist/rich-presence-darwin version)" = "rich-presence $version"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bundle-darwin
+          path: dist/rich-presence-darwin
+          if-no-files-found: error
+
+  bundle:
+    name: Bundle
+    needs: bundle-darwin
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bundle-darwin
+          path: dist/darwin
+
+      - name: Assemble and check
+        run: |
+          version=$(cat VERSION)
+          ldflags="-s -w -buildid= -X $(go list -m)/internal/cli.version=$version"
+          go build -o bin/mcpb ./tools/mcpb
+          assemble() {
+            out=$1
+            GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o "$out/rich-presence.exe" ./cmd/rich-presence
+            GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o "$out/rich-presence-linux" ./cmd/rich-presence
+            bin/mcpb build -version "$version" -out "$out/rich-presence.mcpb"               -manifest extension/manifest.json -icon extension/icon.png               -license LICENSE.md -notices extension/THIRD-PARTY-NOTICES.md               -windows "$out/rich-presence.exe" -darwin dist/darwin/rich-presence-darwin -linux "$out/rich-presence-linux"
+          }
+          mkdir -p dist/a dist/b
+          assemble dist/a
+          bin/mcpb check -version "$version" dist/a/rich-presence.mcpb
+          # The binaries report the version the manifest carries.
+          chmod +x dist/a/rich-presence-linux
+          test "$(dist/a/rich-presence-linux version)" = "rich-presence $version"
+          # Extracting keeps the executable bit on the Unix binaries.
+          mkdir dist/extracted
+          unzip -q dist/a/rich-presence.mcpb -d dist/extracted
+          unzip -Z dist/a/rich-presence.mcpb | grep -E 'server/rich-presence-(darwin|linux)' | grep -q -- '-rwxr-xr-x'
+          # A second build from the same commit is byte-identical.
+          assemble dist/b
+          cmp dist/a/rich-presence.mcpb dist/b/rich-presence.mcpb
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bundle
+          path: dist/a/rich-presence.mcpb
+          if-no-files-found: error
+
   # One check that stands for the whole matrix, so that branch protection has
   # a single name to require.
   ci:
     name: CI
     if: always()
-    needs: check
+    needs: [check, bundle]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     steps:
-      - name: Every operating system passed
+      - name: Every operating system passed, and the bundle was built
         env:
           RESULT: ${{ needs.check.result }}
-        run: test "$RESULT" = success
+          BUNDLE: ${{ needs.bundle.result }}
+        run: test "$RESULT" = success && test "$BUNDLE" = success

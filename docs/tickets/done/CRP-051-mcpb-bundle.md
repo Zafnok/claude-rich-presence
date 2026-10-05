@@ -3,7 +3,7 @@ id: CRP-051
 title: MCPB bundle
 milestone: M5 Claude Desktop
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-001, CRP-033]
 blocks: [CRP-042, CRP-052, CRP-060]

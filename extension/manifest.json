@@ -1,0 +1,73 @@
+{
+  "manifest_version": "0.3",
+  "name": "presence",
+  "display_name": "Rich Presence",
+  "version": "@VERSION@",
+  "description": "Shows what your coding assistant is doing as your Discord status. Unofficial: not affiliated with, endorsed by, or sponsored by Anthropic or Discord.",
+  "author": {
+    "name": "Nick Wentz"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zafnok/claude-rich-presence"
+  },
+  "icon": "icon.png",
+  "server": {
+    "type": "binary",
+    "entry_point": "server/rich-presence-linux",
+    "mcp_config": {
+      "command": "${__dirname}/server/rich-presence-linux",
+      "args": ["mcp"],
+      "env": {
+        "RICH_PRESENCE_PRIVACY": "${user_config.privacy}",
+        "RICH_PRESENCE_DISCORD_APPLICATION_ID": "${user_config.discord_application_id}"
+      },
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}/server/rich-presence.exe",
+          "args": ["mcp"],
+          "env": {
+            "RICH_PRESENCE_PRIVACY": "${user_config.privacy}",
+            "RICH_PRESENCE_DISCORD_APPLICATION_ID": "${user_config.discord_application_id}"
+          }
+        },
+        "darwin": {
+          "command": "${__dirname}/server/rich-presence-darwin",
+          "args": ["mcp"],
+          "env": {
+            "RICH_PRESENCE_PRIVACY": "${user_config.privacy}",
+            "RICH_PRESENCE_DISCORD_APPLICATION_ID": "${user_config.discord_application_id}"
+          }
+        },
+        "linux": {
+          "command": "${__dirname}/server/rich-presence-linux",
+          "args": ["mcp"],
+          "env": {
+            "RICH_PRESENCE_PRIVACY": "${user_config.privacy}",
+            "RICH_PRESENCE_DISCORD_APPLICATION_ID": "${user_config.discord_application_id}"
+          }
+        }
+      }
+    }
+  },
+  "user_config": {
+    "privacy": {
+      "type": "string",
+      "title": "Privacy level",
+      "description": "How much is shown: minimal (that the assistant is in use), standard (adds status and model family) or full (adds the project name).",
+      "default": "standard",
+      "required": false
+    },
+    "discord_application_id": {
+      "type": "string",
+      "title": "Discord application id (optional)",
+      "description": "Leave empty to use the built-in Discord application. Only digits.",
+      "required": false
+    }
+  },
+  "tools_generated": true,
+  "compatibility": {
+    "platforms": ["darwin", "linux", "win32"]
+  }
+}

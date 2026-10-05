@@ -97,7 +97,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-048](M4-claude-code/CRP-048-repository-link.md) | Repository link for opted-in projects | 014, 042, 077 | Sonnet 5.5 | high | M |
 | [CRP-049](M4-claude-code/CRP-049-shared-area-rollup.md) | Shared-area roll-up across sessions | 047 | Sonnet 5.5 | medium | S |
 | [CRP-050](M5-claude-desktop/CRP-050-desktop-adapter.md) | Claude Desktop adapter | 002, 033, 043 | Sonnet 5.5 | medium | S |
-| [CRP-051](M5-claude-desktop/CRP-051-mcpb-bundle.md) | MCPB bundle | 001, 033 | Sonnet 5.5 | medium | S |
+| [CRP-051](done/CRP-051-mcpb-bundle.md) | MCPB bundle | 001, 033 | Sonnet 5.5 | medium | S |
 | [CRP-052](M5-claude-desktop/CRP-052-desktop-validation.md) | Desktop validation on real machines | 002, 042, 050, 051 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-053](M5-claude-desktop/CRP-053-desktop-summary.md) | Activity summary in Claude Desktop Chat | 047, 050 | Sonnet 5.5 | medium | S |
 | [CRP-060](M6-release/CRP-060-release-pipeline.md) | Release pipeline | 003, 005, 007, 042, 043, 051 | Sonnet 5.5 | high | M |
