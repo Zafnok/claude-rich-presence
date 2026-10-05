@@ -83,8 +83,9 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-030](done/CRP-030-control-protocol.md) | Control protocol | 010 | Sonnet 5.5 | medium | S |
 | [CRP-031](done/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
 | [CRP-032](done/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |
-| [CRP-033](M3-host/CRP-033-cli.md) | Command line and composition root | 012, 032, 034, 041 | Sonnet 5.5 | medium | M |
+| [CRP-033](done/CRP-033-cli.md) | Command line and composition root | 012, 032, 034, 041 | Sonnet 5.5 | medium | M |
 | [CRP-034](done/CRP-034-diagnostics.md) | Logging and diagnostics | 012 | Sonnet 5.5 | medium | S |
+| [CRP-035](M3-host/CRP-035-status-command-session-figures.md) | Show the privacy level and event counts in the status command | 033 | Sonnet 5.5 | medium | S |
 | [CRP-040](done/CRP-040-mcp-server.md) | Minimal MCP stdio server | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-041](done/CRP-041-code-adapter.md) | Claude Code adapter | 001, 010, 012, 040 | Sonnet 5.5 | high | M |
 | [CRP-042](M4-claude-code/CRP-042-plugin-packaging.md) | Plugin and marketplace packaging | 001, 033, 051 | Sonnet 5.5 | medium | S |
@@ -142,6 +143,7 @@ flowchart TD
     C032["032 presence host"]
     C033["033 CLI"]
     C034["034 diagnostics"]
+    C035["035 status figures"]
     C040["040 MCP server"]
     C041["041 Code adapter"]
     C042["042 plugin"]
@@ -267,6 +269,7 @@ flowchart TD
     C071 --> C074
     C042 --> C075
     C033 --> C076
+    C033 --> C035
     C014 --> C077
     C041 --> C077
     C077 --> C047
@@ -288,7 +291,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 4 | 023, 077 |
 | 5 | 024, 032, 078 |
 | 6 | 033 |
-| 7 | 043, 051, 076 |
+| 7 | 035, 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
 | 9 | 045, 047, 048, 052, 060, 073, 075 |
 | 10 | 049, 053, 061, 063, 071, 072 |

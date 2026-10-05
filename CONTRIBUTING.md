@@ -135,7 +135,14 @@ rm -rf coverage && mkdir -p coverage/e2e
 go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck ./tools/policycheck
 measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
 CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
-GOCOVERDIR=coverage/e2e bin/rich-presence version
+export GOCOVERDIR=coverage/e2e RICH_PRESENCE_RUNTIME_DIR="$(mktemp -d)/rich-presence"
+expect_exit() { want=$1; shift; code=0; "$@" || code=$?; [ "$code" -eq "$want" ] || { echo "$*: exit $code, want $want"; return 1; }; }
+expect_exit 0 bin/rich-presence version
+expect_exit 0 bin/rich-presence help
+expect_exit 2 bin/rich-presence frobnicate
+expect_exit 3 bin/rich-presence status
+expect_exit 1 bin/rich-presence doctor   # no Discord is running in CI; with one, expect 0 or 1
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"claude-code","version":"2.0.0"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | expect_exit 0 bin/rich-presence mcp
 for target in windows/amd64 darwin/amd64 darwin/arm64 linux/amd64; do
   GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go list -deps -test -json ./... |
     GOCOVERDIR=coverage/e2e bin/policycheck modules .github/allowed-modules.txt
