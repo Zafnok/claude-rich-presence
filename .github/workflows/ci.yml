@@ -70,14 +70,18 @@ jobs:
             GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build ./...
           done
 
-      # The binaries are built with coverage instrumentation, so that running
-      # them covers what no test can call: each main function.
+      # The tools are built with coverage instrumentation, so that running
+      # them covers what no test can call: each main function. The product is
+      # built the same way by the end-to-end tests in test/e2e, which run
+      # here with every other test and start it as real processes. Those
+      # processes write their coverage data where the variable says.
       - name: Test with the race detector
         run: |
           mkdir -p coverage/e2e
-          go build -cover -covermode=atomic -o bin/ ./cmd/rich-presence ./tools/covercheck ./tools/policycheck
+          go build -cover -covermode=atomic -o bin/ ./tools/covercheck ./tools/policycheck
           measured=$(go list ./... | GOCOVERDIR=coverage/e2e bin/covercheck packages)
-          CGO_ENABLED=1 go test -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
+          export RICH_PRESENCE_E2E_COVERDIR="$(go list -m -f '{{.Dir}}')/coverage/e2e"
+          CGO_ENABLED=1 go test -count=1 -race -coverpkg="$measured" -coverprofile=coverage/unit.txt ./...
 
       # Fuzz targets are discovered, so a new one is picked up without a
       # change here.
@@ -90,30 +94,10 @@ jobs:
             done
           done
 
-      # End-to-end runs of the instrumented binaries. CRP-043 adds the real
-      # scenarios here.
-      - name: End-to-end coverage
+      # The coverage of the processes: the product's, written by the
+      # end-to-end tests above, and the tools', written here.
+      - name: Merge the coverage of the built binaries
         run: |
-          # Every command of the product, with the exit code it must give. The
-          # runtime directory is the job's own, so that nothing here can meet
-          # a host that is running on the machine.
-          export GOCOVERDIR=coverage/e2e
-          export RICH_PRESENCE_RUNTIME_DIR="$RUNNER_TEMP/rich-presence-e2e"
-          expect_exit() { want=$1; shift; code=0; "$@" || code=$?; if [ "$code" -ne "$want" ]; then echo "$*: exit $code, want $want"; return 1; fi; }
-          expect_exit 0 bin/rich-presence version
-          expect_exit 0 bin/rich-presence help
-          expect_exit 2 bin/rich-presence frobnicate
-          expect_exit 3 bin/rich-presence status
-          # No Discord is running here, so the doctor reports a problem.
-          expect_exit 1 bin/rich-presence doctor
-          # The server answers initialize and lists its tools, and ends with
-          # its input.
-          printf '%s\n' \
-            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"claude-code","version":"2.0.0"}}}' \
-            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |
-            expect_exit 0 bin/rich-presence mcp > coverage/mcp-out.txt
-          grep -q presence_status coverage/mcp-out.txt
-          unset RICH_PRESENCE_RUNTIME_DIR
           # The dependency policy of ADR-0003. Running the real checks on the
           # real files is also what covers the main function of policycheck.
           # Windows is listed too: go-winio is linked there and nowhere else.

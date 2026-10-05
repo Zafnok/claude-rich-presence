@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"runtime"
 
 	"github.com/Microsoft/go-winio"
 	"golang.org/x/sys/windows"
@@ -45,12 +46,47 @@ type instance struct {
 }
 
 // pipeListener serves one pipe name.
+//
+// Windows ties a pending operation to the thread that started it: cancelling
+// one waits for that thread, and a thread that ends takes its pending
+// operations with it. A goroutine has no thread of its own, and the thread it
+// happened to start an instance on may later be parked in a blocking read of
+// a child process's output, for as long as the child lives. So every
+// instance is created, and every pending connect cancelled, on one thread
+// that the listener keeps to itself and that never does anything else.
 type pipeListener struct {
 	name      string
 	path      *uint16
 	stop      windows.Handle // manual-reset event, set by Interrupt
 	instances [backlog]*instance
 	done      bool
+	// calls carries work to the listener's own thread. It is closed by Close.
+	calls chan func()
+}
+
+// loop runs the listener's own thread until Close.
+func (l *pipeListener) loop() {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	for call := range l.calls {
+		call()
+	}
+}
+
+// onThread runs f on the listener's own thread and waits for it.
+func (l *pipeListener) onThread(f func()) {
+	done := make(chan struct{})
+	l.calls <- func() {
+		defer close(done)
+		f()
+	}
+	<-done
+}
+
+// newInstance is the package's newInstance, on the listener's own thread.
+func (l *pipeListener) newInstance(first bool) (in *instance, err error) {
+	l.onThread(func() { in, err = newInstance(l.path, first) })
+	return in, err
 }
 
 func listen(addr string) (listener, error) {
@@ -62,10 +98,11 @@ func listen(addr string) (listener, error) {
 	if err != nil {
 		return nil, err
 	}
-	l := &pipeListener{name: addr, path: path, stop: stop}
+	l := &pipeListener{name: addr, path: path, stop: stop, calls: make(chan func())}
+	go l.loop()
 	for i := range l.instances {
 		// Only the first refuses to share a name that already exists.
-		if l.instances[i], err = newInstance(path, i == 0); err != nil {
+		if l.instances[i], err = l.newInstance(i == 0); err != nil {
 			_ = l.Close()
 			return nil, err
 		}
@@ -147,7 +184,7 @@ func (l *pipeListener) Accept() (io.ReadWriteCloser, error) {
 	}
 	var next *instance
 	if err == nil {
-		next, err = newInstance(l.path, false)
+		next, err = l.newInstance(false)
 	}
 	if err != nil {
 		l.done = true
@@ -165,11 +202,14 @@ func (l *pipeListener) Accept() (io.ReadWriteCloser, error) {
 func (l *pipeListener) Interrupt() { _ = windows.SetEvent(l.stop) }
 
 func (l *pipeListener) Close() error {
-	for i, in := range l.instances {
-		if in != nil {
-			in.close()
-			l.instances[i] = nil
+	l.onThread(func() {
+		for i, in := range l.instances {
+			if in != nil {
+				in.close()
+				l.instances[i] = nil
+			}
 		}
-	}
+	})
+	close(l.calls)
 	return windows.CloseHandle(l.stop)
 }
