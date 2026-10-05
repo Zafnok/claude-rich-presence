@@ -185,7 +185,10 @@ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o 
 The Mac binary is universal and must be merged on a Mac, with `lipo -create -output dist/rich-presence-darwin` over the two `darwin` builds and then `codesign --force --sign - dist/rich-presence-darwin`. The `bundle-darwin` job of CI does exactly that. Then:
 
 ```bash
-go run ./tools/mcpb build -version "$version" -out dist/rich-presence.mcpb   -manifest extension/manifest.json -icon extension/icon.png   -license LICENSE.md -notices extension/THIRD-PARTY-NOTICES.md   -windows dist/rich-presence.exe -darwin dist/rich-presence-darwin -linux dist/rich-presence-linux
+go run ./tools/mcpb build -version "$version" -out dist/rich-presence.mcpb \
+  -manifest extension/manifest.json -icon extension/icon.png \
+  -license LICENSE.md -notices extension/THIRD-PARTY-NOTICES.md \
+  -windows dist/rich-presence.exe -darwin dist/rich-presence-darwin -linux dist/rich-presence-linux
 go run ./tools/mcpb check -version "$version" dist/rich-presence.mcpb
 ```
 
