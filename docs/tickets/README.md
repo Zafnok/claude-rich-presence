@@ -79,7 +79,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-021](done/CRP-021-discord-transport.md) | Discord transport: pipe and socket dialers | 004, 005, 022 | Opus 5.5 | high | M |
 | [CRP-022](done/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-023](done/CRP-023-discord-session-manager.md) | Discord session manager | 013, 020, 021, 022 | Opus 5.5 | high | M |
-| [CRP-024](M2-discord/CRP-024-prompt-first-activity.md) | Discord session manager: a prompt first activity and the configured interval | 013, 023 | Sonnet 5.5 | high | S |
+| [CRP-024](done/CRP-024-prompt-first-activity.md) | Discord session manager: a prompt first activity and the configured interval | 013, 023 | Sonnet 5.5 | high | S |
 | [CRP-030](done/CRP-030-control-protocol.md) | Control protocol | 010 | Sonnet 5.5 | medium | S |
 | [CRP-031](done/CRP-031-control-transport.md) | Control transport and the host lock | 004, 005 | Opus 5.5 | high | M |
 | [CRP-032](done/CRP-032-presence-host.md) | Presence host: election, serving, failover | 010, 011, 023, 030, 031 | Opus 5.5 | xhigh | L |

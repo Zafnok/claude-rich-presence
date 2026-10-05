@@ -24,10 +24,14 @@ type recorder struct {
 	t     *testing.T
 	clock *fakeclock.Clock
 	calls chan emission
+	// refuse makes emit report that it did not take the update.
+	refuse atomic.Bool
 }
 
-func (r *recorder) emit(value string, show bool) {
+// emit takes every update, unless refuse is set.
+func (r *recorder) emit(value string, show bool) bool {
 	r.calls <- emission{value, show, r.clock.Now().Sub(start)}
+	return !r.refuse.Load()
 }
 
 // next waits for the next emission. The deadline only turns a hang into a
@@ -228,6 +232,51 @@ func TestResetEmitsTheCurrentValueAgain(t *testing.T) {
 	})
 }
 
+func TestRefusedUpdateDoesNotCountTowardsTheInterval(t *testing.T) {
+	s, clock, rec := newScheduler(t)
+	rec.refuse.Store(true)
+	s.Submit("a")
+	rec.want(emission{"a", true, 0})
+
+	// Nothing is retried by itself, and no timer waits for the interval.
+	clock.Advance(time.Second)
+	if clock.Timers() != 0 {
+		t.Fatalf("%d timers armed after a refused update, want none", clock.Timers())
+	}
+	rec.wantNoMore()
+
+	// The consumer is ready: the same value is delivered at once, with the
+	// clock not moved.
+	rec.refuse.Store(false)
+	s.Reset()
+	rec.want(emission{"a", true, time.Second})
+
+	// That one was taken, so it does count.
+	s.Submit("b")
+	clock.WaitForTimers(1)
+	clock.Advance(interval)
+	rec.want(emission{"b", true, time.Second + interval})
+}
+
+func TestRefusedUpdateIsDeliveredAgainWhenSubmittedAgain(t *testing.T) {
+	s, clock, rec := newScheduler(t)
+	s.Submit("a")
+	rec.want(emission{"a", true, 0})
+
+	clock.Advance(interval)
+	rec.refuse.Store(true)
+	s.Submit("b")
+	rec.want(emission{"b", true, interval})
+
+	// The one before it is still the one shown, so going back to it needs no
+	// delivery, and a new value is not held back by the refused one.
+	rec.refuse.Store(false)
+	s.Submit("a")
+	clock.Advance(time.Second)
+	s.Submit("c")
+	rec.want(emission{"c", true, interval + time.Second})
+}
+
 func TestStopReleasesTheTimerAndTheGoroutine(t *testing.T) {
 	// The loop of an earlier test's scheduler may still be on its way out.
 	wantNoGoroutines(t)
@@ -269,9 +318,10 @@ func TestSlowConsumerDoesNotBlockSubmitters(t *testing.T) {
 	clock := fakeclock.New(start)
 	entered := make(chan string)
 	release := make(chan struct{})
-	s := New(clock, interval, func(value string, _ bool) {
+	s := New(clock, interval, func(value string, _ bool) bool {
 		entered <- value
 		<-release
+		return true
 	})
 	defer s.Stop()
 

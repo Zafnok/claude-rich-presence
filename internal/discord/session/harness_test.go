@@ -170,6 +170,11 @@ type harness struct {
 
 func newHarness(t *testing.T) *harness {
 	t.Helper()
+	return newHarnessWithInterval(t, interval)
+}
+
+func newHarnessWithInterval(t *testing.T, interval time.Duration) *harness {
+	t.Helper()
 	h := &harness{
 		t:     t,
 		clock: &clock{Clock: fakeclock.New(start)},
@@ -182,6 +187,7 @@ func newHarness(t *testing.T) *harness {
 		ApplicationID: applicationID,
 		Dial:          func(ctx context.Context) (io.ReadWriteCloser, error) { return h.dialer(ctx) },
 		Clock:         h.clock,
+		Interval:      interval,
 		Jitter:        func() float64 { return 1 },
 		Logger:        diag.NewLogger(h.logs, config.LogDebug, h.clock.Now),
 	})

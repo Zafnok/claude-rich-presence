@@ -27,11 +27,16 @@ type Clock interface {
 // delivered when the interval has passed. A value equal to the one the
 // consumer last received is not delivered again.
 //
+// A consumer that cannot use a value says so by returning false. The value is
+// then as if it had not been delivered: it is not recorded as shown, and does
+// not count towards the interval. Nothing is retried; the value is delivered
+// again after the next Submit, Clear or Reset, if it is still the current one.
+//
 // All methods are safe for use from several goroutines and none of them
 // blocks on the consumer.
 type Scheduler[T comparable] struct {
 	clock Clock
-	emit  func(value T, show bool)
+	emit  func(value T, show bool) bool
 
 	mu      sync.Mutex
 	limiter limiter[T]
@@ -45,11 +50,11 @@ type Scheduler[T comparable] struct {
 // New starts a scheduler. The caller owns it and must call Stop.
 //
 // Updates are delivered by calling emit, with show false and the zero value
-// for "show nothing". emit is called from the scheduler's own goroutine, one
-// call at a time. It may take as long as it likes: submissions made meanwhile
-// are coalesced, and the interval is measured from the start of each call. It
-// must not call Stop.
-func New[T comparable](clock Clock, interval time.Duration, emit func(value T, show bool)) *Scheduler[T] {
+// for "show nothing". emit returns whether it took the update. It is called
+// from the scheduler's own goroutine, one call at a time. It may take as long
+// as it likes: submissions made meanwhile are coalesced, and the interval is
+// measured from the start of each call. It must not call Stop.
+func New[T comparable](clock Clock, interval time.Duration, emit func(value T, show bool) bool) *Scheduler[T] {
 	s := &Scheduler[T]{
 		clock:   clock,
 		emit:    emit,
@@ -155,8 +160,10 @@ func (s *Scheduler[T]) run() {
 			armed.stop()
 			armed = nil
 		}
-		if emit {
-			s.emit(u.value, u.show)
+		if emit && !s.emit(u.value, u.show) {
+			s.mu.Lock()
+			s.limiter.refused()
+			s.mu.Unlock()
 		}
 	}
 }

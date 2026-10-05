@@ -36,6 +36,11 @@ type step struct {
 	do       func(*limiter[string])
 	wantEmit *update[string]
 	wantWait time.Duration
+	// refuse takes back the emission, as a consumer that did not take the
+	// value does. between runs first: something that happens while the
+	// consumer is deciding.
+	refuse  bool
+	between func(*limiter[string])
 }
 
 func emits(v string) *update[string] { u := show(v); return &u }
@@ -192,6 +197,63 @@ func TestLimiter(t *testing.T) {
 			},
 		},
 		{
+			name:     "a refused first emission is as if it had not been made",
+			interval: interval,
+			steps: []step{
+				{do: submit("a"), wantEmit: emits("a"), refuse: true},
+				{wantEmit: emits("a")},
+				{},
+			},
+		},
+		{
+			name:     "a refused emission does not start the interval",
+			interval: interval,
+			steps: []step{
+				{do: submit("a"), wantEmit: emits("a"), refuse: true},
+				{advance: time.Second, do: submit("b"), wantEmit: emits("b")},
+				{advance: time.Second, do: submit("c"), wantWait: 14 * time.Second},
+			},
+		},
+		{
+			name:     "a refused emission leaves the interval of the one before it",
+			interval: interval,
+			steps: []step{
+				{do: submit("a"), wantEmit: emits("a")},
+				{advance: interval, do: submit("b"), wantEmit: emits("b"), refuse: true},
+				{advance: time.Second, wantEmit: emits("b")},
+				{do: submit("c"), wantWait: interval},
+			},
+		},
+		{
+			name:     "a refused emission leaves the value before it as the one shown",
+			interval: interval,
+			steps: []step{
+				{do: submit("a"), wantEmit: emits("a")},
+				{advance: interval, do: submit("b"), wantEmit: emits("b"), refuse: true},
+				{do: submit("a")},
+				{advance: interval},
+			},
+		},
+		{
+			name:     "a refused emission is not re-sent until something asks",
+			interval: interval,
+			steps: []step{
+				{do: submit("a"), wantEmit: emits("a")},
+				{advance: time.Second, do: submit("b"), wantWait: 14 * time.Second},
+				{advance: 14 * time.Second, wantEmit: emits("b"), refuse: true},
+				{advance: time.Second, do: reset, wantEmit: emits("b")},
+			},
+		},
+		{
+			name:     "a reset made while the consumer decided stays made",
+			interval: interval,
+			steps: []step{
+				{do: submit("a"), wantEmit: emits("a")},
+				{advance: interval, do: submit("b"), wantEmit: emits("b"), between: reset, refuse: true},
+				{wantEmit: emits("b")},
+			},
+		},
+		{
 			name:     "zero interval never waits",
 			interval: 0,
 			steps: []step{
@@ -211,6 +273,12 @@ func TestLimiter(t *testing.T) {
 					s.do(l)
 				}
 				got, emit, wait := l.next(clock.Now())
+				if s.refuse {
+					if s.between != nil {
+						s.between(l)
+					}
+					l.refused()
+				}
 				at := clock.Now().Sub(start)
 				switch {
 				case s.wantEmit == nil && emit:
