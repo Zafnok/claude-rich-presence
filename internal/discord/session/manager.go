@@ -157,10 +157,13 @@ func (m *Manager) Status() Status {
 // is Ready, but the connection can be lost before the scheduler delivers it.
 // Then the update is refused, which tells the scheduler that it was never
 // sent, and the connection that follows is given the current activity when it
-// is ready.
+// is ready. An update that is out of date is refused in the same way.
 func (m *Manager) emit(a domain.Activity, show bool) bool {
 	m.mu.Lock()
-	ready := m.status.State == Ready
+	// An update is stale when something newer has been asked for since the
+	// scheduler decided on it. The newer one is on its way to the scheduler,
+	// which delivers it next.
+	ready := m.status.State == Ready && m.desired == update{a, show}
 	if ready {
 		select {
 		case <-m.box:
@@ -170,7 +173,7 @@ func (m *Manager) emit(a domain.Activity, show bool) bool {
 	}
 	m.mu.Unlock()
 	if !ready {
-		m.log.Debug("activity update refused while not connected")
+		m.log.Debug("activity update refused")
 	}
 	return ready
 }
@@ -181,17 +184,21 @@ func (m *Manager) emit(a domain.Activity, show bool) bool {
 // the current activity again, at once unless one was written to Discord less
 // than an interval ago.
 func (m *Manager) setState(s State) {
+	if s == Ready {
+		// Whatever the scheduler decided before now was decided for a
+		// connection that is gone. It is let finish, while the state still
+		// refuses it, before the scheduler is told to start again.
+		m.sched.Reset()
+		m.sched.Settle()
+	}
 	m.mu.Lock()
 	m.status.State = s
 	select {
 	case <-m.box:
 	default:
 	}
-	if s == Ready {
-		m.sched.Reset()
-		if m.wanted {
-			m.submit(m.desired)
-		}
+	if s == Ready && m.wanted {
+		m.submit(m.desired)
 	}
 	m.mu.Unlock()
 	m.log.Info("discord connection state changed", stateAttrs[s])

@@ -41,6 +41,11 @@ type Scheduler[T comparable] struct {
 	mu      sync.Mutex
 	limiter limiter[T]
 
+	// delivering is held from the moment the loop looks at the limiter until
+	// the consumer has answered, so that Settle can wait for a delivery that
+	// is under way, or just decided.
+	delivering sync.Mutex
+
 	wake     chan struct{}
 	stop     chan struct{}
 	done     chan struct{}
@@ -95,6 +100,17 @@ func (s *Scheduler[T]) Reset() {
 	s.signal()
 }
 
+// Settle returns once the delivery that is under way, if there is one, has
+// finished: the consumer has answered and the answer is recorded. Calls to
+// Submit, Clear and Reset made before it are then all taken into account by
+// any delivery that follows. It is for a caller that must know that no
+// delivery decided before its Reset is still on its way to the consumer. It
+// must not be called from the consumer.
+func (s *Scheduler[T]) Settle() {
+	s.delivering.Lock()
+	defer s.delivering.Unlock()
+}
+
 // Stop releases the scheduler's timer and waits for its goroutine to end,
 // which includes waiting for a call to emit that is under way. Nothing is
 // delivered afterwards, not even a pending value. Further calls to any method
@@ -142,6 +158,7 @@ func (s *Scheduler[T]) run() {
 		case <-s.wake:
 		}
 
+		s.delivering.Lock()
 		s.mu.Lock()
 		u, emit, wait := s.limiter.next(s.clock.Now())
 		s.mu.Unlock()
@@ -154,6 +171,7 @@ func (s *Scheduler[T]) run() {
 			if armed == nil || armed.fired.Load() {
 				armed = s.arm(wait)
 			}
+			s.delivering.Unlock()
 			continue
 		}
 		if armed != nil {
@@ -165,5 +183,6 @@ func (s *Scheduler[T]) run() {
 			s.limiter.refused()
 			s.mu.Unlock()
 		}
+		s.delivering.Unlock()
 	}
 }

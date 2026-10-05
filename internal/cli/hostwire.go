@@ -47,9 +47,10 @@ func (s system) hostConfig(cfg config.Config, paths ctransport.Paths, getenv fun
 					}
 					return conn, err
 				},
-				Clock:  s.clock,
-				Jitter: jitter,
-				Logger: log,
+				Clock:    s.clock,
+				Interval: cfg.MinUpdateInterval,
+				Jitter:   jitter,
+				Logger:   log,
 			})}
 		},
 		Render:   presence.Render,

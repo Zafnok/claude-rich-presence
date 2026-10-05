@@ -277,6 +277,40 @@ func TestRefusedUpdateIsDeliveredAgainWhenSubmittedAgain(t *testing.T) {
 	rec.want(emission{"c", true, interval + time.Second})
 }
 
+func TestSettleWaitsForADeliveryThatIsUnderWay(t *testing.T) {
+	clock := fakeclock.New(start)
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	s := New(clock, interval, func(string, bool) bool {
+		close(entered)
+		<-release
+		return true
+	})
+	defer s.Stop()
+
+	// With nothing under way it returns at once.
+	s.Settle()
+
+	s.Submit("a")
+	<-entered
+	settled := make(chan struct{})
+	go func() {
+		s.Settle()
+		close(settled)
+	}()
+	select {
+	case <-settled:
+		t.Fatal("Settle returned while the consumer was still deciding")
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(release)
+	select {
+	case <-settled:
+	case <-time.After(30 * time.Second):
+		t.Fatal("Settle did not return after the delivery finished")
+	}
+}
+
 func TestStopReleasesTheTimerAndTheGoroutine(t *testing.T) {
 	// The loop of an earlier test's scheduler may still be on its way out.
 	wantNoGoroutines(t)
