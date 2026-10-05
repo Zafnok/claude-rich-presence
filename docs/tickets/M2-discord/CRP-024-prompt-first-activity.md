@@ -3,7 +3,7 @@ id: CRP-024
 title: "Discord session manager: a prompt first activity and the configured interval"
 milestone: M2 Discord
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-013, CRP-023]
 blocks: [CRP-043]
