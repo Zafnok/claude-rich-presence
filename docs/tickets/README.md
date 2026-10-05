@@ -111,7 +111,8 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-074](M7-personalisation/CRP-074-status-line-bridge.md) | Status line bridge | 045, 071 | Sonnet 5.5 | high | M |
 | [CRP-075](M7-personalisation/CRP-075-moments.md) | Moments: just shipped | 042 | Sonnet 5.5 | medium | S |
 | [CRP-076](M7-personalisation/CRP-076-spike-wsl.md) | Spike: Claude Code in WSL with Discord on Windows | 033 | Opus 5.5 | high | M |
-| [CRP-077](M7-personalisation/CRP-077-per-project-settings-in-adapter.md) | Per-project privacy level and display name in the Claude Code adapter | 014, 041 | Sonnet 5.5 | high | M |
+| [CRP-077](done/CRP-077-per-project-settings-in-adapter.md) | Per-project privacy level and display name in the Claude Code adapter | 014, 041 | Sonnet 5.5 | high | M |
+| [CRP-078](M7-personalisation/CRP-078-open-at-minimal-with-profiles.md) | Open a profiled session at the lowest level until its first hook | 077 | Sonnet 5.5 | medium | S |
 
 ## Dependency graph
 
@@ -168,6 +169,7 @@ flowchart TD
     C075["075 moments"]
     C076["076 spike: WSL"]
     C077["077 per-project settings"]
+    C078["078 open at minimal"]
     C004 --> C005
     C005 --> C006
     C005 --> C007
@@ -270,6 +272,7 @@ flowchart TD
     C077 --> C047
     C077 --> C048
     C077 --> C073
+    C077 --> C078
 ```
 
 ## Suggested order
@@ -283,7 +286,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 2 | 006, 007, 010, 012, 013, 022, 031, 040 |
 | 3 | 011, 014, 020, 021, 030, 034, 041 |
 | 4 | 023, 077 |
-| 5 | 024, 032 |
+| 5 | 024, 032, 078 |
 | 6 | 033 |
 | 7 | 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |

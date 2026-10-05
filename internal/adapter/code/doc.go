@@ -15,6 +15,22 @@
 // directory becomes its last element, and only at the full privacy level. The
 // level is applied to every event before it is queued.
 //
+// # Project profiles
+//
+// With a Resolver, the level is not fixed. Each hook that carries a working
+// directory is resolved to the settings for it: a level and a display name.
+// The directory is read at every level for this, used once and discarded; it
+// is never stored. The settings last resolved hold until a hook carries
+// another directory. The Privacy option is the level before the first, and
+// throughout when there is no resolver.
+//
+// A move to a higher level is announced with a refresh that carries the level
+// and the project. A move to a lower one ends the session and opens it again
+// under the same id and start time at the lower level, because the domain has
+// no event that takes a project or a model away, and so nothing published at
+// the higher level may stay in the session at the host. Every event of a call
+// is restricted at the level that call resolved.
+//
 // # Never impairing the caller
 //
 // The event tool does no I/O. It has a clock, pure functions and a bounded
