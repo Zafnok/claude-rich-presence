@@ -36,8 +36,8 @@ Read on 2026-10-05, in the activity object of Discord's gateway documentation an
 | An activity Discord sends back lists the buttons as labels only, and bots cannot read the URLs | Docs |
 | `details_url` and `state_url` make a text line a link; `large_url` and `small_url`, in the assets, make an image one | Docs |
 | The fake Discord accepts the button and records it as sent | Observed, `test/e2e: TestRepositoryLink` |
-| A real Discord accepts an activity with a button over the local pipe | **Not observed** |
-| The user sees the button on their own profile | **Not observed.** Third-party descriptions disagree |
+| A real Discord accepts an activity with a button over the local pipe | Observed 2026-10-05, Windows desktop client: the activity was shown with both text lines and the timer, and the log has no error. An activity is accepted or rejected whole |
+| The user sees the button on their own profile | **No**, on the desktop client's own profile popout. Observed 2026-10-05, at `full`: the name, both lines and the timer were shown and no button |
 | Another account sees the button, on desktop and on mobile | **Not observed** |
 | The button shows for the "playing" activity type, which is the one sent | **Not observed.** One other project reports that buttons show for one type only. CRP-070 measures this and has not run |
 
@@ -78,7 +78,7 @@ Record, for each row, what is seen:
 
 | Viewer | Where | Is the button shown | Does it open the link | Notes |
 |---|---|---|---|---|
-| The user | Desktop, own profile | | | |
+| The user | Desktop, own profile | No | Not applicable | 2026-10-05, at `full`. Everything else on the card was shown |
 | The user | Mobile, own profile | | | |
 | Second account | Desktop, profile or member list popout | | | |
 | Second account | Mobile, profile | | | |
