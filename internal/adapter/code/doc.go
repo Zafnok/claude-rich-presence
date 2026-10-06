@@ -12,8 +12,9 @@
 // The allowlist in allowlist.go is the one list of what is read. A field
 // that is not on an event's row is never decoded. Of what is read, a tool
 // name becomes a tool kind, a model id becomes a family label, and a working
-// directory becomes its last element, and only at the full privacy level. The
-// level is applied to every event before it is queued.
+// directory becomes its last element, cleaned by domain.CleanName as a
+// display name is, and only at the full privacy level. The level is applied
+// to every event before it is queued.
 //
 // # Project profiles
 //

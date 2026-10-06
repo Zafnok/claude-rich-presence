@@ -7,8 +7,9 @@ type Settings struct {
 	// Privacy is the level the session is published at.
 	Privacy domain.Privacy
 	// Name is shown in place of the directory name, and only at the full
-	// level. It may be empty. It must be at most domain.MaxProjectLen bytes,
-	// and the configuration cleans names to that.
+	// level. It may be empty. The configuration cleans names, and the
+	// adapter cleans what it is given again with domain.CleanName, so that
+	// no resolver can have it publish a name the host would refuse.
 	Name string
 }
 
@@ -22,7 +23,7 @@ type Resolver func(cwd string) Settings
 // resolveSettings asks the resolver for a directory's settings. A resolver
 // that panics, and one that answers with a level that does not exist, give
 // the most restrictive outcome: minimal, with no name. What a panic carried
-// is dropped, because it may hold the directory.
+// is dropped, because it may hold the directory. The name is cleaned.
 func (a *Adapter) resolveSettings(cwd string) (s Settings) {
 	defer func() {
 		// After a panic s is the zero value, which has no valid level.
@@ -31,7 +32,9 @@ func (a *Adapter) resolveSettings(cwd string) (s Settings) {
 			s = Settings{Privacy: domain.PrivacyMinimal}
 		}
 	}()
-	return a.resolve(cwd)
+	s = a.resolve(cwd)
+	s.Name = domain.CleanName(s.Name)
+	return s
 }
 
 // rank orders the levels from the most private.

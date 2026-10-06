@@ -592,3 +592,57 @@ func TestALockThatIsNotReleasedCleanlyIsReported(t *testing.T) {
 		t.Error("the lock is still held")
 	}
 }
+
+// TestTextThatIsNotCleanIsDroppedAndCounted plays a follower that sends a
+// project and a model its adapter could not have produced: the host is the
+// last thing between another process and a Discord text line, so it refuses
+// text that cleaning would change. Each message is dropped and counted, and
+// the session stays as it was.
+func TestTextThatIsNotCleanIsDroppedAndCounted(t *testing.T) {
+	w, a := hosting(t)
+	q := follower(w, a, "one")
+	now := w.clock.Now()
+	one := func() protocol.SessionState {
+		for _, s := range a.held() {
+			if s.ID == "session-one" {
+				return s
+			}
+		}
+		t.Fatal("the host does not hold the follower's session")
+		return protocol.SessionState{}
+	}
+
+	// Clean text is taken, so the session has a project and a model to keep.
+	clean := sessionAt("session-one", now)
+	clean.Privacy, clean.Project, clean.Model = string(domain.PrivacyFull), "alpha", "Opus 5.5"
+	q.say(protocol.Sync{Session: clean})
+	w.eventually("the clean project and model to be held", func() bool { return one() == *clean })
+	before := a.counters.Snapshot().EventsDropped
+	renders := a.rendersSinceLock()
+
+	for _, text := range []struct{ project, model string }{
+		{project: "al\x00pha"},
+		{project: "alpha\nbeta"},
+		{project: "**alpha** @everyone"},
+		{project: "al\u200bpha\u202e"},
+		{model: "**Opus** 5.5"},
+		{model: "[Opus](https://example.com)"},
+	} {
+		event := eventOf("session-one", domain.KindSessionRefreshed, now.Add(time.Minute))
+		event.Event.Project, event.Event.Model = text.project, text.model
+		q.say(event)
+
+		sync := sessionAt("session-one", now.Add(time.Minute))
+		sync.Privacy, sync.Project, sync.Model = string(domain.PrivacyFull), text.project, text.model
+		q.say(protocol.Sync{Session: sync})
+	}
+	if got := mark(w, a, q, renders); got != 0 {
+		t.Errorf("rendered %d times for messages that were dropped, want none", got)
+	}
+	if got := one(); got != *clean {
+		t.Errorf("the session is now %+v, want it unchanged, %+v", got, *clean)
+	}
+	if got := a.counters.Snapshot().EventsDropped - before; got != 12 {
+		t.Errorf("%d messages counted as dropped, want 12", got)
+	}
+}

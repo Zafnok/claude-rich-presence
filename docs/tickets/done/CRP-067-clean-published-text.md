@@ -3,7 +3,7 @@ id: CRP-067
 title: Clean every piece of text before it is published
 milestone: M6 Release
 type: feature
-status: in-progress
+status: done
 priority: P1
 blocked_by: [CRP-062]
 blocks: []
@@ -44,13 +44,13 @@ The model can create a directory and work in it, so at `full` the project name c
 
 ## Acceptance criteria
 
-- [ ] A table test gives `projectName` directory names holding formatting characters, a mention, link syntax, a zero-width character and a right-to-left override, and each comes out as `CleanName` would give it.
-- [ ] `TestNothingLeaks` and `TestPrivacy` still pass.
-- [ ] A host test sends an event and a sync whose project holds a control character, and one whose model holds markup, and shows each dropped and counted, with the session unchanged.
-- [ ] A property or fuzz test shows that any project the adapter publishes is accepted by the host.
-- [ ] The purity tests of every package touched still pass, unchanged or with a stated reason.
-- [ ] The configuration document says what `full` publishes, as above.
-- [ ] The threat model names these tests.
+- [x] A table test gives `projectName` directory names holding formatting characters, a mention, link syntax, a zero-width character and a right-to-left override, and each comes out as `CleanName` would give it.
+- [x] `TestNothingLeaks` and `TestPrivacy` still pass.
+- [x] A host test sends an event and a sync whose project holds a control character, and one whose model holds markup, and shows each dropped and counted, with the session unchanged.
+- [x] A property or fuzz test shows that any project the adapter publishes is accepted by the host.
+- [x] The purity tests of every package touched still pass, unchanged or with a stated reason.
+- [x] The configuration document says what `full` publishes, as above.
+- [x] The threat model names these tests.
 
 ## Notes for the implementer
 

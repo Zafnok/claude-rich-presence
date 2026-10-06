@@ -105,8 +105,8 @@ The session object:
 | `surface` | [word](#words) | Yes | `code` or `desktop` |
 | `status` | [word](#words) | Yes | `idle`, `working`, `waiting` or `compacting` |
 | `tool` | [word](#words) | No | The kind of tool in use, only while `working`. See the tool kinds under [`event`](#event) |
-| `model` | string, at most 64 bytes | No | A short model family label |
-| `project` | string, at most 128 bytes | No | The project name, as the adapter's privacy level allows |
+| `model` | [model label](#model-label) | No | A short model family label |
+| `project` | [project name](#project-name) | No | The project name, as the adapter's privacy level allows |
 | `privacy` | [word](#words) | Yes | `minimal`, `standard` or `full` |
 | `start` | [time](#times) | Yes | When the session began. It feeds the elapsed timer and survives a change of host |
 | `last_activity` | [time](#times) | Yes | When the session last did something |
@@ -139,8 +139,8 @@ The event object:
 | `at` | [time](#times) | Yes | When it happened |
 | `kind` | [word](#words) | Yes | What happened, from the list below |
 | `tool` | [word](#words) | No | The kind of tool. The domain requires it on `tool_started` |
-| `model` | string, at most 64 bytes | No | A short model family label. The domain requires it on `model_changed` |
-| `project` | string, at most 128 bytes | No | The project name |
+| `model` | [model label](#model-label) | No | A short model family label. The domain requires it on `model_changed` |
+| `project` | [project name](#project-name) | No | The project name |
 | `privacy` | [word](#words) | No | `minimal`, `standard` or `full` |
 
 Kinds: `session_opened`, `session_refreshed`, `turn_started`, `tool_started`, `tool_finished`, `attention_needed`, `idle`, `turn_finished`, `compaction_started`, `compaction_finished`, `model_changed`, `subagent_started`, `subagent_stopped`, `session_ended`.
@@ -220,9 +220,17 @@ An integer: milliseconds since 1970-01-01 00:00 UTC. It must be greater than 0.
 
 A string of at most 32 bytes from a closed vocabulary: surface, status, event kind, tool kind, privacy level. The codec carries the word and checks only its length. The receiver's domain model decides whether it knows the word. This is what lets a vocabulary grow without a new protocol version: see rule 3 below.
 
+### Project name
+
+A string of at most 128 bytes that is already clean: one line, with no control character, no invisible or direction character, none of the characters Discord reads as formatting, a mention or a link (``* ` ~ | < > [ ] \ @``), no space at either end and no two spaces together. The sending adapter cleans the name. The codec checks only the length. The host's domain model refuses a name that cleaning would change, so an event or a `sync` that carries one is skipped and counted, like one with an unknown word, and the connection stays open.
+
+### Model label
+
+A string of at most 64 bytes from the letters `A` to `Z` and `a` to `z`, the digits, `.` and single spaces between words, such as `Opus 5.5`. The codec checks only the length, and the host's domain model refuses anything else in the same way as a project name.
+
 ## What the channel cannot carry
 
-The fields above are all there is. No message has a field for prompt text, tool input or output, an assistant message, a file path, a transcript path or a tool name, and a test fails if a field is added without being listed. The only strings that are not from a closed vocabulary are the session id, the model label, the project name and the binary version, and each has a length limit. The activity summary ([ADR-0011](../architecture/adr/0011-model-authored-activity-summary.md)) is not in protocol version 1.
+The fields above are all there is. No message has a field for prompt text, tool input or output, an assistant message, a file path, a transcript path or a tool name, and a test fails if a field is added without being listed. The only strings that are not from a closed vocabulary are the session id, the model label, the project name and the binary version. Each has a length limit, and the last three are held to an alphabet or to clean text as [Field types](#field-types) says. The activity summary ([ADR-0011](../architecture/adr/0011-model-authored-activity-summary.md)) is not in protocol version 1.
 
 ## Errors
 
@@ -245,6 +253,8 @@ Different versions of the binary run side by side during an upgrade, so these ru
 2. **Unknown fields are ignored**, at every level. A field can be added to a message without a new protocol version, provided an older receiver that ignores it still behaves correctly.
 3. **Unknown words are dropped by the domain, not the codec.** An event whose `kind` an older host does not know decodes, fails the host's validation and is skipped. The connection stays open. A session in a `sync` with an unknown word is skipped the same way.
 4. **Unknown reason and state codes** are read as `other` and `unknown`.
+
+   A project name or a model label the host does not accept is dropped the same way as an unknown word. A follower older than this rule cleaned a directory name less, so it may send a newer host a name that is refused. Its `session_opened` or `sync` is then skipped: the host shows that session without a project, or not until a later event creates it. Both are the safe direction. No protocol version was needed, because nothing an older host accepted has changed meaning.
 5. **Anything an older host cannot safely ignore increments the protocol version.** Examples: removing or renaming a field, changing a field's type or meaning, adding a required field, or adding a message the host must act on for presence to be right.
 6. **The host accepts every version it understands**, from the oldest it supports to its own. It answers a `hello` with any other version with `refuse` and the reason `unsupported_protocol`. Today the oldest and the newest are both 1.
 7. **The connection speaks the version in the `hello`.** A newer host does not send an older follower anything that version lacks.
