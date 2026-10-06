@@ -3,7 +3,7 @@ id: CRP-054
 title: Decide how long Claude Desktop is shown when nothing else is running
 milestone: M5 Claude Desktop
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-050]
 blocks: []
