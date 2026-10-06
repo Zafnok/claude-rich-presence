@@ -148,10 +148,10 @@ Accepted risk: **a symbolic link at the log path is followed.** The file is open
 | A dependency or a CI action replaced upstream | Modules are limited to an allowlist and verified by the Go checksum database; actions are pinned to a commit; licences and known vulnerabilities are checked on every change and weekly | `tools/policycheck: TestRun`; the `Supply chain` workflow |
 | The binary gaining a way to phone home | See [No network](#no-network) | `test/e2e: TestTheBinaryLinksNoNetworkClient` |
 
-Accepted risks, each with the ticket that owns it. None of this exists yet, so none of it was reviewed:
+Accepted risks, each with the ticket that owns it. None of this existed at the commit the review read, so none of it was reviewed:
 
 - **Tampered release assets.** There is no release pipeline. [CRP-060](../tickets/M6-release/CRP-060-release-pipeline.md) is to publish checksums and a provenance attestation. Until a user verifies those, the trust root is the GitHub repository and account, as it is for the source.
-- **A changed bundle address.** The plugin, which will point at the bundle by URL with no checksum field, is [CRP-042](../tickets/M4-claude-code/CRP-042-plugin-packaging.md). The address lives in the same repository as everything else, so changing it takes the same access as changing the code (risk R15).
+- **A changed bundle address.** The plugin points at the bundle by a release URL with no checksum field. It is [CRP-042](../tickets/done/CRP-042-plugin-packaging.md), merged after the review. The address lives in the same repository as everything else, so changing it takes the same access as changing the code (risk R15).
 - **Unsigned binaries.** [CRP-063](../tickets/M6-release/CRP-063-code-signing.md).
 
 ### 7. Claude itself
@@ -193,8 +193,8 @@ Each is a ticket. None is high.
 
 ## What the review did not cover
 
-- **Features that are not built**: the activity summary and its sanitiser (ADR-0011), repository link buttons, the status line bridge (ADR-0015), the plugin and its hook file, the release pipeline and signing. Each needs its own look when it lands; the summary most of all, because it is the one path for model-written text by design.
-- **The Claude Desktop adapter**, `internal/adapter/desktop`. It was merged after the commit this review read, and has not been read. The no-network test does cover it, because that test reads whatever the binary is built from.
+- **Features that are not built**: the activity summary and its sanitiser (ADR-0011), repository link buttons, the status line bridge (ADR-0015), the release pipeline and signing. Each needs its own look when it lands; the summary most of all, because it is the one path for model-written text by design.
+- **The Claude Desktop adapter**, `internal/adapter/desktop`, **and the plugin**, `plugin/`, with its hook file and skills. Both were merged after the commit this review read, and have not been read. The no-network test does cover it, because that test reads whatever the binary is built from.
 - **`/security-review`**, which the ticket names. It reviews the changes pending on a branch, and this branch changes documents and one test. The code was reviewed by reading it instead: every non-test file under `internal/control`, `internal/host`, `internal/discord`, `internal/adapter`, `internal/mcp`, `internal/diag`, `internal/config`, `internal/cli`, `internal/domain` and `internal/presence`.
 - **Running anything hostile.** The findings come from reading code and tests on Windows. F1 and F4 concern Unix and were not reproduced on a Unix machine with two users; the tickets ask for a test that does.
 - **macOS**, on any point where it differs from Linux, and the access control of `%TEMP%` on a Windows machine joined to a domain or with a redirected profile.
