@@ -1,0 +1,16 @@
+{
+  "name": "rich-presence",
+  "owner": {
+    "name": "Nick Wentz"
+  },
+  "metadata": {
+    "description": "Discord Rich Presence for your coding assistant. Unofficial: not affiliated with, endorsed by, or sponsored by Anthropic or Discord."
+  },
+  "plugins": [
+    {
+      "name": "rich-presence",
+      "source": "./plugin",
+      "description": "Shows what your coding assistant is doing as your Discord status."
+    }
+  ]
+}

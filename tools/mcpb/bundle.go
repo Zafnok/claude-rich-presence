@@ -391,6 +391,12 @@ func (c *checker) userConfig(m *manifest) {
 			// Claude Desktop starts the server before the form is saved.
 			c.problem("user_config.%s must not be required: the server starts before the user fills it in", key)
 		}
+		if option.Default != nil {
+			// Claude Code lets a default here win over the value the user
+			// chose in the plugin's settings (CRP-042). The server has its
+			// own defaults.
+			c.problem("user_config.%s must have no default: it would override the plugin's setting", key)
+		}
 		if !reached[key] {
 			c.problem("user_config.%s is not passed to the server", key)
 		}

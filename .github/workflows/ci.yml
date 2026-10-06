@@ -22,6 +22,9 @@ env:
   # honnef.co/go/tools 2026.2.1. The go command verifies it against the Go
   # checksum database.
   STATICCHECK_VERSION: v0.8.1
+  # Anthropic's own package, used only for its plugin validator. This is also
+  # the version the plugin was last checked against.
+  CLAUDE_CODE_VERSION: "2.1.288"
   FUZZ_TIME: 10s
   RELEASE_TARGETS: windows/amd64 darwin/amd64 darwin/arm64 linux/amd64
 
@@ -222,18 +225,40 @@ jobs:
           path: dist/a/rich-presence.mcpb
           if-no-files-found: error
 
+  # The plugin and the marketplace are JSON and Markdown, so no Go test can
+  # say whether Claude Code accepts them. Its own validator does. The tests in
+  # internal/adapter/code hold the same files to the allowlist and the ADRs.
+  plugin:
+    name: Plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the validator
+        run: npm install --global "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
+
+      - name: Validate the plugin and the marketplace
+        run: |
+          claude --version
+          claude plugin validate --strict ./plugin
+          claude plugin validate --strict .
+
   # One check that stands for the whole matrix, so that branch protection has
   # a single name to require.
   ci:
     name: CI
     if: always()
-    needs: [check, bundle]
+    needs: [check, bundle, plugin]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     steps:
-      - name: Every operating system passed, and the bundle was built
+      - name: Every operating system passed, the bundle was built and the plugin is valid
         env:
           RESULT: ${{ needs.check.result }}
           BUNDLE: ${{ needs.bundle.result }}
-        run: test "$RESULT" = success && test "$BUNDLE" = success
+          PLUGIN: ${{ needs.plugin.result }}
+        run: test "$RESULT" = success && test "$BUNDLE" = success && test "$PLUGIN" = success

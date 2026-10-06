@@ -50,6 +50,8 @@ The README today describes a project in its architecture phase. By this ticket t
 
 - Write for someone who uses Discord and Claude but does not know what MCP or a hook is. Define a term or avoid it.
 - Do not claim anything the validation records do not support.
+- Turning presence off: disabling the plugin does not stop it in sessions that are already open. They keep showing presence until each is restarted, or the plugin is uninstalled, which stops it at once. Observed in [CRP-042](../done/CRP-042-plugin-packaging.md). Say this in the install and troubleshooting pages.
+- A changed privacy level applies to sessions started afterwards. The card shows one session at a time at that session's level, so with older sessions still open it can show more than the new level allows. Same record.
 - A screenshot needs the owner. Ask for one from CRP-052's record.
 
 ## Why this model and effort
