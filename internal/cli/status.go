@@ -80,7 +80,21 @@ func (s system) runStatus(args []string, stdout, stderr io.Writer, getenv func(s
 		fmt.Fprintf(stderr, "%s: status: %v\n", BinaryName, err)
 		return exitFailure
 	}
-	fmt.Fprintf(stdout, "Role: host\nDiscord: %s\nSessions: %d\nVersion: %s\nUptime: %s\n",
-		result.Discord, result.Sessions, result.Version, time.Duration(result.UptimeSeconds)*time.Second)
+	fmt.Fprintf(stdout, "Role: host\nDiscord: %s\nSessions: %d\nVersion: %s\nUptime: %s\nPaused: %s\n",
+		result.Discord, result.Sessions, result.Version, time.Duration(result.UptimeSeconds)*time.Second,
+		pausedWord(result.Pause, s.clock.Now()))
 	return exitOK
+}
+
+// pausedWord says whether the host is paused, from what it said of itself.
+func pausedWord(p *protocol.PauseState, now time.Time) string {
+	switch {
+	case p == nil:
+		return "unavailable, the presence host is an older version"
+	case !p.Paused || p.Until != 0 && now.UnixMilli() >= p.Until:
+		return "no"
+	case p.Until == 0:
+		return "until resumed"
+	}
+	return "until " + time.UnixMilli(p.Until).UTC().Format("2006-01-02 15:04:05 UTC")
 }

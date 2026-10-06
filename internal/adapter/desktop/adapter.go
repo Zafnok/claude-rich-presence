@@ -27,7 +27,8 @@ type Clock interface {
 type Options struct {
 	// Privacy is carried on the session so that it is rendered as the user's
 	// other sessions are. The adapter publishes the same at every level: it
-	// knows nothing that a level could withhold.
+	// knows nothing that a level could withhold. At domain.PrivacyOff the
+	// session is hidden, and the adapter publishes nothing.
 	Privacy domain.Privacy
 	// ID names the session. It must be unique to this process.
 	ID        string
@@ -58,7 +59,7 @@ type Adapter struct {
 // New checks the options and builds the adapter that reports the app.
 func New(opts Options) (*Adapter, error) {
 	switch {
-	case !opts.Privacy.Valid():
+	case !opts.Privacy.Settable():
 		return nil, errors.New("desktop: unknown privacy level")
 	case opts.ID == "" || len(opts.ID) > domain.MaxIDLen:
 		return nil, errors.New("desktop: session id must be 1 to 128 bytes")
@@ -76,7 +77,7 @@ func New(opts Options) (*Adapter, error) {
 // the status tool and publishes no event, whatever is called on it.
 func NewPassive(privacy domain.Privacy, status StatusSource) (*Adapter, error) {
 	switch {
-	case !privacy.Valid():
+	case !privacy.Settable():
 		return nil, errors.New("desktop: unknown privacy level")
 	case status == nil:
 		return nil, errors.New("desktop: status source is nil")
@@ -120,9 +121,10 @@ func (a *Adapter) Close() {
 }
 
 // publish stamps an event as this session's and gives it to the publisher. A
-// publisher that panics loses the event and nothing else (ADR-0008).
+// publisher that panics loses the event and nothing else (ADR-0008). A hidden
+// session, like the passive copy, publishes nothing.
 func (a *Adapter) publish(e domain.Event) {
-	if a.pub == nil {
+	if a.pub == nil || a.privacy == domain.PrivacyOff {
 		return
 	}
 	defer func() { _ = recover() }()

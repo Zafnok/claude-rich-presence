@@ -874,7 +874,7 @@ func TestTheToolsAsAClientSeesThem(t *testing.T) {
 		t.Fatal(err)
 	}
 	tools := listed.Result.Tools
-	if len(tools) != 2 || tools[0].Name != EventToolName || tools[1].Name != StatusToolName {
+	if len(tools) != 3 || tools[0].Name != EventToolName || tools[1].Name != StatusToolName || tools[2].Name != PauseToolName {
 		t.Fatalf("tools = %+v", tools)
 	}
 
@@ -912,8 +912,24 @@ func TestTheToolsAsAClientSeesThem(t *testing.T) {
 	}
 
 	status := tools[1]
-	if !strings.Contains(status.Description, "Read-only") || status.InputSchema.Type != "object" || len(status.InputSchema.Properties) != 0 {
+	if !strings.Contains(status.Description, "Read-only") || status.InputSchema.Type != "object" ||
+		len(status.InputSchema.Properties) != 1 || status.InputSchema.Properties["preview"].Type != "boolean" {
 		t.Errorf("status tool = %+v", status)
+	}
+	// The preview is described as private, so that the model treats it so.
+	if !strings.Contains(status.Description, "private preview") {
+		t.Errorf("status tool description = %q", status.Description)
+	}
+
+	// The pause tool takes a duration and a flag, and nothing that could
+	// change what is shown.
+	pause := tools[2]
+	properties := pause.InputSchema.Properties
+	if pause.InputSchema.Type != "object" || len(properties) != 2 || properties["minutes"].Type != "integer" || properties["resume"].Type != "boolean" {
+		t.Errorf("pause tool = %+v", pause)
+	}
+	if !strings.Contains(pause.Description, "only when the user asks") {
+		t.Errorf("pause tool description = %q", pause.Description)
 	}
 }
 
@@ -985,15 +1001,15 @@ func TestStatusTool(t *testing.T) {
 		want    string
 	}{
 		{"host", domain.PrivacyFull, Status{Role: RoleHost, Discord: DiscordConnected, Sessions: 3},
-			"Role: host\nDiscord: connected\nSessions: 3\nPrivacy: full\nEvents ignored: 1\nEvents dropped: 0"},
+			"Role: host\nDiscord: connected\nSessions: 3\nPrivacy: full\nPaused: no\nEvents ignored: 1\nEvents dropped: 0"},
 		{"follower", domain.PrivacyStandard, Status{Role: RoleFollower, Discord: DiscordConnecting, Sessions: 1},
-			"Role: follower\nDiscord: connecting\nSessions: 1\nPrivacy: standard\nEvents ignored: 1\nEvents dropped: 0"},
+			"Role: follower\nDiscord: connecting\nSessions: 1\nPrivacy: standard\nPaused: no\nEvents ignored: 1\nEvents dropped: 0"},
 		{"off", domain.PrivacyMinimal, Status{Role: RoleOff, Discord: DiscordDisconnected},
-			"Role: off\nDiscord: disconnected\nSessions: 0\nPrivacy: minimal\nEvents ignored: 1\nEvents dropped: 0"},
+			"Role: off\nDiscord: disconnected\nSessions: 0\nPrivacy: minimal\nPaused: no\nEvents ignored: 1\nEvents dropped: 0"},
 		{"nothing known", domain.PrivacyStandard, Status{},
-			"Role: unknown\nDiscord: unknown\nSessions: 0\nPrivacy: standard\nEvents ignored: 1\nEvents dropped: 0"},
+			"Role: unknown\nDiscord: unknown\nSessions: 0\nPrivacy: standard\nPaused: no\nEvents ignored: 1\nEvents dropped: 0"},
 		{"values outside the vocabulary", domain.PrivacyFull, Status{Role: "/home/u/work/alpha", Discord: "alpha", Sessions: 2},
-			"Role: unknown\nDiscord: unknown\nSessions: 2\nPrivacy: full\nEvents ignored: 1\nEvents dropped: 0"},
+			"Role: unknown\nDiscord: unknown\nSessions: 2\nPrivacy: full\nPaused: no\nEvents ignored: 1\nEvents dropped: 0"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

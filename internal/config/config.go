@@ -143,8 +143,8 @@ var settings = []setting{
 		return ""
 	}},
 	{"privacy", false, func(c *Config, v string) string {
-		if !domain.Privacy(v).Valid() {
-			return "must be minimal, standard or full"
+		if !domain.Privacy(v).Settable() {
+			return problemPrivacy
 		}
 		c.Privacy = domain.Privacy(v)
 		return ""

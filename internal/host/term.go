@@ -30,6 +30,14 @@ type term struct {
 	reduced chan struct{}
 	// sessions is how many sessions the registry holds, for Status.
 	sessions atomic.Int64
+	// pause is the pause the registry holds, and card is what was last
+	// handed to the Discord connection. Neither is ever nil.
+	pause atomic.Pointer[protocol.PauseState]
+	card  atomic.Pointer[protocol.PreviewResult]
+	// changed tells the goroutine that announces that the pause is another,
+	// and announced is closed when that goroutine has ended.
+	changed   chan struct{}
+	announced chan struct{}
 
 	// yield is closed by a valid stand_down, and broken by a panic in a
 	// goroutine of the term. Either ends the term.
@@ -59,8 +67,25 @@ type term struct {
 	handlers sync.WaitGroup
 
 	mu       sync.Mutex
-	conns    map[uint64]io.Closer
+	conns    map[uint64]*link
 	lastConn uint64
+}
+
+// link is one connection to the host. Two goroutines write to it: the one
+// that serves it, and the one that announces a change of pause.
+type link struct {
+	conn io.ReadWriteCloser
+	// writing is held for one write.
+	writing sync.Mutex
+	// welcomed is read and written with the term's mu held.
+	welcomed bool
+}
+
+// send writes one message.
+func (l *link) send(m protocol.Message) error {
+	l.writing.Lock()
+	defer l.writing.Unlock()
+	return protocol.Encode(l.conn, m)
 }
 
 // host is one term as host. It forwards the node's own session, and ends
@@ -113,26 +138,34 @@ func (n *Node) release(lock Lock) {
 // listener, each on a goroutine of its own.
 func (n *Node) begin(lock Lock, firm bool) *term {
 	t := &term{
-		n:        n,
-		lock:     lock,
-		firm:     firm,
-		discord:  n.discord(),
-		since:    n.clock.Now(),
-		inbox:    make(chan request),
-		quit:     make(chan struct{}),
-		reduced:  make(chan struct{}),
-		yield:    make(chan struct{}),
-		broken:   make(chan struct{}),
-		cleared:  make(chan struct{}),
-		accepted: make(chan struct{}),
-		conns:    map[uint64]io.Closer{},
+		n:         n,
+		lock:      lock,
+		firm:      firm,
+		discord:   n.discord(),
+		since:     n.clock.Now(),
+		inbox:     make(chan request),
+		quit:      make(chan struct{}),
+		reduced:   make(chan struct{}),
+		yield:     make(chan struct{}),
+		broken:    make(chan struct{}),
+		cleared:   make(chan struct{}),
+		accepted:  make(chan struct{}),
+		changed:   make(chan struct{}, 1),
+		announced: make(chan struct{}),
+		conns:     map[uint64]*link{},
 	}
+	// The term begins with the pause the node knows of, so that a host that
+	// is to be paused shows nothing from the start.
+	pause := n.known()
+	t.pause.Store(&pause)
+	t.card.Store(&protocol.PreviewResult{})
 	// Neither context comes from the one given to Run: a term ends its
 	// parts itself, in order.
 	showing, stopDiscord := context.WithCancel(context.Background())
 	t.stopDiscord = stopDiscord
 	t.listening, t.stopListening = context.WithCancel(context.Background())
 	t.spawn(t.reduce, t.reduced)
+	t.spawn(t.announce, t.announced)
 	t.spawn(func() { t.discord.Run(showing) }, t.cleared)
 	t.spawn(t.listen, t.accepted)
 	return t
@@ -176,6 +209,7 @@ func (t *term) end() {
 	// The registry goes last: a connection reports to it as it closes.
 	close(t.quit)
 	<-t.reduced
+	<-t.announced
 	t.n.log.Info("stopped hosting presence")
 }
 
@@ -183,13 +217,40 @@ func (t *term) end() {
 // serves it.
 func (t *term) hangUp() {
 	t.mu.Lock()
-	conns := make([]io.Closer, 0, len(t.conns))
-	for _, c := range t.conns {
-		conns = append(conns, c)
+	links := make([]*link, 0, len(t.conns))
+	for _, l := range t.conns {
+		links = append(links, l)
 	}
 	t.mu.Unlock()
-	for _, c := range conns {
-		_ = c.Close()
+	for _, l := range links {
+		_ = l.conn.Close()
+	}
+}
+
+// announce is the goroutine that tells every welcomed connection the host's
+// summary of itself whenever the pause has changed, so that each follower
+// can offer the pause to the next host. A follower that has stopped reading
+// holds up the followers after it, and nothing else: the term closes the
+// connection when it ends.
+func (t *term) announce() {
+	for {
+		select {
+		case <-t.quit:
+			return
+		case <-t.changed:
+		}
+		t.mu.Lock()
+		links := make([]*link, 0, len(t.conns))
+		for _, l := range t.conns {
+			if l.welcomed {
+				links = append(links, l)
+			}
+		}
+		t.mu.Unlock()
+		for _, l := range links {
+			// A connection that has failed is found by whoever reads it.
+			_ = l.send(t.status())
+		}
 	}
 }
 
@@ -230,14 +291,14 @@ func (t *term) accept(l Listener) (served bool) {
 			return served
 		}
 		served = true
-		id := t.admit(conn)
+		id, l := t.admit(conn)
 		t.handlers.Add(1)
 		go func() {
 			defer t.handlers.Done()
 			// A panic costs this connection and no other.
 			t.n.protect(func() {
 				defer t.dismiss(id, conn)
-				t.converse(id, conn)
+				t.converse(id, l)
 			})
 		}()
 	}
@@ -261,12 +322,13 @@ func closeWith(ctx context.Context, c io.Closer) (closeNow func()) {
 }
 
 // admit records a connection, so that hangUp can close it, and numbers it.
-func (t *term) admit(conn io.Closer) uint64 {
+func (t *term) admit(conn io.ReadWriteCloser) (uint64, *link) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.lastConn++
-	t.conns[t.lastConn] = conn
-	return t.lastConn
+	l := &link{conn: conn}
+	t.conns[t.lastConn] = l
+	return t.lastConn, l
 }
 
 // dismiss closes a connection and forgets it.
@@ -279,7 +341,8 @@ func (t *term) dismiss(id uint64, conn io.Closer) {
 
 // converse is the host's side of one connection, from the hello until the
 // connection ends.
-func (t *term) converse(id uint64, conn io.ReadWriteCloser) {
+func (t *term) converse(id uint64, l *link) {
+	conn := l.conn
 	// Nothing here has a deadline. A connection that is not welcomed in
 	// time is closed, which ends the read below.
 	stopGreeting := t.n.clock.AfterFunc(greetTimeout, func() { _ = conn.Close() })
@@ -294,12 +357,16 @@ func (t *term) converse(id uint64, conn io.ReadWriteCloser) {
 		return
 	}
 	answer := t.answer(hello)
-	if protocol.Encode(conn, answer) != nil {
+	if l.send(answer) != nil {
 		return
 	}
 	_, welcomed := answer.(protocol.Welcome)
 	if welcomed {
 		stopGreeting()
+		// From here on the connection is told of a change of pause.
+		t.mu.Lock()
+		l.welcomed = true
+		t.mu.Unlock()
 		// The sessions of a connection end with it.
 		defer t.submit(request{op: opClosed, source: id})
 	}
@@ -319,10 +386,14 @@ func (t *term) converse(id uint64, conn io.ReadWriteCloser) {
 				t.yieldOnce.Do(func() { close(t.yield) })
 			}
 		case protocol.Status:
-			if welcomed && protocol.Encode(conn, t.status()) != nil {
+			if welcomed && l.send(t.status()) != nil {
 				return
 			}
-		case protocol.Sync, protocol.Event:
+		case protocol.Preview:
+			if welcomed && l.send(t.preview()) != nil {
+				return
+			}
+		case protocol.Sync, protocol.Event, protocol.Pause, protocol.Resume:
 			// After a refusal the only message still read is stand_down.
 			if welcomed {
 				t.receive(id, m)
@@ -368,12 +439,21 @@ func (t *term) status() protocol.StatusResult {
 		Sessions:      int(t.sessions.Load()),
 		Version:       t.n.version,
 		UptimeSeconds: max(0, int64(t.n.clock.Now().Sub(t.since)/time.Second)),
+		Pause:         new(*t.pause.Load()),
 	}
 }
 
-// receive passes a sync or an event from a source to the registry. It is
-// the one path for a follower's session and for the node's own. Any other
-// message is ignored.
+// preview is the card as it is shown once everything the caller submitted
+// before has been dealt with: the registry takes one request at a time, so
+// when it has taken this one the earlier ones have been shown.
+func (t *term) preview() protocol.PreviewResult {
+	t.submit(request{op: opPeek})
+	return *t.card.Load()
+}
+
+// receive passes a sync, an event, a pause or a resume from a source to the
+// registry. It is the one path for what a follower sends and for the node's
+// own. Any other message is ignored.
 func (t *term) receive(source uint64, m protocol.Message) {
 	switch m := m.(type) {
 	case protocol.Sync:
@@ -388,6 +468,10 @@ func (t *term) receive(source uint64, m protocol.Message) {
 		e := m.Event.Domain()
 		e.Link = t.n.checked(e.Link)
 		t.submit(request{op: opEvent, source: source, event: e})
+	case protocol.Pause:
+		t.submit(request{op: opPause, pause: protocol.PauseState{Paused: true, Until: m.Until, At: m.At}})
+	case protocol.Resume:
+		t.submit(request{op: opPause, pause: protocol.PauseState{At: m.At}})
 	}
 }
 
@@ -419,7 +503,7 @@ func (t *term) submit(r request) {
 // reduce is the goroutine that owns the registry. After every change it
 // shows the result.
 func (t *term) reduce() {
-	r := registry{sessions: domain.NewRegistry(), owners: map[string]uint64{}}
+	r := registry{sessions: domain.NewRegistry(), owners: map[string]uint64{}, pause: *t.pause.Load()}
 	stopTimer := noTimer
 	defer func() { stopTimer() }()
 	for {
@@ -430,20 +514,47 @@ func (t *term) reduce() {
 			if !r.apply(req, t.n.counters) {
 				continue
 			}
+			if req.op == opPause {
+				t.adopt(r.pause)
+			}
 			stopTimer()
-			stopTimer = t.show(r.sessions.Snapshot())
+			stopTimer = t.show(r.sessions.Snapshot(), r.pause)
 		}
 	}
 }
 
+// adopt makes a pause the registry has taken known: to Status, to the node,
+// which offers it to its next host, and to the followers, which do the same.
+// It never waits.
+func (t *term) adopt(p protocol.PauseState) {
+	t.pause.Store(&p)
+	t.n.learn(p)
+	select {
+	case t.changed <- struct{}{}:
+	default:
+	}
+}
+
 // show renders the sessions and hands the result to the Discord connection,
-// whose scheduler decides when it is sent. If the result would change by
-// itself, because the idle period ends, it arms a timer that renders again
-// then, and returns the function that cancels it.
-func (t *term) show(sessions []domain.Session) (stopTimer func() bool) {
+// whose scheduler decides when it is sent. While presence is paused it shows
+// nothing instead, whatever the sessions are. If the result would change by
+// itself, because the pause or the idle period ends, it arms a timer that
+// renders again then, and returns the function that cancels it.
+func (t *term) show(sessions []domain.Session, pause protocol.PauseState) (stopTimer func() bool) {
 	now := t.n.clock.Now()
 	t.sessions.Store(int64(len(sessions)))
-	if activity, ok := t.n.render(sessions, now, t.n.settings); ok {
+	tick := func() { t.submit(request{op: opTick}) }
+	if pausedAt(pause, now) {
+		t.card.Store(&protocol.PreviewResult{})
+		t.discord.Clear()
+		if pause.Until == 0 {
+			return noTimer
+		}
+		return t.n.clock.AfterFunc(time.UnixMilli(pause.Until).Sub(now), tick)
+	}
+	activity, ok := t.n.render(sessions, now, t.n.settings)
+	t.card.Store(new(protocol.PreviewOf(activity, ok)))
+	if ok {
 		t.discord.Set(activity)
 	} else {
 		t.discord.Clear()
@@ -452,7 +563,7 @@ func (t *term) show(sessions []domain.Session) (stopTimer func() bool) {
 	if !ok {
 		return noTimer
 	}
-	return t.n.clock.AfterFunc(wait, func() { t.submit(request{op: opTick}) })
+	return t.n.clock.AfterFunc(wait, tick)
 }
 
 // noTimer cancels no timer.

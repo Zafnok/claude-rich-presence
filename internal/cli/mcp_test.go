@@ -30,8 +30,8 @@ func TestMCPWithPresenceOff(t *testing.T) {
 
 			s := w.startSession(t)
 			s.initialize()
-			if got := strings.Join(s.toolNames(), ","); got != "presence_event,presence_status" {
-				t.Errorf("tools = %q, want the event and status tools", got)
+			if got := strings.Join(s.toolNames(), ","); got != "presence_event,presence_status,presence_pause" {
+				t.Errorf("tools = %q, want the event, status and pause tools", got)
 			}
 			if got := s.status(); !strings.Contains(got, "Role: off") || !strings.Contains(got, "Sessions: 0") {
 				t.Errorf("status = %q, want role off and no sessions", got)
@@ -160,13 +160,13 @@ func TestMCPStartupProblemsLeaveStandardOutputToTheProtocol(t *testing.T) {
 		{
 			name:      "no runtime directory can be resolved",
 			prepare:   func(w *world) { w.env = w.env.with("RICH_PRESENCE_RUNTIME_DIR", "relative") },
-			wantTools: "presence_event,presence_status",
+			wantTools: "presence_event,presence_status,presence_pause",
 			wantRole:  "Role: off",
 		},
 		{
 			name:      "this binary's version is not one the control protocol carries",
 			prepare:   func(w *world) { w.sys.version = "not a version" },
-			wantTools: "presence_event,presence_status",
+			wantTools: "presence_event,presence_status,presence_pause",
 			wantRole:  "Role: off",
 		},
 		{

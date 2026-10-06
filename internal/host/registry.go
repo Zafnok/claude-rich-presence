@@ -1,6 +1,7 @@
 package host
 
 import (
+	"github.com/Zafnok/claude-rich-presence/internal/control/protocol"
 	"github.com/Zafnok/claude-rich-presence/internal/diag"
 	"github.com/Zafnok/claude-rich-presence/internal/domain"
 )
@@ -15,8 +16,13 @@ const (
 	opSync
 	// opClosed removes what a source holds: its connection has ended.
 	opClosed
-	// opTick changes nothing. The idle period may have ended.
+	// opTick changes nothing. The idle period, or a pause, may have ended.
 	opTick
+	// opPause offers a pause or a resume.
+	opPause
+	// opPeek does nothing. Whoever sent it knows, once it is taken, that
+	// everything sent before it has been shown.
+	opPeek
 )
 
 // request is one thing for the goroutine that owns the registry to do.
@@ -25,6 +31,7 @@ type request struct {
 	source  uint64
 	event   domain.Event
 	session *domain.Session // for opSync; nil means the source has no session
+	pause   protocol.PauseState
 }
 
 // registry is the host's sessions and which source each belongs to. It is
@@ -38,6 +45,8 @@ type registry struct {
 	// to be read on the old connection can neither take the session back
 	// nor end it.
 	owners map[string]uint64
+	// pause is the latest pause or resume the host was offered.
+	pause protocol.PauseState
 }
 
 // apply carries out a request and reports whether what is shown may have
@@ -76,6 +85,14 @@ func (r *registry) apply(req request, counters *diag.Counters) (changed bool) {
 		return r.release(req.source, keep) || keep != ""
 	case opClosed:
 		return r.release(req.source, "")
+	case opPause:
+		if !supersedes(req.pause, r.pause) {
+			return false
+		}
+		r.pause = req.pause
+		return true
+	case opPeek:
+		return false
 	}
 	return true
 }

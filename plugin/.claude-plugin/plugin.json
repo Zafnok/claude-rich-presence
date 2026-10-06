@@ -15,8 +15,8 @@
     "privacy": {
       "type": "string",
       "title": "Privacy level",
-      "description": "How much is shown: minimal (that the assistant is in use), standard (adds status and model family) or full (adds the project name).",
-      "options": ["minimal", "standard", "full"],
+      "description": "How much is shown: off (nothing), minimal (that the assistant is in use), standard (adds status and model family) or full (adds the project name).",
+      "options": ["off", "minimal", "standard", "full"],
       "default": "standard"
     },
     "discord_application_id": {

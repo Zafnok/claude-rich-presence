@@ -66,6 +66,13 @@ type Status struct {
 	Version string
 	// Uptime is how long the host has been host.
 	Uptime time.Duration
+	// Paused says presence is switched off for now, by the latest pause the
+	// node knows of. PausedUntil is when that ends by itself, or the zero
+	// time for a pause that lasts until it is resumed.
+	Paused      bool
+	PausedUntil time.Time
+	// NoPause says the host is from before pausing, and cannot pause.
+	NoPause bool
 }
 
 // outcome is how one round of the role loop ended.
@@ -117,6 +124,14 @@ type Node struct {
 	// heard is what the host last said of itself, while role is
 	// RoleFollower.
 	heard Status
+	// pause is the latest pause or resume the node knows of, and offer says
+	// the host is still to be given it.
+	pause protocol.PauseState
+	offer bool
+	// old says the host has said of itself and cannot pause, and seen is the
+	// card it last said it shows. Both are of the host that is followed now.
+	old  bool
+	seen *protocol.PreviewResult
 
 	// The rest belongs to the goroutine in Run.
 	followed bool // a host has been followed since this node was last host
@@ -210,19 +225,30 @@ func (n *Node) Publish(e domain.Event) {
 // follower also asks the host again, so that a later call is up to date.
 func (n *Node) Status() Status {
 	n.mu.Lock()
-	role, t, heard := n.role, n.term, n.heard
+	role, t, heard, pause, old := n.role, n.term, n.heard, n.pause, n.old
 	if role == RoleFollower {
 		n.asked = true
 	}
 	n.mu.Unlock()
+	st := Status{Discord: protocol.DiscordUnknown}
 	switch role {
 	case RoleHost:
-		return statusOf(RoleHost, t.status())
+		st = statusOf(RoleHost, t.status())
 	case RoleFollower:
 		n.signal()
-		return heard
+		st = heard
 	}
-	return Status{Discord: protocol.DiscordUnknown}
+	// The pause is the latest the node knows of, which a request of its own
+	// that the host has yet to take may be. A host that cannot pause shows
+	// presence whatever the node knows.
+	st.NoPause = role == RoleFollower && old
+	if !st.NoPause && pausedAt(pause, n.clock.Now()) {
+		st.Paused = true
+		if pause.Until != 0 {
+			st.PausedUntil = time.UnixMilli(pause.Until).UTC()
+		}
+	}
+	return st
 }
 
 // statusOf is a host's summary of itself, as a node reports it.
@@ -289,6 +315,10 @@ func (n *Node) attach(role Role, t *term, version string) {
 	n.heard = Status{Role: role, Discord: protocol.DiscordUnknown, Version: version}
 	n.queue = n.queue[:0]
 	n.resync, n.asked = true, true
+	// A pause outlives a host because each node offers the next host the
+	// latest it knows of.
+	n.offer = n.pause.At != 0
+	n.old, n.seen = false, nil
 	n.mu.Unlock()
 	n.signal()
 }
@@ -301,13 +331,18 @@ func (n *Node) detach() {
 }
 
 // take removes and returns everything that is waiting for the host, in the
-// order it is to be sent: the session as a whole if that is due, or else the
-// queued events. A follower also asks for the host's status whenever it sends
-// something or Status has been called.
+// order it is to be sent: a pause or a resume, so that a host that is to be
+// paused shows nothing first, then the session as a whole if that is due, or
+// else the queued events. A follower also asks for the host's status and its
+// card whenever it sends something or either has been asked for.
 func (n *Node) take() []protocol.Message {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	var out []protocol.Message
+	if n.offer {
+		n.offer = false
+		out = append(out, pauseRequest(n.pause))
+	}
 	if n.resync {
 		n.resync = false
 		out = append(out, protocol.Sync{Session: n.session()})
@@ -318,7 +353,7 @@ func (n *Node) take() []protocol.Message {
 	n.queue = n.queue[:0]
 	if n.role == RoleFollower && (n.asked || len(out) > 0) {
 		n.asked = false
-		out = append(out, protocol.Status{})
+		out = append(out, protocol.Status{}, protocol.Preview{})
 	}
 	return out
 }

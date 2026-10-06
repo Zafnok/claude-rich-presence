@@ -149,6 +149,28 @@ func TestSessionOpensAndEnds(t *testing.T) {
 	}
 }
 
+func TestAHiddenSessionPublishesNothing(t *testing.T) {
+	pub := &recorder{}
+	opts := options(pub)
+	opts.Privacy = domain.PrivacyOff
+	a, err := New(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.Open()
+	status := a.handleStatus(nil)
+	a.Close()
+	if len(pub.events) != 0 {
+		t.Errorf("published %+v, want nothing", pub.events)
+	}
+	if !strings.Contains(status.Text, "Privacy: off") {
+		t.Errorf("status = %q, want the level off", status.Text)
+	}
+	if _, err := NewPassive(domain.PrivacyOff, opts.Status); err != nil {
+		t.Errorf("the passive copy does not take the level off: %v", err)
+	}
+}
+
 func TestCloseWithoutOpenPublishesNothing(t *testing.T) {
 	pub := &recorder{}
 	a, err := New(options(pub))

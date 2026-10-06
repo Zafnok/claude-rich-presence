@@ -744,8 +744,8 @@ func TestEveryStateToStoppedWhenTheContextEnds(t *testing.T) {
 		s := w.stubHost().listen()
 		b := w.spawn("b").open().run()
 		q, _ := s.greeted("1.0.0")
-		q.hear() // the sync
-		q.hear() // the request for status
+		q.hear()  // the sync
+		q.asked() // the requests for status and for the card
 		b.stop()
 		q.hearEnd()
 		if got := b.role(); got != host.RoleNone {
