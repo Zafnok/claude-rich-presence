@@ -116,10 +116,11 @@ func all(s string, is func(rune) bool) bool {
 }
 
 // projectName reduces a working directory to its last element, for either
-// slash style and with or without a trailing separator. It returns the empty
-// string when there is no usable last element: a root, a bare drive, a dot
-// entry, or a name with a control character. A name longer than the domain
-// allows is cut at a character boundary.
+// slash style and with or without a trailing separator, and cleans it as a
+// display name from a profile is cleaned, because a directory can be named
+// anything and Claude can create one. It returns the empty string when there
+// is no usable last element: a root, a bare drive, a dot entry, or a name
+// with nothing left once it is clean.
 func projectName(cwd string) string {
 	const separators = `/\`
 	trimmed := strings.TrimRight(cwd, separators)
@@ -127,12 +128,5 @@ func projectName(cwd string) string {
 	if name == "" || name == "." || name == ".." || strings.HasSuffix(name, ":") {
 		return ""
 	}
-	if !printable(name) {
-		return ""
-	}
-	for len(name) > domain.MaxProjectLen {
-		_, size := utf8.DecodeLastRuneInString(name)
-		name = name[:len(name)-size]
-	}
-	return name
+	return domain.CleanName(name)
 }
