@@ -20,7 +20,7 @@ At every level, prompts, replies, tool inputs and outputs, file contents and fil
 
 ## Changing the level
 
-1. Run `/config`, find the row **Privacy level** under the Rich Presence plugin, and pick `minimal`, `standard` or `full`. The same option is in `/plugin`, under the plugin's configuration.
+1. Run `/config`, find the row **Privacy level** under the Rich Presence plugin, and pick `off`, `minimal`, `standard` or `full`. The same option is in `/plugin`, under the plugin's configuration.
 2. Restart the session. The level is read when the presence server starts, so a session that is already open keeps the old one.
 
 If several sessions are open, restart each of them.

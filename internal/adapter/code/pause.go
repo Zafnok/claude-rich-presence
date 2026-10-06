@@ -50,15 +50,22 @@ func (a *Adapter) handlePause(arguments json.RawMessage) (result mcp.Result) {
 	if a.pauser == nil {
 		return mcp.Result{Text: pauseOff}
 	}
+	// The minutes are read as any JSON number, because a client may write a
+	// whole number as 30.0.
 	var asked struct {
-		Minutes int64 `json:"minutes"`
-		Resume  bool  `json:"resume"`
+		Minutes float64 `json:"minutes"`
+		Resume  bool    `json:"resume"`
 	}
 	// No arguments at all ask for a pause until resumed.
 	if len(arguments) > 0 && json.Unmarshal(arguments, &asked) != nil {
 		return mcp.Result{Text: pauseBadMinutes, IsError: true}
 	}
-	if asked.Minutes < 0 || asked.Minutes > maxPauseMinutes {
+	// The comparison is written so that it also refuses what is not a number.
+	minutes := int64(0)
+	if asked.Minutes >= 0 && asked.Minutes <= maxPauseMinutes {
+		minutes = int64(asked.Minutes)
+	}
+	if float64(minutes) != asked.Minutes {
 		return mcp.Result{Text: pauseBadMinutes, IsError: true}
 	}
 	var done bool
@@ -66,11 +73,11 @@ func (a *Adapter) handlePause(arguments json.RawMessage) (result mcp.Result) {
 	switch {
 	case asked.Resume:
 		done, text = a.pauser.Resume(), pauseResumed
-	case asked.Minutes == 0:
+	case minutes == 0:
 		done = a.pauser.Pause(time.Time{})
 	default:
-		done = a.pauser.Pause(a.clock.Now().Add(time.Duration(asked.Minutes) * time.Minute))
-		text = "Presence is paused for every session for " + strconv.FormatInt(asked.Minutes, 10) + " minutes. It returns by itself."
+		done = a.pauser.Pause(a.clock.Now().Add(time.Duration(minutes) * time.Minute))
+		text = "Presence is paused for every session for " + strconv.FormatInt(minutes, 10) + " minutes. It returns by itself."
 	}
 	if !done {
 		return mcp.Result{Text: pauseOldHost, IsError: true}

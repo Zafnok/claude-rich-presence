@@ -271,6 +271,7 @@ func TestPauseTool(t *testing.T) {
 		{"null", `null`, pauseIndefinite, []string{"pause"}},
 		{"zero minutes", `{"minutes":0}`, pauseIndefinite, []string{"pause"}},
 		{"a duration", `{"minutes":30}`, "Presence is paused for every session for 30 minutes. It returns by itself.", []string{"pause until 2026-10-03T12:30:01Z"}},
+		{"a whole number written with a fraction", `{"minutes":30.0}`, "Presence is paused for every session for 30 minutes. It returns by itself.", []string{"pause until 2026-10-03T12:30:01Z"}},
 		{"the longest duration", `{"minutes":10080}`, "Presence is paused for every session for 10080 minutes. It returns by itself.", []string{"pause until 2026-10-10T12:00:01Z"}},
 		{"resume", `{"resume":true}`, pauseResumed, []string{"resume"}},
 		{"resume wins over a duration", `{"resume":true,"minutes":5}`, pauseResumed, []string{"resume"}},
@@ -295,6 +296,8 @@ func TestPauseToolRefusesWhatItCannotRead(t *testing.T) {
 	for name, arguments := range map[string]string{
 		"negative minutes":      `{"minutes":-1}`,
 		"too many minutes":      `{"minutes":10081}`,
+		"far too many minutes":  `{"minutes":1e300}`,
+		"just under a minute":   `{"minutes":0.5}`,
 		"minutes as text":       `{"minutes":"ten"}`,
 		"a fraction of minutes": `{"minutes":1.5}`,
 		"resume as text":        `{"resume":"yes"}`,

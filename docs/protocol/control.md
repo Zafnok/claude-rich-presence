@@ -333,7 +333,7 @@ A pause must outlive the host. So:
 2. A follower remembers the latest pause or resume it knows of: its own request, or what a host said.
 3. Whenever a follower gains a host, it sends what it remembers as a `pause` or a `resume`, before its `sync`. The new host merges what its followers offer by the rule above, so they agree on the latest whatever order they arrive in.
 
-Pausing was added without a new protocol version. A host from before it ignores `pause`, `resume` and `preview`, as it ignores any type it does not know, and goes on showing presence. A follower sees that its host cannot pause from a `status_result` with no `pause` object, and tells the user that pausing is unavailable instead of sending the request.
+Pausing was added without a new protocol version. A host from before it ignores `pause`, `resume` and `preview`, as it ignores any type it does not know, and goes on showing presence. A follower sees that its host cannot pause from a `status_result` with no `pause` object, and tells the user that pausing is unavailable instead of sending the request. Such a host shows presence, so the follower also forgets the pause it remembered: it is not offered to a later host, which would hide presence again long after it had come back.
 
 ## What the channel cannot carry
 

@@ -380,7 +380,15 @@ func TestAFollowerKeepsTheLatestPauseItHears(t *testing.T) {
 func TestAnOlderHostCannotPause(t *testing.T) {
 	w, s, b, q := following(t)
 
-	// A host from before pausing says nothing of a pause.
+	// Before the host has said what it is, a pause is taken and sent.
+	if !b.node.Pause(time.Time{}) {
+		t.Fatal("a follower whose host has said nothing yet would not pause")
+	}
+	if _, ok := q.update().(protocol.Pause); !ok {
+		t.Fatal("the pause was not sent")
+	}
+	// A host from before pausing says nothing of a pause. It shows presence,
+	// so the pause the follower remembers is over, and is forgotten.
 	q.say(protocol.StatusResult{Discord: protocol.DiscordConnected, Sessions: 1, Version: "1.0.0"})
 	w.eventually("the follower to know its host cannot pause", func() bool { return b.node.Status().NoPause })
 	if b.node.Pause(time.Time{}) || b.node.Pause(w.clock.Now().Add(time.Hour)) || b.node.Resume() {

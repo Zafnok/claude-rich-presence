@@ -115,6 +115,12 @@ func (n *Node) hear(lines *protocol.Decoder) {
 			n.mu.Lock()
 			n.heard = statusOf(RoleFollower, m)
 			n.old = m.Pause == nil
+			if n.old {
+				// A host that cannot pause shows presence, so whatever pause
+				// the node remembers is over. It is not kept for a later
+				// host, which would hide presence again long after.
+				n.pause, n.offer = protocol.PauseState{}, false
+			}
 			n.mu.Unlock()
 			if m.Pause != nil {
 				n.learn(*m.Pause)
