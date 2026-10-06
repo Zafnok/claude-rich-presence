@@ -95,7 +95,7 @@ Needs an interactive Claude Code session with the plugin loaded from this branch
 | Case | Expected | Observed |
 |---|---|---|
 | A public GitHub repository, GitHub CLI signed in | Reports it public, shows the summary, writes the profile after a yes | **As expected**, 2026-10-05, Claude Code 2.1.290 on Windows, auto mode, started in a worktree of this repository. It read the remote, ran `gh repo view` for the visibility, proposed eight areas, asked one question naming the link, and wrote the file only after "Yes, write it as shown". It chose the main checkout as the profile's path, not the worktree, which covers the worktrees inside it |
-| A private GitHub repository | Stops with an explanation and writes nothing, even when asked to go on | |
+| A private GitHub repository | Stops with an explanation and writes nothing, even when asked to go on | **As expected**, 2026-10-05, same setup. `gh repo view` reported the repository private; the skill stopped, explained that the link would reveal the owner and name and lead to a not-found page, and left the configuration file as it was. It was not then asked to go on regardless |
 | A repository whose `origin` is `https://user:token@github.com/owner/repo.git` | The link shown and written has no credential, and the token is not repeated | |
 | GitHub CLI signed out | Says it could not check and asks whether the repository is public | |
 | "Stop sharing this project" | Shows the profile, asks whether to remove the link or the whole entry, and edits accordingly | |
