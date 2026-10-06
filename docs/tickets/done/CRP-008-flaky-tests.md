@@ -3,7 +3,7 @@ id: CRP-008
 title: Fix two flaky tests in the scheduler and the session manager
 milestone: M0 Foundation
 type: chore
-status: in-progress
+status: done
 priority: P1
 blocked_by: [CRP-005, CRP-013, CRP-023, CRP-024]
 blocks: []
@@ -20,7 +20,7 @@ size: S
 
 ## Context
 
-On the first two CI runs of the pull request for [CRP-051](done/CRP-051-mcpb-bundle.md), which changed no code in either package, two tests failed and then passed on a rerun:
+On the first two CI runs of the pull request for [CRP-051](CRP-051-mcpb-bundle.md), which changed no code in either package, two tests failed and then passed on a rerun:
 
 | Test | Package | What happened |
 |---|---|---|
@@ -43,11 +43,11 @@ A different test failed on each operating system, and the change under test was 
 
 ## Acceptance criteria
 
-- [ ] `go test -race -count=200 ./internal/schedule ./internal/discord/session` passes on Linux, and on Windows if a fault was seen there.
-- [ ] The pull request names the cause of each of the two failures, with the evidence that it was the cause.
-- [ ] If the cause is in the code under test, a test fails without the fix.
-- [ ] No test sleeps for a real duration to wait for another goroutine.
-- [ ] Statement coverage stays at 100.0%.
+- [x] `go test -race -count=200 ./internal/schedule ./internal/discord/session` passes on Linux, and on Windows if a fault was seen there.
+- [x] The pull request names the cause of each of the two failures, with the evidence that it was the cause.
+- [x] If the cause is in the code under test, a test fails without the fix.
+- [x] No test sleeps for a real duration to wait for another goroutine.
+- [x] Statement coverage stays at 100.0%.
 
 ## Notes for the implementer
 
@@ -61,5 +61,5 @@ Finding a race from a failure that rarely reproduces is concurrency investigatio
 
 ## References
 
-- [CRP-013](done/CRP-013-update-scheduler.md), [CRP-023](done/CRP-023-discord-session-manager.md), [CRP-024](done/CRP-024-prompt-first-activity.md)
+- [CRP-013](CRP-013-update-scheduler.md), [CRP-023](CRP-023-discord-session-manager.md), [CRP-024](CRP-024-prompt-first-activity.md)
 - [Quality strategy](../../architecture/quality-strategy.md)
