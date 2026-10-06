@@ -28,7 +28,9 @@ A session exists on the host exactly while its follower's connection is open. Th
 
 After a `refuse` the only message the host still reads is `stand_down`. The follower sends it or not, and closes the connection. The host does not wait for long: it closes a connection that has not been welcomed one second after accepting it, whether the connection was refused or has said nothing.
 
-`status` and `stand_down` are requests that can be sent on any connection after `welcome`. The `status` command opens a connection of its own, says `hello`, asks, reads the answer and closes without ever sending a `sync`. A follower may ask for `status` as often as it likes. This binary asks after each thing it sends, so that what it reports of its host is recent.
+`status`, `preview`, `pause`, `resume` and `stand_down` are requests that can be sent on any connection after `welcome`. The `status` command opens a connection of its own, says `hello`, asks, reads the answer and closes without ever sending a `sync`. A follower may ask for `status` and `preview` as often as it likes. This binary asks for both after each thing it sends, so that what it reports of its host is recent.
+
+The host also sends a `status_result` that nobody asked for, to every welcomed connection, whenever its pause changes. That is how each follower learns of a pause, so that it can offer it to the next host: see [Pausing](#pausing).
 
 ## Messages
 
@@ -41,7 +43,11 @@ After a `refuse` the only message the host still reads is `stand_down`. The foll
 | [`event`](#event) | Follower to host | One presence event |
 | [`stand_down`](#stand_down) | Follower to host | Nothing |
 | [`status`](#status) | Either to host | Nothing |
-| [`status_result`](#status_result) | Host to requester | Discord connection state, session count, host binary version, uptime |
+| [`status_result`](#status_result) | Host to requester | Discord connection state, session count, host binary version, uptime, the pause |
+| [`pause`](#pause) | Follower to host | When the pause ends, when the user asked |
+| [`resume`](#resume) | Follower to host | When the user asked |
+| [`preview`](#preview) | Follower to host | Nothing |
+| [`preview_result`](#preview_result) | Host to requester | The card as the host last handed it to Discord |
 
 In the tables below, a required field must be present and not empty. A message without one is rejected.
 
@@ -192,6 +198,15 @@ The host's summary of itself. It says nothing about any session: no project name
 | `sessions` | integer, 0 or more | No | How many sessions the host holds. Always sent; absent is read as 0 |
 | `version` | [binary version](#binary-version) | Yes | The host's binary version |
 | `uptime_seconds` | integer, 0 or more | No | How long this process has been host. Always sent; absent is read as 0 |
+| `pause` | object | No | The latest pause or resume the host was given. A host that can pause always sends it, so a `status_result` without it comes from a host from before pausing |
+
+The pause object:
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `paused` | boolean | No | Whether the latest request was a pause. Absent is read as false |
+| `until` | integer, 0 or more | No | When the pause ends, as a [time](#times). Absent or 0 means until a `resume`. A pause whose `until` has passed has ended |
+| `at` | integer, 0 or more | No | When the user asked, as a [time](#times). Absent or 0 means nothing was ever asked |
 
 | State | Meaning |
 |---|---|
@@ -201,7 +216,73 @@ The host's summary of itself. It says nothing about any session: no project name
 | `unknown` | A state the receiver does not know is read as `unknown` |
 
 ```json
-{"type":"status_result","discord":"connected","sessions":3,"version":"1.4.0","uptime_seconds":5400}
+{"type":"status_result","discord":"connected","sessions":3,"version":"1.4.0","uptime_seconds":5400,"pause":{"paused":true,"until":1790989323500,"at":1790985723500}}
+```
+
+### `pause`
+
+Asks the host to show nothing, whatever its sessions do. It has no reply. See [Pausing](#pausing).
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `until` | integer, 0 or more | No | When the pause ends by itself, as a [time](#times). Absent or 0 means until a `resume` |
+| `at` | [time](#times) | Yes | When the user asked |
+
+```json
+{"type":"pause","until":1790989323500,"at":1790985723500}
+```
+
+Until resumed:
+
+```json
+{"type":"pause","at":1790985723500}
+```
+
+### `resume`
+
+Ends a pause. It has no reply.
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `at` | [time](#times) | Yes | When the user asked |
+
+```json
+{"type":"resume","at":1790985999000}
+```
+
+### `preview`
+
+Asks the host what the card shows. It has no fields. The host answers with one `preview_result` on the same connection, after it has dealt with everything the connection sent before.
+
+```json
+{"type":"preview"}
+```
+
+### `preview_result`
+
+The activity as the host last handed it to its Discord connection. Unlike a `status_result` it can name a project, so it is for the user's own eyes: this binary returns it through a tool result and never logs it.
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `shown` | boolean | No | Whether the host shows an activity. Absent is read as false, and the other fields are then absent |
+| `details` | string, at most 512 bytes | No | The first text line |
+| `state` | string, at most 512 bytes | No | The second text line |
+| `start` | integer, 0 or more | No | The beginning of the elapsed timer, as a [time](#times). Absent means no timer |
+| `large_image` | string, at most 512 bytes | No | The asset key of the large image |
+| `large_text` | string, at most 512 bytes | No | The hover text of the large image |
+| `small_image` | string, at most 512 bytes | No | The asset key of the small image |
+| `small_text` | string, at most 512 bytes | No | The hover text of the small image |
+| `button_label` | string, at most 512 bytes | No | The label of the button |
+| `button_url` | string, at most 512 bytes | No | The link of the button |
+
+```json
+{"type":"preview_result","shown":true,"details":"Claude Code · example-project","state":"Editing files · Opus · 2 sessions","start":1790985600000,"large_image":"logo","large_text":"Claude Code","small_image":"working","small_text":"Editing files","button_label":"View on GitHub","button_url":"https://github.com/owner/example-project"}
+```
+
+With nothing shown:
+
+```json
+{"type":"preview_result","shown":false}
 ```
 
 ## Field types
@@ -238,9 +319,25 @@ The link comes from a project profile in the user's own configuration and from n
 
 A session's link is set when the session opens, by a `session_opened` event or by a sync, and by nothing after. A follower whose link changes ends the session and opens it again.
 
+## Pausing
+
+A pause switches the whole presence off without changing any setting ([ADR-0012](../architecture/adr/0012-project-profiles-and-repository-link.md), "Hiding and pausing"). The host holds it. While it lasts the host clears the activity and sends Discord nothing more, and it goes on taking sessions and events as before, so that a resume shows the present at once.
+
+`pause` and `resume` can only take presence away or give back what the sessions already publish. Neither has a field that could change what is shown, a privacy level or a profile.
+
+The host keeps one thing: the latest request, by its `at`. A `pause` or a `resume` with an earlier `at` than the one it holds is ignored. Of two with the same `at`, a pause wins over a resume, and the pause that ends later wins. Every process on the machine reads the same clock, so "latest" is what the user did last.
+
+A pause must outlive the host. So:
+
+1. The host tells every welcomed connection its pause whenever it changes, with a `status_result`.
+2. A follower remembers the latest pause or resume it knows of: its own request, or what a host said.
+3. Whenever a follower gains a host, it sends what it remembers as a `pause` or a `resume`, before its `sync`. The new host merges what its followers offer by the rule above, so they agree on the latest whatever order they arrive in.
+
+Pausing was added without a new protocol version. A host from before it ignores `pause`, `resume` and `preview`, as it ignores any type it does not know, and goes on showing presence. A follower sees that its host cannot pause from a `status_result` with no `pause` object, and tells the user that pausing is unavailable instead of sending the request. Such a host shows presence, so the follower also forgets the pause it remembered: it is not offered to a later host, which would hide presence again long after it had come back.
+
 ## What the channel cannot carry
 
-The fields above are all there is. No message has a field for prompt text, tool input or output, an assistant message, a file path, a transcript path or a tool name, and a test fails if a field is added without being listed. The only strings that are not from a closed vocabulary are the session id, the model label, the project name, the repository link and the binary version. Each has a length limit. The model label, the project name and the binary version are held to an alphabet or to clean text as [Field types](#field-types) says, and the link is validated by the host as [The link](#the-link) describes. The activity summary ([ADR-0011](../architecture/adr/0011-model-authored-activity-summary.md)) is not in protocol version 1.
+The fields above are all there is. No message has a field for prompt text, tool input or output, an assistant message, a file path, a transcript path or a tool name, and a test fails if a field is added without being listed. The only strings that are not from a closed vocabulary are the session id, the model label, the project name, the repository link, the binary version and the text of a `preview_result`. Each has a length limit. A `preview_result` goes from the host to a follower only, and holds what the host already publishes to Discord and nothing more. The model label, the project name and the binary version are held to an alphabet or to clean text as [Field types](#field-types) says, and the link is validated by the host as [The link](#the-link) describes. The activity summary ([ADR-0011](../architecture/adr/0011-model-authored-activity-summary.md)) is not in protocol version 1.
 
 ## Errors
 

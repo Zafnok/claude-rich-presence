@@ -3,10 +3,10 @@ id: CRP-073
 title: Hide, pause and preview
 milestone: M7 Personalisation
 type: feature
-status: todo
+status: done
 priority: P1
 blocked_by: [CRP-014, CRP-042, CRP-077]
-blocks: []
+blocks: [CRP-055, CRP-081]
 model: claude-sonnet-5-5
 effort: medium
 size: S
@@ -45,15 +45,15 @@ The decisions are in [ADR-0012](../../architecture/adr/0012-project-profiles-and
 
 ## Acceptance criteria
 
-- [ ] A session in a project profiled `off` produces no control traffic beyond what is needed to stay connected, and no activity. A session elsewhere is unaffected.
-- [ ] With one session `off` and one visible, the count on the card is one.
-- [ ] `presence_pause` with a duration clears the activity at once and restores it when the duration ends. Tested with the fake clock.
-- [ ] A pause survives a host failover: the new host is still paused, for the remaining time.
-- [ ] Resume restores the current activity without waiting for a new event.
-- [ ] The pause tools can only pause and resume. No input to them can change what is shown, a privacy level, or a profile.
-- [ ] The preview lists every slot and matches what the fake Discord received.
-- [ ] The preview is returned only to the session's own user through the tool result. It is not logged.
-- [ ] An older host that does not know the pause messages ignores them, and the follower reports that pausing is unavailable.
+- [x] A session in a project profiled `off` produces no control traffic beyond what is needed to stay connected, and no activity. A session elsewhere is unaffected.
+- [x] With one session `off` and one visible, the count on the card is one.
+- [x] `presence_pause` with a duration clears the activity at once and restores it when the duration ends. Tested with the fake clock.
+- [x] A pause survives a host failover: the new host is still paused, for the remaining time.
+- [x] Resume restores the current activity without waiting for a new event.
+- [x] The pause tools can only pause and resume. No input to them can change what is shown, a privacy level, or a profile.
+- [x] The preview lists every slot and matches what the fake Discord received.
+- [x] The preview is returned only to the session's own user through the tool result. It is not logged.
+- [x] An older host that does not know the pause messages ignores them, and the follower reports that pausing is unavailable.
 
 ## Notes for the implementer
 

@@ -90,7 +90,7 @@ var settingCases = []struct {
 	{
 		"privacy", `"minimal"`, domain.PrivacyMinimal, "full", domain.PrivacyFull,
 		func(c config.Config) any { return c.Privacy },
-		"summary", "must be minimal, standard or full", `1`, "must be a string",
+		"summary", "must be off, minimal, standard or full", `1`, "must be a string",
 	},
 	{
 		"discord_application_id", `"123"`, "123", "18446744073709551615", "18446744073709551615",
@@ -205,8 +205,8 @@ func TestWarningsNeverEchoTheValue(t *testing.T) {
 }
 
 func TestWarningString(t *testing.T) {
-	w := config.Warning{Source: config.SourceFile, Setting: "privacy", Problem: "must be minimal, standard or full"}
-	if got, want := w.String(), "file: privacy must be minimal, standard or full"; got != want {
+	w := config.Warning{Source: config.SourceFile, Setting: "privacy", Problem: "must be off, minimal, standard or full"}
+	if got, want := w.String(), "file: privacy must be off, minimal, standard or full"; got != want {
 		t.Errorf("String = %q, want %q", got, want)
 	}
 }
@@ -342,7 +342,7 @@ func TestEveryProblemIsReported(t *testing.T) {
 	_, warnings := load(t, `{"privacy": "loud", "log_level": 3, "extra": 1}`,
 		"RICH_PRESENCE_ENABLED", "perhaps", "RICH_PRESENCE_MIN_UPDATE_INTERVAL", "1s")
 	want := []config.Warning{
-		{Source: config.SourceFile, Setting: "privacy", Problem: "must be minimal, standard or full"},
+		{Source: config.SourceFile, Setting: "privacy", Problem: "must be off, minimal, standard or full"},
 		{Source: config.SourceFile, Setting: "log_level", Problem: "must be a string"},
 		{Source: config.SourceFile, Setting: "extra", Problem: "is not a known setting"},
 		{Source: config.SourceEnv, Setting: "enabled", Problem: "must be true or false"},

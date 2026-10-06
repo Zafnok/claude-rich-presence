@@ -83,7 +83,7 @@
 //   - One goroutine owns the registry. Everything reaches it through one
 //     channel. After every change it renders, hands the result to the
 //     Discord connection, whose scheduler limits the rate, and arms a timer
-//     for the moment the idle period would end.
+//     for the moment the idle period, or a pause, would end.
 //   - One goroutine runs the Discord connection.
 //   - One goroutine listens and accepts. If the control socket cannot be
 //     opened, or fails, it tries again with backoff, and meanwhile the node
@@ -92,6 +92,9 @@
 //     stalls delays nobody else. A connection owns the sessions its events
 //     created and the session it synced last, and they are removed when it
 //     closes. Only a sync moves a session from one connection to another.
+//   - One goroutine announces a change of pause to every welcomed
+//     connection. A follower that has stopped reading holds it up, and
+//     nothing else.
 //
 // A stand_down is valid when it comes from a newer binary: on a welcomed
 // connection, one whose hello carried a newer binary version, and on a
@@ -101,12 +104,23 @@
 // A term ends in this order: stop accepting, clear presence, close follower
 // connections, close the listener, release the lock.
 //
+// # Pausing
+//
+// A pause switches the whole presence off without changing any setting
+// (ADR-0012). The registry holds the latest pause or resume it was offered,
+// and while a pause lasts it shows nothing, whatever the sessions are, and
+// goes on reducing them. A pause must outlive the host, so every node keeps
+// the latest pause or resume it knows of: its own request, or what its host
+// said. Whenever it gains a host, itself included, it offers that first, and
+// a term begins with it. See pause.go.
+//
 // # Never impairing the caller
 //
-// Publish and Status take a lock that is held only to read and write memory,
-// and never wait for a goroutine that performs I/O. A follower's Status is
-// what the host last said: the node asks again whenever it has sent
-// something and whenever Status is called, and answers from memory.
+// Publish, Status, Pause, Resume and Preview take a lock that is held only
+// to read and write memory, and never wait for a goroutine that performs
+// I/O. A follower's Status and
+// Preview are what the host last said: the node asks again whenever it has
+// sent something and whenever either is called, and answers from memory.
 //
 // A panic in a goroutine of this package is recovered and logged (ADR-0008).
 // It costs the connection it happened on, or the term, and never the process.

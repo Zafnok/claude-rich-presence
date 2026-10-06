@@ -23,9 +23,7 @@ func following(t *testing.T, options ...func(*host.Config)) (*world, *stub, *pro
 	if _, ok := q.hear().(protocol.Sync); !ok {
 		t.Fatal("the first message after the welcome was not a sync")
 	}
-	if _, ok := q.hear().(protocol.Status); !ok {
-		t.Fatal("the sync was not followed by a request for status")
-	}
+	q.asked()
 	return w, s, b, q
 }
 
@@ -211,11 +209,9 @@ func TestAFollowerReportsWhatItsHostLastSaid(t *testing.T) {
 		t.Errorf("status before the host answered is %+v, want %+v", got, want)
 	}
 	// Asking makes the node ask its host again.
-	if got := q.hear(); got != (protocol.Status{}) {
-		t.Fatalf("the host read %#v, want a request for status", got)
-	}
+	q.asked()
 
-	q.say(protocol.StatusResult{Discord: protocol.DiscordConnecting, Sessions: 7, Version: "1.0.0", UptimeSeconds: 30})
+	q.say(protocol.StatusResult{Discord: protocol.DiscordConnecting, Sessions: 7, Version: "1.0.0", UptimeSeconds: 30, Pause: &protocol.PauseState{}})
 	want = host.Status{Role: host.RoleFollower, Discord: protocol.DiscordConnecting, Sessions: 7, Version: "1.0.0", Uptime: 30 * time.Second}
 	w.eventually("the answer to be reported", func() bool { return b.node.Status() == want })
 
@@ -223,7 +219,7 @@ func TestAFollowerReportsWhatItsHostLastSaid(t *testing.T) {
 	q.write("this is not a message\n")
 	q.write(`{"type":"from_a_later_version"}` + "\n")
 	q.say(protocol.Welcome{Protocol: protocol.Version, Version: "9.9.9"})
-	q.say(protocol.StatusResult{Discord: protocol.DiscordConnected, Sessions: 8, Version: "1.0.0", UptimeSeconds: 31})
+	q.say(protocol.StatusResult{Discord: protocol.DiscordConnected, Sessions: 8, Version: "1.0.0", UptimeSeconds: 31, Pause: &protocol.PauseState{}})
 	want = host.Status{Role: host.RoleFollower, Discord: protocol.DiscordConnected, Sessions: 8, Version: "1.0.0", Uptime: 31 * time.Second}
 	w.eventually("the later answer to be reported", func() bool { return b.node.Status() == want })
 }

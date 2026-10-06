@@ -4,7 +4,8 @@ import "github.com/Zafnok/claude-rich-presence/internal/domain"
 
 // Settings are what applies to a session in one project.
 type Settings struct {
-	// Privacy is the level the session is published at.
+	// Privacy is the level the session is published at, or domain.PrivacyOff
+	// for a session that is not published at all.
 	Privacy domain.Privacy
 	// Name is shown in place of the directory name, and only at the full
 	// level. It may be empty. The configuration cleans names, and the
@@ -25,14 +26,15 @@ type Resolver func(cwd string) Settings
 
 // resolveSettings asks the resolver for a directory's settings. A resolver
 // that panics, and one that answers with a level that does not exist, give
-// the most restrictive outcome: minimal, with no name. What a panic carried
-// is dropped, because it may hold the directory. The name is cleaned.
+// what a session has before its directory is known: minimal, or hidden if
+// some directory is, with no name. What a panic carried is dropped, because
+// it may hold the directory. The name is cleaned.
 func (a *Adapter) resolveSettings(cwd string) (s Settings) {
 	defer func() {
 		// After a panic s is the zero value, which has no valid level.
 		recover()
-		if !s.Privacy.Valid() {
-			s = Settings{Privacy: domain.PrivacyMinimal}
+		if !s.Privacy.Settable() {
+			s = Settings{Privacy: a.opening}
 		}
 	}()
 	s = a.resolve(cwd)
@@ -40,13 +42,15 @@ func (a *Adapter) resolveSettings(cwd string) (s Settings) {
 	return s
 }
 
-// rank orders the levels from the most private.
+// rank orders the levels from the most private, which is off.
 func rank(level domain.Privacy) int {
 	switch level {
 	case domain.PrivacyFull:
-		return 2
+		return 3
 	case domain.PrivacyStandard:
-		return 1
+		return 2
+	case domain.PrivacyOff:
+		return 0
 	}
-	return 0
+	return 1
 }

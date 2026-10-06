@@ -82,7 +82,18 @@ const (
 	PrivacyFull     Privacy = "full"
 )
 
-// Valid reports whether p is a known privacy level.
+// PrivacyOff hides a session: it is never published, so no session and no
+// event carries it, and Valid does not accept it. It is a level a user can
+// set, globally or for a project (ADR-0012), and the adapter acts on it.
+const PrivacyOff Privacy = "off"
+
+// Valid reports whether p is a level a session can be published at.
 func (p Privacy) Valid() bool {
 	return p == PrivacyMinimal || p == PrivacyStandard || p == PrivacyFull
+}
+
+// Settable reports whether p is a level a user can set: one a session can be
+// published at, or PrivacyOff.
+func (p Privacy) Settable() bool {
+	return p == PrivacyOff || p.Valid()
 }

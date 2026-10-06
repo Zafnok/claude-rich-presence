@@ -143,6 +143,44 @@ func TestEffectiveSettings(t *testing.T) {
 	})
 }
 
+func TestOffHidesAProjectOrEverything(t *testing.T) {
+	cases := []struct {
+		name  string
+		file  string
+		hides bool
+		want  map[string]domain.Privacy
+	}{
+		{"a profile hides its project", `{"projects": [{"path": "/work/secret", "privacy": "off"}]}`, true,
+			map[string]domain.Privacy{"/work/secret/src": domain.PrivacyOff, "/work/other": domain.PrivacyStandard}},
+		{"the global level hides everything but a profile that shows", `{"privacy": "off", "projects": [{"path": "/work/open", "privacy": "full"}]}`, true,
+			map[string]domain.Privacy{"/work/open": domain.PrivacyFull, "/work/other": domain.PrivacyOff}},
+		{"no level is off", `{"privacy": "minimal", "projects": [{"path": "/work/open", "privacy": "full"}]}`, false,
+			map[string]domain.Privacy{"/work/open": domain.PrivacyFull, "/work/other": domain.PrivacyMinimal}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, warnings := loadOn(t, "linux", tc.file)
+			if len(warnings) != 0 {
+				t.Fatalf("warnings: %v", warnings)
+			}
+			if got := cfg.Hides(); got != tc.hides {
+				t.Errorf("Hides() = %v, want %v", got, tc.hides)
+			}
+			for cwd, want := range tc.want {
+				if got := cfg.Effective("linux", cwd).Privacy; got != want {
+					t.Errorf("%s: got %q, want %q", cwd, got, want)
+				}
+			}
+		})
+	}
+	t.Run("the environment can set it", func(t *testing.T) {
+		cfg, warnings := loadOn(t, "linux", `{}`, "RICH_PRESENCE_PRIVACY", "off")
+		if len(warnings) != 0 || !cfg.Hides() {
+			t.Errorf("Hides() = %v with warnings %v", cfg.Hides(), warnings)
+		}
+	})
+}
+
 func TestValidateLink(t *testing.T) {
 	hosts := []string{"github.com", "gitlab.example.org"}
 	cases := []struct {
@@ -400,10 +438,10 @@ func TestBadProfileFieldIsLeftUnset(t *testing.T) {
 		want  config.Settings
 	}{
 		{"unknown level", `"privacy": "loud", "name": "N"`,
-			fileWarning("projects[0].privacy", "must be minimal, standard or full"),
+			fileWarning("projects[0].privacy", "must be off, minimal, standard or full"),
 			config.Settings{Privacy: domain.PrivacyFull, Name: "N"}},
 		{"level of the wrong type", `"privacy": 2`,
-			fileWarning("projects[0].privacy", "must be minimal, standard or full"),
+			fileWarning("projects[0].privacy", "must be off, minimal, standard or full"),
 			config.Settings{Privacy: domain.PrivacyFull}},
 		{"name of the wrong type", `"privacy": "minimal", "name": ["N"]`,
 			fileWarning("projects[0].name", "must be text with something to show"),
@@ -445,7 +483,7 @@ func TestBadProfileFieldIsLeftUnset(t *testing.T) {
 	t.Run("every problem in a profile is reported", func(t *testing.T) {
 		_, warnings := loadOn(t, "linux", `{"projects": [{"path": "/p", "privacy": "", "name": "", "areas": null, "link": "", "x": 1}]}`)
 		want := []config.Warning{
-			fileWarning("projects[0].privacy", "must be minimal, standard or full"),
+			fileWarning("projects[0].privacy", "must be off, minimal, standard or full"),
 			fileWarning("projects[0].name", "must be text with something to show"),
 			fileWarning("projects[0].areas", "must be a list of strings"),
 			fileWarning("projects[0].link", "is not an accepted repository link and is not published"),
@@ -590,7 +628,7 @@ func TestEnvironmentDoesNotDefineProfiles(t *testing.T) {
 func TestProfileWarningsKeepTheirPlace(t *testing.T) {
 	_, warnings := loadOn(t, "linux", `{"zeta": 1, "projects": [1], "link_hosts": [""], "privacy": "loud"}`)
 	want := []config.Warning{
-		fileWarning("privacy", "must be minimal, standard or full"),
+		fileWarning("privacy", "must be off, minimal, standard or full"),
 		fileWarning("link_hosts[0]", "must be a host name such as gitlab.com"),
 		fileWarning("projects[0]", "must be an object and was skipped"),
 		fileWarning("zeta", "is not a known setting"),

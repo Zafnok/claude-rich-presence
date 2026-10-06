@@ -26,6 +26,10 @@
 // the session's end, and then the node, which clears the presence it holds
 // and gives up the lock and the socket.
 //
+// A Claude Code session also has the pause tool, which hands a pause or a
+// resume to the node, and its status tool can return the private preview of
+// the card from the node's memory.
+//
 // Presence is off when the configuration has enabled false, or when
 // CLAUDE_CODE_REMOTE is true. The server then offers the same tools and
 // answers them, and no lock file or socket is made. Presence also goes off,
@@ -51,7 +55,9 @@
 // It is not a node. It dials the control socket, says hello, asks for the
 // status, reads one answer and closes, and holds no session. It prints what
 // the host says of itself: the Discord connection, the number of sessions,
-// the host's version and how long it has been host.
+// the host's version, how long it has been host and whether presence is
+// paused. None of that names a session. The card itself is only ever given
+// to a session's own status tool, as a private preview.
 //
 // # The real system
 //

@@ -52,6 +52,14 @@ func Decode(line []byte) (Message, error) {
 		return decodeAs[Status](line)
 	case TypeStatusResult:
 		return decodeAs[StatusResult](line)
+	case TypePause:
+		return decodeAs[Pause](line)
+	case TypeResume:
+		return decodeAs[Resume](line)
+	case TypePreview:
+		return decodeAs[Preview](line)
+	case TypePreviewResult:
+		return decodeAs[PreviewResult](line)
 	}
 	return Unknown{}, nil
 }

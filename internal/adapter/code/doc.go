@@ -34,6 +34,25 @@
 // the higher level may stay in the session at the host. Every event of a call
 // is restricted at the level that call resolved.
 //
+// # Hiding
+//
+// The level off hides a session: nothing of it is published, not even that
+// it exists. A session that becomes hidden ends at the host, and one that
+// stops being hidden opens there as new. While it is hidden the adapter goes
+// on remembering its id and model, and publishes nothing. If any directory
+// can resolve to off, the session is hidden, and not at minimal, until the
+// first hook that carries a directory.
+//
+// # Pause and preview
+//
+// The pause tool is the one tool the model is meant to call. All it can do
+// is ask the Pauser to pause or to resume: it reads a number of minutes and
+// a flag, and has no way to change what is shown, a level or a profile
+// (ADR-0012). The status tool returns the diagnostic summary, which holds no
+// text of any session, or, when asked, the private preview: the card as
+// Discord was last told to show it. The preview can name a project, so it
+// goes to the tool result and nowhere else.
+//
 // # Never impairing the caller
 //
 // The event tool does no I/O. It has a clock, pure functions and a bounded

@@ -55,7 +55,7 @@
     "privacy": {
       "type": "string",
       "title": "Privacy level",
-      "description": "How much is shown: minimal (that the assistant is in use), standard (adds status and model family) or full (adds the project name). Empty means standard.",
+      "description": "How much is shown: off (nothing), minimal (that the assistant is in use), standard (adds status and model family) or full (adds the project name). Empty means standard.",
       "required": false
     },
     "discord_application_id": {

@@ -157,7 +157,7 @@ func TestChecks(t *testing.T) {
 		action string
 	}{
 		{"configuration with warnings", cfg("/home/zed", `{"privacy":"loud","log_level":7}`), diag.CheckConfig, diag.Warn,
-			"2 ignored: file: privacy must be minimal, standard or full; file: log_level must be a string",
+			"2 ignored: file: privacy must be off, minimal, standard or full; file: log_level must be a string",
 			"Correct these; until then each keeps its default"},
 		{"configuration that is not JSON", cfg("/home/zed", `{`), diag.CheckConfig, diag.Warn,
 			"1 ignored: file: config.json is not a JSON object",

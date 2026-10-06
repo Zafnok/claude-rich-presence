@@ -16,6 +16,7 @@ import (
 const (
 	EventToolName  = "presence_event"
 	StatusToolName = "presence_status"
+	PauseToolName  = "presence_pause"
 )
 
 // eventReply is the text of every result of the event tool, whatever the
@@ -51,12 +52,18 @@ type Clock interface {
 	Now() time.Time
 }
 
-// Options configures an Adapter. Every field but Resolve is required.
+// Options configures an Adapter. Privacy, ProvisionalID, Publisher, Status
+// and Clock are required.
 type Options struct {
 	// Privacy is the level for the whole session when Resolve is nil. When
 	// Resolve is set it is the level for a directory that matches no profile,
 	// and the session is at minimal until a hook supplies a working directory.
+	// It may be domain.PrivacyOff, which hides the session.
 	Privacy domain.Privacy
+	// MayHide says some directory resolves to domain.PrivacyOff. The session
+	// is then hidden, and not at minimal, until a hook supplies a working
+	// directory, so that a session in a hidden project is never published.
+	MayHide bool
 	// Resolve gives the level and the project's display name for a working
 	// directory. When it is set, the working directory is read at every level,
 	// used to resolve and then discarded, and the level of the session follows
@@ -70,7 +77,13 @@ type Options struct {
 	ProvisionalID string
 	Publisher     Publisher
 	Status        StatusSource
-	Clock         Clock
+	// Pauser pauses presence for the pause tool. When it is nil there is no
+	// presence to pause, and the tool says so.
+	Pauser Pauser
+	// Preview supplies the card for the preview. When it is nil the preview
+	// says that there is none.
+	Preview PreviewSource
+	Clock   Clock
 }
 
 // Adapter turns calls to the event tool into presence events for one session
@@ -85,8 +98,13 @@ type Adapter struct {
 	// level in force is session.privacy, which is minimal until a hook with a
 	// working directory has been resolved.
 	privacy domain.Privacy
+	// opening is the level before any working directory is known, and the one
+	// a directory that cannot be resolved is given.
+	opening domain.Privacy
 	resolve Resolver
 	status  StatusSource
+	pauser  Pauser
+	preview PreviewSource
 	clock   Clock
 	pub     Publisher
 
@@ -133,7 +151,7 @@ type session struct {
 // must call Close.
 func New(opts Options) (*Adapter, error) {
 	switch {
-	case !opts.Privacy.Valid():
+	case !opts.Privacy.Settable():
 		return nil, errors.New("code: unknown privacy level")
 	case opts.ProvisionalID == "" || len(opts.ProvisionalID) > domain.MaxIDLen:
 		return nil, errors.New("code: provisional id must be 1 to 128 bytes")
@@ -146,8 +164,11 @@ func New(opts Options) (*Adapter, error) {
 	}
 	a := &Adapter{
 		privacy: opts.Privacy,
+		opening: openingLevel(opts),
 		resolve: opts.Resolve,
 		status:  opts.Status,
+		pauser:  opts.Pauser,
+		preview: opts.Preview,
 		clock:   opts.Clock,
 		pub:     opts.Publisher,
 		queue:   make(chan []domain.Event, queueSize),
@@ -162,27 +183,33 @@ func New(opts Options) (*Adapter, error) {
 // openingLevel is the level a session is published at before any hook has
 // supplied a working directory. With a resolver the directory decides the
 // level, and until it is known the session may be in a profile more private
-// than Privacy, so it opens at minimal.
+// than Privacy, so it opens at minimal. If the directory may be one that is
+// hidden, the session is hidden until it is known.
 func openingLevel(opts Options) domain.Privacy {
-	if opts.Resolve != nil {
-		return domain.PrivacyMinimal
+	switch {
+	case opts.Resolve == nil:
+		return opts.Privacy
+	case opts.MayHide || opts.Privacy == domain.PrivacyOff:
+		return domain.PrivacyOff
 	}
-	return opts.Privacy
+	return domain.PrivacyMinimal
 }
 
-// Tools returns the event tool and the status tool.
+// Tools returns the event tool, the status tool and the pause tool.
 func (a *Adapter) Tools() []mcp.Tool {
 	// The names and schemas are constants that NewTool accepts, which the
 	// tests show by listing the tools through a server.
 	event, _ := mcp.NewMetaTool(EventToolName, eventDescription, eventSchema(), a.handleEvent)
-	status, _ := mcp.NewTool(StatusToolName, statusDescription, json.RawMessage(`{"type":"object"}`), a.handleStatus)
-	return []mcp.Tool{event, status}
+	status, _ := mcp.NewTool(StatusToolName, statusDescription, json.RawMessage(statusSchema), a.handleStatus)
+	pause, _ := mcp.NewTool(PauseToolName, pauseDescription, json.RawMessage(pauseSchema), a.handlePause)
+	return []mcp.Tool{event, status, pause}
 }
 
 // Open opens the session under its provisional id. Call it when MCP
 // initialize completes: no hook has fired by then, and nothing may be
 // published before (ADR-0007). It returns at once. A second call does
-// nothing, and so does a call after Close.
+// nothing, and so does a call after Close. A session that is hidden opens
+// without publishing anything.
 func (a *Adapter) Open() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -191,6 +218,9 @@ func (a *Adapter) Open() {
 	}
 	a.opened = true
 	a.start = a.clock.Now()
+	if a.session.privacy == domain.PrivacyOff {
+		return
+	}
 	// The queue is empty: nothing is queued before the session opens.
 	a.queue <- []domain.Event{a.openedEvent(a.session)}
 }
@@ -203,7 +233,8 @@ func (a *Adapter) Close() {
 	a.mu.Lock()
 	if !a.closed {
 		a.closed = true
-		if a.opened {
+		// A hidden session was never published, so it has no end to publish.
+		if a.opened && a.session.privacy != domain.PrivacyOff {
 			last := a.event(a.id, domain.KindSessionEnded, a.clock.Now())
 			a.last = &last
 		}
@@ -284,6 +315,9 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 	}
 	raised := rank(next.privacy) > rank(a.session.privacy)
 	lowered := rank(next.privacy) < rank(a.session.privacy)
+	// A hidden session is not at the host: it has nothing to end there, and
+	// when it stops being hidden it opens as a new one.
+	wasHidden := a.session.privacy == domain.PrivacyOff
 
 	// The project is published at full only. Below it the session holds none,
 	// so that a rebuilt session cannot have one either.
@@ -296,7 +330,7 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 	}
 	// A session's link is set when it opens and by nothing after, so a change
 	// of link reopens the session, as a lower level does.
-	reopened := lowered || next.link != a.session.link
+	reopened := lowered || wasHidden || next.link != a.session.link
 	moved := h.get(fieldSessionID) != next.id
 	if id := h.get(fieldSessionID); moved || reopened {
 		// A new id, as the first hook brings and as a clear does, a lower
@@ -305,7 +339,9 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 		// time, so no second session appears and none is left behind. Ending
 		// is how the host forgets what was published at the higher level,
 		// because no event takes a project or a model away.
-		batch = append(batch, a.event(next.id, domain.KindSessionEnded, now))
+		if !wasHidden {
+			batch = append(batch, a.event(next.id, domain.KindSessionEnded, now))
+		}
 		next.id = id
 		agents = map[string]struct{}{}
 		batch = append(batch, a.openedEvent(next))
@@ -363,7 +399,14 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 	}
 
 	// Every event of the call is restricted at the level this call resolved,
-	// and so no batch spans a change of level.
+	// and so no batch spans a change of level. A hidden session publishes
+	// nothing but the end of the session it was before it was hidden.
+	if next.privacy == domain.PrivacyOff {
+		batch = batch[:0]
+		if !wasHidden {
+			batch = append(batch, a.event(a.session.id, domain.KindSessionEnded, now))
+		}
+	}
 	batch = restrict(next.privacy, batch)
 	if len(batch) > 0 {
 		select {

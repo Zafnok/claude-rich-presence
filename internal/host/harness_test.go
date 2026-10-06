@@ -1093,16 +1093,29 @@ func (q *peer) hear() protocol.Message {
 	return m
 }
 
-// update reads the next message that is not a request for status. A node
-// that follows asks for status after whatever it sends, and whenever a test
-// asks it for its role.
+// update reads the next message that is not a request for status or for the
+// card. A node that follows asks for both after whatever it sends, and
+// whenever a test asks it for its role.
 func (q *peer) update() protocol.Message {
 	q.t.Helper()
 	for {
-		m := q.hear()
-		if _, ok := m.(protocol.Status); !ok {
+		switch m := q.hear().(type) {
+		case protocol.Status, protocol.Preview:
+		default:
 			return m
 		}
+	}
+}
+
+// asked reads a request for status and the request for the card that a node
+// sends with it.
+func (q *peer) asked() {
+	q.t.Helper()
+	if got := q.hear(); got != (protocol.Status{}) {
+		q.t.Fatalf("the host read %#v, want a request for status", got)
+	}
+	if got := q.hear(); got != (protocol.Preview{}) {
+		q.t.Fatalf("the host read %#v, want a request for the card", got)
 	}
 }
 

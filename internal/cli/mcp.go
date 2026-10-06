@@ -27,6 +27,10 @@ const EnvRemote = "CLAUDE_CODE_REMOTE"
 type presenceLine struct {
 	publisher code.Publisher
 	status    code.StatusSource
+	// pauser pauses presence and preview reads the card. Both are nil when
+	// presence is off: there is nothing to pause and no card.
+	pauser  code.Pauser
+	preview code.PreviewSource
 	// stop gives up the node's role and waits for it to finish.
 	stop func()
 }
@@ -53,7 +57,16 @@ type nodeStatus struct{ node *host.Node }
 
 func (n nodeStatus) Status() code.Status {
 	st := n.node.Status()
-	return code.Status{Role: adapterRole(st.Role), Discord: adapterDiscord(st.Discord), Sessions: st.Sessions}
+	return code.Status{
+		Role: adapterRole(st.Role), Discord: adapterDiscord(st.Discord), Sessions: st.Sessions,
+		Paused: st.Paused, PausedUntil: st.PausedUntil, NoPause: st.NoPause,
+	}
+}
+
+// Preview is the card for the private preview, from the node's memory.
+func (n nodeStatus) Preview() (code.Preview, bool) {
+	p, known := n.node.Preview()
+	return code.Preview{Shown: p.Shown, Activity: p.Activity}, known
 }
 
 // adapterRole maps the node's role to the adapter's word. A node that has no
@@ -114,7 +127,7 @@ func (s system) startPresence(cfg config.Config, getenv func(string) string, log
 		defer close(done)
 		node.Run(ctx)
 	}()
-	return presenceLine{publisher: node, status: nodeStatus{node}, stop: func() {
+	return presenceLine{publisher: node, status: nodeStatus{node}, pauser: node, preview: nodeStatus{node}, stop: func() {
 		cancel()
 		<-done
 	}}
@@ -188,6 +201,7 @@ func (m *mcpSession) codeAdapter() (adapter, error) {
 	goos := m.sys.goos
 	return code.New(code.Options{
 		Privacy: m.cfg.Privacy,
+		MayHide: m.cfg.Hides(),
 		Resolve: func(cwd string) code.Settings {
 			s := m.cfg.Effective(goos, cwd)
 			return code.Settings{Privacy: s.Privacy, Name: s.Name, Link: s.Link}
@@ -195,6 +209,8 @@ func (m *mcpSession) codeAdapter() (adapter, error) {
 		ProvisionalID: m.sys.sessionID(),
 		Publisher:     line.publisher,
 		Status:        line.status,
+		Pauser:        line.pauser,
+		Preview:       line.preview,
 		Clock:         m.sys.clock,
 	})
 }

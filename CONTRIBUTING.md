@@ -205,7 +205,7 @@ The archive is reproducible: the same binaries give the same bytes. The Windows 
 
 ### The plugin
 
-The Claude Code plugin is [plugin/](plugin/), and this repository is its marketplace through [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json). The plugin is JSON and Markdown only: a manifest that names the bundle's release URL, one hook per event, and two skills. The tests in [internal/adapter/code/plugin_test.go](internal/adapter/code/plugin_test.go) hold these files to the adapter's allowlist, the bundle manifest and the [VERSION](VERSION) file, and CI runs Claude Code's own validator on them:
+The Claude Code plugin is [plugin/](plugin/), and this repository is its marketplace through [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json). The plugin is JSON and Markdown only: a manifest that names the bundle's release URL, one hook per event, and six skills. The tests in [internal/adapter/code/plugin_test.go](internal/adapter/code/plugin_test.go) hold these files to the adapter's allowlist, the bundle manifest and the [VERSION](VERSION) file, and CI runs Claude Code's own validator on them:
 
 ```bash
 claude plugin validate --strict ./plugin
