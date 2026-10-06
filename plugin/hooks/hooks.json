@@ -1,0 +1,233 @@
+{
+  "description": "Reports session events to the presence server. Each hook names the only fields it sends.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "clear|compact",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "SessionStart",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}",
+              "model": "${model}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "UserPromptSubmit",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "PreToolUse",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}",
+              "tool_name": "${tool_name}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "PostToolUse",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "PostToolUseFailure",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "Notification",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}",
+              "notification_type": "${notification_type}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "Stop",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "StopFailure",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "PreCompact",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "PostCompact",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostModelSwitch": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "PostModelSwitch",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}",
+              "to_model": "${to_model}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "SubagentStart",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}",
+              "agent_id": "${agent_id}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rich-presence:presence",
+            "tool": "presence_event",
+            "input": {
+              "event": "SubagentStop",
+              "session_id": "${session_id}",
+              "cwd": "${cwd}",
+              "agent_id": "${agent_id}"
+            },
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}

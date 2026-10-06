@@ -21,3 +21,6 @@ covmeta.*
 *~
 .DS_Store
 Thumbs.db
+
+# Written by Claude Code when the plugin is loaded in place. It records absolute paths.
+plugin/.mcpb-cache/

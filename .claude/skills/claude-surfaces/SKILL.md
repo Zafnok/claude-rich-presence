@@ -130,7 +130,13 @@ A summary is model-written and therefore untrusted. It is sanitised in the adapt
 | A plugin name starting with `claude-` or `anthropic-` is a validation error, and `claude` as a whole word elsewhere is a warning | The plugin is named `rich-presence` (ADR-0010) |
 | `mcpServers` accepts a path or an HTTPS URL ending in `.mcpb`, which Claude Code downloads and extracts into a cache under the plugin | This is how the binary is delivered |
 | `userConfig` values reach MCP server configuration through `${user_config.KEY}` and reach hook processes as `CLAUDE_PLUGIN_OPTION_<KEY>` | How the privacy setting arrives |
-| Fixed-choice options in `userConfig` need a recent Claude Code | Sets the minimum version, or use free text |
+| Fixed-choice options (`options`) in `userConfig` need Claude Code 2.1.271. An older one cannot load the plugin at all (docs, 2026-10-05) | That is the plugin's minimum version |
+| A plugin option reaches a bundled server through the `${user_config.KEY}` of the same name in the bundle's manifest. Observed in CRP-042 on 2.1.288, not documented | The plugin and the bundle declare the same keys, and a test checks it |
+| **A `default` on the bundle's own `user_config` entry wins over the value the user chose in the plugin.** Observed in CRP-042, not documented | The bundle declares no defaults, and `mcpb check` refuses one |
+| With the plugin option unset, the server receives the plugin's `default`, or an empty string if there is none. With no plugin `userConfig` at all, it receives the literal `${user_config.KEY}` | Empty and placeholder both mean unset |
+| A bundle's own option can be set only at install, as `--config <server>.<key>=<value>`. `claude plugin configure` lists plugin options only | Settings are offered through the plugin's `userConfig` |
+| Plugin options are stored in user settings under `pluginConfigs.<plugin>@<marketplace>.options`, and removed on uninstall. A change applies to the next session | |
+| `claude plugin disable` leaves the server out of the next session. `claude mcp list` then shows none | |
 | Plugin MCP servers receive `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PLUGIN_DATA` in their environment | |
 | A top-level `bin/` directory makes claude.ai and Cowork refuse the plugin | Do not create one |
 | A `CLAUDE.md` at the plugin root is not loaded | Put guidance in a plugin skill |

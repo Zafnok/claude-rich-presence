@@ -47,16 +47,29 @@ The plugin is JSON and Markdown only. It points at the MCPB bundle and declares 
 ## Acceptance criteria
 
 - [ ] `claude plugin validate --strict` passes for the plugin and the marketplace, in CI.
-- [ ] The plugin directory contains no executable, no script, and no top-level `bin/`.
+- [x] The plugin directory contains no executable, no script, and no top-level `bin/`.
 - [ ] Installed from a local marketplace with a locally built bundle, a real Claude Code session shows presence in a real Discord client, on Windows. What was run and what Discord showed is recorded in the pull request.
-- [ ] The hook file and the adapter's allowlist are proven identical by a test.
-- [ ] Every hook has an explicit timeout.
+- [x] The hook file and the adapter's allowlist are proven identical by a test.
+- [x] Every hook has an explicit timeout.
 - [ ] Starting an interactive session shows no hook error under the banner, and exiting prints none. Recorded in the pull request. CRP-001 saw both errors with a hook file that lacked the matcher and declared `SessionEnd`.
-- [ ] A test checks that the server address in the hook file matches the bundle manifest's `name`.
+- [x] A test checks that the server address in the hook file matches the bundle manifest's `name`.
 - [ ] Changing the privacy setting through Claude Code's plugin configuration changes what is published, after a session restart.
 - [ ] Disabling the plugin stops the server and clears presence.
-- [ ] A test checks that the plugin manifest's `version` equals the contents of the repository's `VERSION` file, which is also the version in the bundle manifest and in the binaries ([CRP-051](../done/CRP-051-mcpb-bundle.md)).
-- [ ] The minimum Claude Code version the plugin needs is determined, stated in the plugin description and in the README.
+- [x] A test checks that the plugin manifest's `version` equals the contents of the repository's `VERSION` file, which is also the version in the bundle manifest and in the binaries ([CRP-051](../done/CRP-051-mcpb-bundle.md)).
+- [x] The minimum Claude Code version the plugin needs is determined, stated in the plugin description and in the README.
+
+## State on 2026-10-05
+
+Built and checked with Claude Code 2.1.288 on Windows. The boxes ticked above are held by tests in `internal/adapter/code/plugin_test.go`. The others wait for:
+
+- the first CI run of the new `Plugin` job, for the validation criterion;
+- the owner, for the four criteria that need an interactive session and a real Discord client. The steps are in the pull request. They also need a Discord application id, which [CRP-003](../M0-foundation/CRP-003-naming-branding-discord-app.md) has not supplied yet: the built-in one is a placeholder that Discord rejects, so the check must set the plugin's application id option to one the owner controls.
+
+Found here, and not as the ticket assumed:
+
+- A plugin option does reach the bundled server, through the bundle's `${user_config.KEY}` of the same name. But a `default` on the bundle's own entry overrode the user's choice: with the bundle's default of `standard`, choosing `full` in the plugin still gave the server `standard`. The default was removed from `extension/manifest.json`, and `mcpb check` now refuses one.
+- Seen with a stand-in server that records its environment, in an isolated configuration directory: unset gives `standard` and an empty application id; `privacy=full` and an application id set through `claude plugin configure` both arrive; after `claude plugin disable`, no server is started.
+- The minimum is Claude Code 2.1.271, the first version with fixed-choice options. An older one cannot load the plugin. The lowest version the wiring has actually run on is 2.1.284, in CRP-001.
 
 ## Notes for the implementer
 

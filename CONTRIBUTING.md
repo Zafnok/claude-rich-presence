@@ -179,7 +179,7 @@ The unit tests must write their profile with `-coverprofile`. A package that no 
 
 `rich-presence.mcpb` is the one archive that Claude Code fetches through the plugin and Claude Desktop installs as an extension ([ADR-0007](docs/architecture/adr/0007-integration-and-distribution.md)). Its parts are in [extension/](extension/): the manifest, the icon (a placeholder until [CRP-003](docs/tickets/M0-foundation/CRP-003-naming-branding-discord-app.md) supplies one) and the third-party notices. [tools/mcpb](tools/mcpb/main.go) assembles it and checks it.
 
-The version has one source, the [VERSION](VERSION) file. `mcpb build` writes it into the manifest in place of `@VERSION@`, and the binaries get it from the linker. The plugin manifest of [CRP-052](docs/tickets/M5-claude-desktop/CRP-052-desktop-validation.md) and the release pipeline of [CRP-060](docs/tickets/M6-release/CRP-060-release-pipeline.md) read the same file.
+The version has one source, the [VERSION](VERSION) file. `mcpb build` writes it into the manifest in place of `@VERSION@`, and the binaries get it from the linker. The plugin manifest and the release pipeline of [CRP-060](docs/tickets/M6-release/CRP-060-release-pipeline.md) read the same file.
 
 ```bash
 version=$(cat VERSION)
@@ -202,3 +202,56 @@ go run ./tools/mcpb check -version "$version" dist/rich-presence.mcpb
 `check` is this repository's check against the published manifest schema (version 0.3), plus the decisions of the ADRs: the layout, the server name, the settings, the executable bit of the Unix binaries and the architectures inside each binary. It is used instead of the official validator, which would be a new tool in CI under the dependency policy.
 
 The archive is reproducible: the same binaries give the same bytes. The Windows and Linux binaries are too, since they are built with `-trimpath` and no build id. The Mac binary is signed ad hoc on the runner, and whether `codesign` gives the same bytes twice is not checked, so CI compares two assemblies of the Windows and Linux builds only.
+
+### The plugin
+
+The Claude Code plugin is [plugin/](plugin/), and this repository is its marketplace through [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json). The plugin is JSON and Markdown only: a manifest that names the bundle's release URL, one hook per event, and two skills. The tests in [internal/adapter/code/plugin_test.go](internal/adapter/code/plugin_test.go) hold these files to the adapter's allowlist, the bundle manifest and the [VERSION](VERSION) file, and CI runs Claude Code's own validator on them:
+
+```bash
+claude plugin validate --strict ./plugin
+```
+
+```bash
+claude plugin validate --strict .
+```
+
+Two facts about settings, found by [CRP-042](docs/tickets/M4-claude-code/CRP-042-plugin-packaging.md) with Claude Code 2.1.288:
+
+- An option in the plugin's `userConfig` reaches the bundled server through the `${user_config.KEY}` reference of the same name in the bundle's manifest. So the two files declare the same keys.
+- A `default` on the bundle's own `user_config` entry wins over the value the user chose in the plugin. So the bundle declares no defaults, and `mcpb check` refuses one. The server's own defaults apply to an empty value.
+
+#### Run the plugin with a bundle you built
+
+The committed manifest names a release URL, which Claude Code downloads. To try a local build, make a copy of the marketplace whose plugin names a bundle file instead. Nothing tracked is changed, and `dist/` is ignored.
+
+1. Build `dist/rich-presence.mcpb` as [The bundle](#the-bundle) describes. Off a Mac, take the Mac binary from CI instead of building it: `gh run download --name bundle-darwin --dir dist` on any run of the CI workflow.
+2. Make the copy:
+
+   ```bash
+   rm -rf dist/marketplace && mkdir -p dist/marketplace
+   cp -r .claude-plugin plugin dist/marketplace/
+   rm -rf dist/marketplace/plugin/.mcpb-cache
+   cp dist/rich-presence.mcpb dist/marketplace/plugin/
+   sed -i.bak 's#"mcpServers": "[^"]*"#"mcpServers": "./rich-presence.mcpb"#' dist/marketplace/plugin/.claude-plugin/plugin.json
+   rm dist/marketplace/plugin/.claude-plugin/plugin.json.bak
+   ```
+
+3. For one session, with nothing installed:
+
+   ```bash
+   claude --plugin-dir dist/marketplace/plugin
+   ```
+
+   Or install it as a user would, from the local marketplace:
+
+   ```bash
+   claude plugin marketplace add ./dist/marketplace
+   claude plugin install rich-presence@rich-presence
+   ```
+
+4. `claude mcp list` shows `plugin:rich-presence:presence` as connected. In a session, `/rich-presence:status` reports what the server sees.
+5. To remove it: `claude plugin marketplace remove rich-presence`.
+
+A marketplace added from a directory is loaded in place, so after rebuilding the bundle, repeat step 2 and start a new session. Claude Code writes `.mcpb-cache/` into the plugin directory it loads, with absolute paths inside. That is why the copy is made under `dist/`, and why `plugin/.mcpb-cache/` is ignored in case the repository root itself is ever added as a marketplace.
+
+The privacy level is set with `/plugin`, under the plugin's configuration, or from a shell with `echo '{"privacy":"full"}' | claude plugin configure rich-presence@rich-presence --values-stdin`. It is read when the server starts, so it applies to the next session.
