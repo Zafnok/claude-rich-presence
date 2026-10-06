@@ -3,7 +3,7 @@ id: CRP-067
 title: Clean every piece of text before it is published
 milestone: M6 Release
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-062]
 blocks: []
