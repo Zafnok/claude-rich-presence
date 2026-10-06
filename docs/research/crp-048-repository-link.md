@@ -104,7 +104,7 @@ For each of the manual, accept-edits and auto modes, note whether Claude Code it
 
 ## Not tested
 
-- The button on Discord's mobile app, for the user and for another account.
+- The button on Discord's mobile app, for the user and for another account. Ticketed as [CRP-080](../tickets/M4-claude-code/CRP-080-repository-link-on-mobile.md).
 - The button at `minimal` on a real Discord. The tests show it is sent.
 - The skill with the GitHub CLI signed out, and its "remove" path.
 - The skill in a permission mode other than auto. For those the table above is the documentation's account.
