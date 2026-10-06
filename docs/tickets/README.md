@@ -103,6 +103,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-052](M5-claude-desktop/CRP-052-desktop-validation.md) | Desktop validation on real machines | 002, 042, 050, 051 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-053](M5-claude-desktop/CRP-053-desktop-summary.md) | Activity summary in Claude Desktop Chat | 047, 050 | Sonnet 5.5 | medium | S |
 | [CRP-054](M5-claude-desktop/CRP-054-desktop-idle-clear.md) | Decide how long Claude Desktop is shown when nothing else is running | 050 | Sonnet 5.5 | medium | S |
+| [CRP-055](M5-claude-desktop/CRP-055-desktop-pause-and-preview.md) | Pause and preview from Claude Desktop | 073 | Sonnet 5.5 | medium | S |
 | [CRP-060](M6-release/CRP-060-release-pipeline.md) | Release pipeline | 003, 005, 007, 042, 043, 051 | Sonnet 5.5 | high | M |
 | [CRP-061](M6-release/CRP-061-user-documentation.md) | User documentation | 003, 042, 052 | Haiku 4.5 | n/a | S |
 | [CRP-062](done/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S |
@@ -115,7 +116,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-070](M7-personalisation/CRP-070-spike-discord-display.md) | Spike: how Discord displays an activity | none | Sonnet 5.5 | medium | S |
 | [CRP-071](M7-personalisation/CRP-071-summary-first-layout.md) | Summary-first card layout | 047, 070 | Sonnet 5.5 | high | M |
 | [CRP-072](M7-personalisation/CRP-072-personalities.md) | Personalities | 047 | Sonnet 5.5 | medium | M |
-| [CRP-073](M7-personalisation/CRP-073-hide-pause-preview.md) | Hide, pause and preview | 014, 042, 077 | Sonnet 5.5 | medium | S |
+| [CRP-073](done/CRP-073-hide-pause-preview.md) | Hide, pause and preview | 014, 042, 077 | Sonnet 5.5 | medium | S |
 | [CRP-074](M7-personalisation/CRP-074-status-line-bridge.md) | Status line bridge | 045, 071 | Sonnet 5.5 | high | M |
 | [CRP-075](M7-personalisation/CRP-075-moments.md) | Moments: just shipped | 042 | Sonnet 5.5 | medium | S |
 | [CRP-076](M7-personalisation/CRP-076-spike-wsl.md) | Spike: Claude Code in WSL with Discord on Windows | 033 | Opus 5.5 | high | M |
@@ -123,6 +124,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-078](done/CRP-078-open-at-minimal-with-profiles.md) | Open a profiled session at the lowest level until its first hook | 077 | Sonnet 5.5 | medium | S |
 | [CRP-079](M4-claude-code/CRP-079-claude-code-manual-checks.md) | Manual checks in a real Claude Code | 042, 043 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-080](M4-claude-code/CRP-080-repository-link-on-mobile.md) | Check the repository link button on Discord's mobile app | 048 | Owner, with Sonnet 5.5 | low | S |
+| [CRP-081](M7-personalisation/CRP-081-check-pause-hide-preview-by-hand.md) | Check pause, hide and preview in a real Claude Code and Discord | 073 | Owner, with Sonnet 5.5 | low | S |
 
 ## Dependency graph
 
@@ -190,6 +192,8 @@ flowchart TD
     C078["078 open at minimal"]
     C079["079 manual checks"]
     C080["080 link on mobile"]
+    C055["055 Desktop pause, preview"]
+    C081["081 pause, hide, preview by hand"]
     C004 --> C005
     C005 --> C006
     C005 --> C007
@@ -308,6 +312,8 @@ flowchart TD
     C042 --> C079
     C043 --> C079
     C048 --> C080
+    C073 --> C055
+    C073 --> C081
 ```
 
 ## Suggested order
@@ -326,7 +332,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 7 | 035, 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
 | 9 | 015, 045, 047, 048, 052, 054, 060, 065, 066, 067, 068, 073, 075, 079 |
-| 10 | 049, 053, 061, 063, 071, 072, 080 |
+| 10 | 049, 053, 055, 061, 063, 071, 072, 080, 081 |
 | 11 | 064, 074 |
 
 The critical path is 004, 005, 022, 021, 023, 032, 033, 051, 042, 060. CI (005) comes before every code ticket, because their definition of done needs it. The visibility features, which are project profiles, the activity summary and the repository link (014, 046, 047, 048, 049, 053, 077), are deliberately off it: the first release does not wait for them. Nor does anything in M7. The spikes and the owner task in wave 0 have the longest lead time and involve people, so start them first.
@@ -374,6 +380,7 @@ These need a person with the owner's accounts. Nothing else in the plan does.
 | Confirm presence in a real Discord client on real machines | CRP-052 |
 | Look at test activities from a second Discord account and record what is visible | CRP-070 |
 | Look at the repository link button in Discord's mobile app, as yourself and from a second account | CRP-080 |
+| Try pause, resume, preview and a hidden project in a real Claude Code, with a second Discord account watching | CRP-081 |
 | Approve the built-in personalities and their wording | CRP-072 |
 | Decide whether to pay for signing and notarisation | CRP-063 |
 | Submit to directories | CRP-064 |

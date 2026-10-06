@@ -69,7 +69,7 @@ A moment is a short-lived event worth showing, such as a successful push. For a 
 
 ### Preview
 
-Because hover text is invisible until someone hovers, the user needs a way to see the whole card. The status tool gains a preview that lists every slot as it is currently sent. Ticketed with hide and pause in [CRP-073](../../tickets/M7-personalisation/CRP-073-hide-pause-preview.md).
+Because hover text is invisible until someone hovers, the user needs a way to see the whole card. The status tool gains a preview that lists every slot as it is currently sent. Ticketed with hide and pause in [CRP-073](../../tickets/done/CRP-073-hide-pause-preview.md).
 
 ## Consequences
 

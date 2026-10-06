@@ -131,9 +131,10 @@ func TestAPauseWithADurationClearsAtOnceAndEndsByItself(t *testing.T) {
 		t.Errorf("the host counts %d sessions while paused, want 2", st.Sessions)
 	}
 
-	// While paused, sessions go on being reduced and nothing is shown.
+	// While paused, sessions go on being reduced and nothing is shown. The
+	// answer to peek says the host has dealt with the event, so the clock is
+	// not moved under it.
 	told := len(a.discord().all())
-	a.publish(domain.KindTurnStarted, domain.KindToolStarted)
 	q.say(eventOf("session-one", domain.KindTurnStarted, w.clock.Now()))
 	if got := q.peek(); got != (protocol.PreviewResult{}) {
 		t.Errorf("the card while paused is %+v, want nothing", got)
@@ -146,9 +147,10 @@ func TestAPauseWithADurationClearsAtOnceAndEndsByItself(t *testing.T) {
 		t.Errorf("an activity was shown %d times during the pause, want none", got)
 	}
 
-	// The pause ends by itself, and what is shown is the present.
+	// The pause ends by itself, at its time and with no event, and what is
+	// shown is the present: the turn that began during the pause.
 	w.clock.Advance(1)
-	w.eventually("the activity to return", func() bool { return a.shows("Editing files") && a.shows("2 sessions") })
+	w.eventually("the activity to return", func() bool { return a.shows("Thinking") && a.shows("2 sessions") })
 	if st := a.node.Status(); st.Paused || !st.PausedUntil.IsZero() {
 		t.Errorf("status after the pause is %+v, want not paused", st)
 	}
@@ -275,23 +277,36 @@ func TestAPauseSurvivesAFailoverForTheRemainingTime(t *testing.T) {
 	a.node.Pause(until)
 	w.eventually("the activity to be cleared", a.cleared)
 	w.eventually("the follower to learn of the pause", func() bool { return b.node.Status().Paused })
+	b.publish(domain.KindTurnStarted)
 	w.clock.Advance(4 * time.Minute)
 
 	a.kill()
 	w.settle("b to take over", b.isHost)
 	w.eventually("b to hold its session", func() bool { return b.node.Status().Sessions == 1 })
 	// The new host is paused from the start: it never shows the session.
-	b.publish(domain.KindTurnStarted)
-	w.eventually("the new host to say it shows nothing", b.cleared)
-	if got := b.shownSince(0); got != 0 {
-		t.Errorf("the new host showed an activity %d times during the pause, want none", got)
+	// The answer to peek says it has dealt with the session, so the clock is
+	// not moved under it.
+	q := w.join("probe")
+	q.welcomed("1.0.0")
+	if got := q.peek(); got.Shown {
+		t.Errorf("the new host's card is %+v, want nothing", got)
+	}
+	if !b.cleared() || b.shownSince(0) != 0 {
+		t.Errorf("the new host showed an activity %d times during the pause, want none", b.shownSince(0))
 	}
 	if st := b.node.Status(); !st.Paused || !st.PausedUntil.Equal(until) {
 		t.Errorf("the new host's status is %+v, want paused until %v", st, until)
 	}
 
-	// For the remaining time, and no longer.
-	w.clock.Advance(6*time.Minute - 1)
+	// For the remaining time, and no longer. Taking over moved the clock on
+	// a little, so what remains is read from it.
+	if left := until.Sub(w.clock.Now()); left > 6*time.Minute || left < 5*time.Minute {
+		t.Fatalf("%v of the pause is left, want a little under six minutes", left)
+	}
+	w.clock.Advance(until.Sub(w.clock.Now()) - 1)
+	if got := q.peek(); got.Shown {
+		t.Errorf("just before the pause ends the new host's card is %+v, want nothing", got)
+	}
 	if got := b.shownSince(0); got != 0 {
 		t.Errorf("the new host showed an activity %d times before the pause ended", got)
 	}
