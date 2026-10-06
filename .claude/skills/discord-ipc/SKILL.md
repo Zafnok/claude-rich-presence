@@ -83,7 +83,7 @@ For the repository link (ADR-0012, CRP-048):
 
 | Field | Notes |
 |---|---|
-| `buttons` | Sent, one at most. Discord allows two. Each is an object with a `label` of 1 to 32 characters and a `url` of 1 to 512; the codec leaves out a button outside those limits. Checked against the activity object in the documentation on 2026-10-05. An activity that Discord sends back lists only the labels. How buttons appear to other users, and whether the user sees their own, is still unverified: see `docs/research/crp-048-repository-link.md` |
+| `buttons` | Sent, one at most. Discord allows two. Each is an object with a `label` of 1 to 32 characters and a `url` of 1 to 512; the codec leaves out a button outside those limits. Checked against the activity object in the documentation on 2026-10-05. An activity that Discord sends back lists only the labels. On the desktop client another account sees the button and the user does not see their own (observed 2026-10-05); mobile is unverified: see `docs/research/crp-048-repository-link.md` |
 | `details_url`, `state_url`, and `large_url` and `small_url` in the assets | Not sent. They make a text line or an image clickable. The fallback if buttons are not visible where it matters |
 
 A URL placed in an activity comes only from the user's configuration, validated. Never from model-written text.

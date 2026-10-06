@@ -2,7 +2,7 @@
 
 Ticket: [CRP-048](../tickets/M4-claude-code/CRP-048-repository-link.md). Decision: [ADR-0012](../architecture/adr/0012-project-profiles-and-repository-link.md).
 
-**Coverage.** The link is built and tested end to end against the fake Discord. What a real Discord shows, and how the `share-project` skill behaves in a real Claude Code session, has **not been observed**. Those checks need the owner's Discord, a second account and an interactive session, and are written out under [Checks for the owner](#checks-for-the-owner). Nothing below fills that gap with an assumption.
+**Coverage.** The link is built and tested end to end against the fake Discord. On a real Discord, on the Windows desktop client, the button is shown to another account and opens the link, and is not shown to the user on their own profile. Mobile was not checked. How the `share-project` skill behaves in a real Claude Code session has **not been observed**. What remains is written out under [Checks for the owner](#checks-for-the-owner). Nothing below fills that gap with an assumption.
 
 ## What was built
 
@@ -38,8 +38,9 @@ Read on 2026-10-05, in the activity object of Discord's gateway documentation an
 | The fake Discord accepts the button and records it as sent | Observed, `test/e2e: TestRepositoryLink` |
 | A real Discord accepts an activity with a button over the local pipe | Observed 2026-10-05, Windows desktop client: the activity was shown with both text lines and the timer, and the log has no error. An activity is accepted or rejected whole |
 | The user sees the button on their own profile | **No**, on the desktop client's own profile popout. Observed 2026-10-05, at `full`: the name, both lines and the timer were shown and no button |
-| Another account sees the button, on desktop and on mobile | **Not observed** |
-| The button shows for the "playing" activity type, which is the one sent | **Not observed.** One other project reports that buttons show for one type only. CRP-070 measures this and has not run |
+| Another account sees the button on desktop | **Yes.** Observed 2026-10-05, at `full`: a "View on GitHub" button under the activity on the profile card, and it opened the repository |
+| Another account sees the button on mobile | **Not observed** |
+| The button shows for the "playing" activity type, which is the one sent | Yes, as above. Other types were not tried; CRP-070 measures them |
 
 ## Permission modes
 
@@ -80,12 +81,12 @@ Record, for each row, what is seen:
 |---|---|---|---|---|
 | The user | Desktop, own profile | No | Not applicable | 2026-10-05, at `full`. Everything else on the card was shown |
 | The user | Mobile, own profile | | | |
-| Second account | Desktop, profile or member list popout | | | |
+| Second account | Desktop, profile card | Yes | Yes, to the right repository | 2026-10-05, at `full` |
 | Second account | Mobile, profile | | | |
 
 Run it once more with `-Privacy minimal` and confirm the button is still there with only the first text line.
 
-If the second account does not see the button, the ticket switches to the text line's URL field, as ADR-0012 allows.
+The second account sees the button, so the button stands and the text line's URL field is not needed. The mobile rows and the run at `minimal` are still open.
 
 ### 2. The `share-project` skill
 

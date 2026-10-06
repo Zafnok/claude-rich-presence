@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed.** The profile mechanism needs nothing verified. The link is built as a button in [CRP-048](../../tickets/M4-claude-code/CRP-048-repository-link.md); how Discord displays it to the user and to other people has not yet been observed on a real Discord, and this ADR stays Proposed until it has. See [the findings](../../research/crp-048-repository-link.md). Extends [ADR-0008](0008-privacy-and-safety-by-default.md) and replaces the directory allowlist first sketched in [ADR-0011](0011-model-authored-activity-summary.md).
+**Accepted**, 2026-10-05. The link is shown as a button, built in [CRP-048](../../tickets/M4-claude-code/CRP-048-repository-link.md). On a real Discord desktop client another account sees the button and it opens the link; the user does not see it on their own profile. Mobile was not checked. See [the findings](../../research/crp-048-repository-link.md). Extends [ADR-0008](0008-privacy-and-safety-by-default.md) and replaces the directory allowlist first sketched in [ADR-0011](0011-model-authored-activity-summary.md).
 
 ## Context
 
@@ -14,7 +14,7 @@ Facts:
 |---|---|
 | A Discord activity may carry up to two buttons, each a label of 1 to 32 characters and a URL of up to 512 | Docs |
 | Newer activity fields also let the text lines and images carry URLs | Docs |
-| How buttons appear to other users, and whether the user sees their own, is described inconsistently by third parties | Unverified |
+| On the desktop client, another account sees a button and can open it; the user does not see their own | Observed in CRP-048. Mobile not checked |
 | A git remote URL can embed credentials, as in `https://user:token@host/...` | Known git behaviour |
 | Whether a repository is public can only be learned by asking its host over the network | Design |
 | Our binary makes no network requests | [ADR-0008](0008-privacy-and-safety-by-default.md) |
@@ -55,7 +55,7 @@ This replaces the separate allowlist in ADR-0011: enabling the summary for chose
    - within Discord's length limit.
    
    A link that fails validation is dropped with a warning that does not echo it.
-4. **Shown as a button** on the activity, labelled for the host, such as "View on GitHub". Shown for the focus session only, and at every privacy level: the link is its own per-project opt-in, and a user who sets one at `minimal` has asked for it to be shown. If CRP-048 finds that buttons are not visible where it matters, the text line's URL field is the alternative.
+4. **Shown as a button** on the activity, labelled for the host, such as "View on GitHub". Shown for the focus session only, and at every privacy level: the link is its own per-project opt-in, and a user who sets one at `minimal` has asked for it to be shown. CRP-048 found the button visible to other people on desktop, so the text line's URL field, which was the alternative, is not used.
 5. **The binary does not check that the repository is public.** That would need a network request. Instead:
    - opting in is an explicit, per-project act;
    - the plugin provides a skill, `share-project`, that performs the setup inside a Claude Code session: it reads the remote, checks visibility with the user's own GitHub CLI when available, shows exactly what would be published, asks the user to confirm that summary, and only then writes the profile by editing the configuration file. The skill's own question is the consent step, because Claude Code's permission prompt for the edit is not shown in every permission mode. Where the prompt is shown it is a second check, and the skill does nothing to avoid it;

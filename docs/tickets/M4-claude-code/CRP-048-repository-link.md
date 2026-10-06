@@ -63,16 +63,15 @@ Two things are not yet known and are settled here on a real Discord: how a butto
 - [ ] The `share-project` skill refuses to write a profile for a repository the GitHub CLI reports as private, and never writes a link containing credentials. Checked by running it on a public repository, a private one, and one with a token in its remote URL, with the results recorded.
 - [ ] The same record states, for each Claude Code permission mode, whether the user was asked to approve the skill's edit to the configuration file. ADR-0012 assumes they are asked in the default modes; if not, the skill gains an explicit confirmation step of its own and the ADR is corrected.
 - [ ] `docs/research/crp-048-repository-link.md` records how the button appears to the user and to a second account. If it is not visible to others, the ticket switches to the text line's URL field as ADR-0012 allows, and records that.
-- [ ] ADR-0012 is marked Accepted with the display mechanism that was confirmed.
+- [x] ADR-0012 is marked Accepted with the display mechanism that was confirmed.
 - [ ] The user documentation explains that the link is per project, that the program cannot tell whether a repository is public, and how to remove a profile.
 
 ## Remaining
 
 The code, the skill and the documentation are in place and every automated criterion is met. The ticket stays `in-progress` for the criteria that need a real Discord and an interactive Claude Code session, which have not been run:
 
-- how the button appears to the user and to a second account, on desktop and on mobile;
+- how the button appears on mobile. On desktop it is confirmed: another account sees it and it opens the link, and the user does not see their own;
 - the `share-project` skill on a public repository, a private one and one with a token in its remote, and whether Claude Code asks to approve the edit in each permission mode;
-- ADR-0012 marked Accepted, once the display is confirmed.
 
 The steps and the tables to fill in are in [the findings](../../research/crp-048-repository-link.md#checks-for-the-owner).
 
