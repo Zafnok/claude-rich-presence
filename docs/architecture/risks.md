@@ -1,6 +1,6 @@
 # Risk register
 
-Ordered by how much damage each could do to the plan. "Retired by" names the ticket whose outcome settles it.
+Ordered by how much damage each could do to the plan. "Retired by" names the ticket whose outcome settles it. Threats from other users, other processes and the model are in the [threat model](threat-model.md).
 
 | # | Risk | Likelihood | Impact | Mitigation | Retired by |
 |---|---|---|---|---|---|

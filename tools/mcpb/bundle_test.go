@@ -278,6 +278,7 @@ func TestCheckRejects(t *testing.T) {
       "title": "Privacy level"`), want: `has type "text"`},
 		{name: "setting without a description", edit: replacing(`"title": "Privacy level",`, `"title": "",`), want: "needs a title"},
 		{name: "required setting", edit: replacing(`"required": false`, `"required": true`), want: "must not be required"},
+		{name: "setting with a default", edit: replacing(`"title": "Privacy level",`, `"title": "Privacy level", "default": "standard",`), want: "user_config.privacy must have no default"},
 		{name: "tools not generated", edit: replacing(`"tools_generated": true`, `"tools_generated": false`), want: "tools_generated"},
 		{name: "tools listed", edit: replacing(`"tools_generated": true`, `"tools_generated": true, "tools": []`), want: "must not list tools"},
 		{name: "wrong platforms", edit: replacing(`["darwin", "linux", "win32"]`, `["darwin", "linux"]`), want: "compatibility.platforms"},

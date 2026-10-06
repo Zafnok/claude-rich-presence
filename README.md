@@ -20,6 +20,20 @@ Show what you are doing with Claude in your Discord profile: that a session is o
 
 Why Chat is partial and the web is unsupported is explained in the [viability assessment](docs/architecture/viability.md).
 
+## Install in Claude Code
+
+The plugin needs Claude Code 2.1.271 or later. There is no release yet, so these two commands work only once the first one is published:
+
+```bash
+claude plugin marketplace add Zafnok/claude-rich-presence
+```
+
+```bash
+claude plugin install rich-presence@rich-presence
+```
+
+Until then, [CONTRIBUTING.md](CONTRIBUTING.md#the-plugin) describes how to load the plugin with a bundle you build yourself.
+
 ## How it works, in one paragraph
 
 One small native program, `rich-presence`, is started by Claude itself as a local MCP server: by a Claude Code plugin in Claude Code, and by a desktop extension in Claude Desktop. Claude Code hooks report session events to it. Whichever copy starts first becomes the *presence host*: it keeps the single connection to the Discord client and renders one activity from all open sessions. The others forward their events to it and take over if it exits. Nothing is installed as a service, nothing runs after Claude closes, and nothing leaves your machine except the activity sent to your local Discord client.
@@ -34,6 +48,8 @@ One small native program, `rich-presence`, is started by Claude itself as a loca
 | [docs/architecture/quality-strategy.md](docs/architecture/quality-strategy.md) | Testing, 100% coverage, SonarQube |
 | [docs/architecture/repository-layout.md](docs/architecture/repository-layout.md) | The target folder structure |
 | [docs/architecture/risks.md](docs/architecture/risks.md) | Open risks and what retires each one |
+| [docs/architecture/threat-model.md](docs/architecture/threat-model.md) | What could go wrong at each trust boundary, what stops it, and the test that shows it |
+| [SECURITY.md](SECURITY.md) | How to report a vulnerability privately |
 | [docs/configuration.md](docs/configuration.md) | Every setting, where it is read from, and project profiles |
 | [docs/tickets/](docs/tickets/README.md) | The work plan: tickets, blockers, acceptance criteria, recommended model and effort |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to work in this repository |

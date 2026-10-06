@@ -90,7 +90,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-035](M3-host/CRP-035-status-command-session-figures.md) | Show the privacy level and event counts in the status command | 033 | Sonnet 5.5 | medium | S |
 | [CRP-040](done/CRP-040-mcp-server.md) | Minimal MCP stdio server | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-041](done/CRP-041-code-adapter.md) | Claude Code adapter | 001, 010, 012, 040 | Sonnet 5.5 | high | M |
-| [CRP-042](M4-claude-code/CRP-042-plugin-packaging.md) | Plugin and marketplace packaging | 001, 033, 051 | Sonnet 5.5 | medium | S |
+| [CRP-042](done/CRP-042-plugin-packaging.md) | Plugin and marketplace packaging | 001, 033, 051 | Sonnet 5.5 | medium | S |
 | [CRP-043](done/CRP-043-end-to-end-tests.md) | End-to-end tests | 022, 024, 033 | Opus 5.5 | high | L |
 | [CRP-044](done/CRP-044-fallback-command-hooks.md) | Fallback: command hooks and standalone host | 001, 002, 043 | Opus 5.5 | high | L |
 | [CRP-045](M4-claude-code/CRP-045-spike-initial-model.md) | Spike: status line bridge and the model at launch | 042 | Sonnet 5.5 | medium | M |
@@ -105,9 +105,13 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-054](M5-claude-desktop/CRP-054-desktop-idle-clear.md) | Decide how long Claude Desktop is shown when nothing else is running | 050 | Sonnet 5.5 | medium | S |
 | [CRP-060](M6-release/CRP-060-release-pipeline.md) | Release pipeline | 003, 005, 007, 042, 043, 051 | Sonnet 5.5 | high | M |
 | [CRP-061](M6-release/CRP-061-user-documentation.md) | User documentation | 003, 042, 052 | Haiku 4.5 | n/a | S |
-| [CRP-062](M6-release/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S |
+| [CRP-062](done/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S |
 | [CRP-063](M6-release/CRP-063-code-signing.md) | Code signing and notarisation | 002, 052, 060 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-064](M6-release/CRP-064-directory-submission.md) | Directory submission | 003, 060, 061 | Owner, with Haiku 4.5 | n/a | S |
+| [CRP-065](M6-release/CRP-065-follower-checks-runtime-directory.md) | A follower checks the runtime directory before it dials | 062 | Opus 5.5 | high | S |
+| [CRP-066](M6-release/CRP-066-limit-connections-and-sessions.md) | Limit the connections and sessions a host holds | 062 | Sonnet 5.5 | high | S |
+| [CRP-067](M6-release/CRP-067-clean-published-text.md) | Clean every piece of text before it is published | 062 | Sonnet 5.5 | medium | S |
+| [CRP-068](M6-release/CRP-068-check-discord-socket-owner.md) | Check who owns the Discord socket on Unix | 062 | Sonnet 5.5 | high | S |
 | [CRP-070](M7-personalisation/CRP-070-spike-discord-display.md) | Spike: how Discord displays an activity | none | Sonnet 5.5 | medium | S |
 | [CRP-071](M7-personalisation/CRP-071-summary-first-layout.md) | Summary-first card layout | 047, 070 | Sonnet 5.5 | high | M |
 | [CRP-072](M7-personalisation/CRP-072-personalities.md) | Personalities | 047 | Sonnet 5.5 | medium | M |
@@ -170,6 +174,10 @@ flowchart TD
     C062["062 security review"]
     C063["063 signing"]
     C064["064 directory"]
+    C065["065 follower checks directory"]
+    C066["066 host limits"]
+    C067["067 clean published text"]
+    C068["068 Discord socket owner"]
     C070["070 spike: Discord display"]
     C071["071 summary-first layout"]
     C072["072 personalities"]
@@ -269,6 +277,10 @@ flowchart TD
     C042 --> C061
     C052 --> C061
     C043 --> C062
+    C062 --> C065
+    C062 --> C066
+    C062 --> C067
+    C062 --> C068
     C002 --> C063
     C052 --> C063
     C060 --> C063
@@ -310,7 +322,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 6 | 008, 033 |
 | 7 | 035, 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
-| 9 | 015, 045, 047, 048, 052, 054, 060, 073, 075, 079 |
+| 9 | 015, 045, 047, 048, 052, 054, 060, 065, 066, 067, 068, 073, 075, 079 |
 | 10 | 049, 053, 061, 063, 071, 072 |
 | 11 | 064, 074 |
 
@@ -345,7 +357,7 @@ Rules for keeping cost down without losing quality:
 4. **Review is cheaper than rework.** Run `/code-review` on every pull request. For the Opus tickets, review with Opus as well.
 5. **Spikes are time-boxed.** A spike that has not answered its questions in its box stops and reports what it found.
 
-By this plan thirty-four tickets run on Sonnet 5.5, ten on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
+By this plan thirty-eight tickets run on Sonnet 5.5, eleven on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
 
 ## Owner actions
 

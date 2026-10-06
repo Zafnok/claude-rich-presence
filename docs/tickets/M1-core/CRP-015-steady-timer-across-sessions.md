@@ -106,4 +106,4 @@ A small change to one pure function with clear criteria, plus three documents; t
 - "From sessions to one activity" in [the architecture overview](../../architecture/README.md)
 - [ADR-0013](../../architecture/adr/0013-summary-first-card-layout.md), Timer row of the slot table
 - [CRP-011](../done/CRP-011-presence-renderer.md), which chose the focus session's start time
-- CRP-042, whose manual check is where this was seen. Its file is in `docs/tickets/M4-claude-code/` while open and in `docs/tickets/done/` once closed
+- [CRP-042](../done/CRP-042-plugin-packaging.md), whose manual check is where this was seen
