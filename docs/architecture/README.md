@@ -259,4 +259,5 @@ The adapter tells the surfaces apart from the client name in the MCP `initialize
 - [Repository layout](repository-layout.md)
 - [Quality strategy](quality-strategy.md)
 - [Risk register](risks.md)
+- [Threat model](threat-model.md)
 - [Tickets](../tickets/README.md)

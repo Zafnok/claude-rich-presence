@@ -3,10 +3,10 @@ id: CRP-062
 title: Security review and threat model
 milestone: M6 Release
 type: chore
-status: in-progress
+status: blocked
 priority: P1
 blocked_by: [CRP-043]
-blocks: []
+blocks: [CRP-065, CRP-066, CRP-067, CRP-068]
 model: claude-opus-5-5
 effort: high
 size: S
@@ -47,11 +47,19 @@ The program runs in every Claude session, listens on a local socket, parses inpu
 
 ## Acceptance criteria
 
-- [ ] The threat model exists and every listed threat has a mitigation and a named test, or an accepted-risk note with a reason.
+- [x] The threat model exists and every listed threat has a mitigation and a named test, or an accepted-risk note with a reason.
 - [ ] `SECURITY.md` exists and GitHub private vulnerability reporting is enabled. Enabling it is an owner action.
-- [ ] The no-network test exists and passes.
-- [ ] Every finding is a ticket with a severity. No finding of high severity is open at the first stable release.
-- [ ] The review states what it did not cover.
+- [x] The no-network test exists and passes.
+- [x] Every finding is a ticket with a severity. No finding of high severity is open at the first stable release.
+- [x] The review states what it did not cover.
+
+## Blocked
+
+On one owner action. Everything else is done: the [threat model](../../architecture/threat-model.md), [SECURITY.md](../../../SECURITY.md), the no-network test `TestTheBinaryLinksNoNetworkClient` in `test/e2e`, and the four findings as CRP-065 to CRP-068, one medium and three low.
+
+GitHub private vulnerability reporting is off. Checked on 2026-10-05: `gh api repos/Zafnok/claude-rich-presence/private-vulnerability-reporting` answers `{"enabled":false}`. SECURITY.md sends reporters to the form that this setting provides, so it has to be on before the policy is of any use.
+
+To finish: in the repository on GitHub, open Settings, then Advanced Security, and enable "Private vulnerability reporting". Then tick the second criterion, set `status: done` and move this file to `docs/tickets/done/` as the `work-ticket` skill describes.
 
 ## Notes for the implementer
 
