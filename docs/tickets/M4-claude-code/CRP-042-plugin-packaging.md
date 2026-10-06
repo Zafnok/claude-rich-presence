@@ -3,7 +3,7 @@ id: CRP-042
 title: Plugin and marketplace packaging
 milestone: M4 Claude Code
 type: feature
-status: todo
+status: in-progress
 priority: P0
 blocked_by: [CRP-001, CRP-033, CRP-051]
 blocks: [CRP-045, CRP-047, CRP-048, CRP-052, CRP-060, CRP-061, CRP-073, CRP-075, CRP-079]
