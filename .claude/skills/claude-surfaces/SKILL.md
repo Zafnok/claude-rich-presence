@@ -136,7 +136,7 @@ A summary is model-written and therefore untrusted. It is sanitised in the adapt
 | With the plugin option unset, the server receives the plugin's `default`, or an empty string if there is none. With no plugin `userConfig` at all, it receives the literal `${user_config.KEY}` | Empty and placeholder both mean unset |
 | A bundle's own option can be set only at install, as `--config <server>.<key>=<value>`. `claude plugin configure` lists plugin options only | Settings are offered through the plugin's `userConfig` |
 | Plugin options are stored in user settings under `pluginConfigs.<plugin>@<marketplace>.options`, and removed on uninstall. A change applies to the next session | |
-| `claude plugin disable` leaves the server out of the next session. `claude mcp list` then shows none | |
+| `claude plugin disable` leaves the server out of sessions started afterwards. **Sessions already open keep their servers.** Uninstalling, or removing the marketplace, stops them within seconds. Observed in CRP-042 with 13 open Code-tab sessions | Presence outlives a disable until the sessions restart. The user documentation says so |
 | Plugin MCP servers receive `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PLUGIN_DATA` in their environment | |
 | A top-level `bin/` directory makes claude.ai and Cowork refuse the plugin | Do not create one |
 | A `CLAUDE.md` at the plugin root is not loaded | Put guidance in a plugin skill |

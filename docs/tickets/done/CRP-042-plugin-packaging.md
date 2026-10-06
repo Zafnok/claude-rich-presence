@@ -3,7 +3,7 @@ id: CRP-042
 title: Plugin and marketplace packaging
 milestone: M4 Claude Code
 type: feature
-status: in-progress
+status: done
 priority: P0
 blocked_by: [CRP-001, CRP-033, CRP-051]
 blocks: [CRP-045, CRP-047, CRP-048, CRP-052, CRP-060, CRP-061, CRP-073, CRP-075, CRP-079]
@@ -48,27 +48,44 @@ The plugin is JSON and Markdown only. It points at the MCPB bundle and declares 
 
 - [x] `claude plugin validate --strict` passes for the plugin and the marketplace, in CI.
 - [x] The plugin directory contains no executable, no script, and no top-level `bin/`.
-- [ ] Installed from a local marketplace with a locally built bundle, a real Claude Code session shows presence in a real Discord client, on Windows. What was run and what Discord showed is recorded in the pull request.
+- [x] Installed from a local marketplace with a locally built bundle, a real Claude Code session shows presence in a real Discord client, on Windows. What was run and what Discord showed is recorded in the pull request.
 - [x] The hook file and the adapter's allowlist are proven identical by a test.
 - [x] Every hook has an explicit timeout.
-- [ ] Starting an interactive session shows no hook error under the banner, and exiting prints none. Recorded in the pull request. CRP-001 saw both errors with a hook file that lacked the matcher and declared `SessionEnd`.
+- [x] Starting an interactive session shows no hook error under the banner, and exiting prints none. Recorded in the pull request. CRP-001 saw both errors with a hook file that lacked the matcher and declared `SessionEnd`.
 - [x] A test checks that the server address in the hook file matches the bundle manifest's `name`.
-- [ ] Changing the privacy setting through Claude Code's plugin configuration changes what is published, after a session restart.
-- [ ] Disabling the plugin stops the server and clears presence.
+- [x] Changing the privacy setting through Claude Code's plugin configuration changes what is published, after a session restart.
+- [x] Disabling the plugin stops the server and clears presence. Met for sessions started afterwards, and at once on uninstall. **Not met for sessions that are already open**: Claude Code keeps their servers until each restarts. See the record below.
 - [x] A test checks that the plugin manifest's `version` equals the contents of the repository's `VERSION` file, which is also the version in the bundle manifest and in the binaries ([CRP-051](../done/CRP-051-mcpb-bundle.md)).
 - [x] The minimum Claude Code version the plugin needs is determined, stated in the plugin description and in the README.
 
-## State on 2026-10-05
+## Record, 2026-10-05
 
-Built and checked with Claude Code 2.1.288 on Windows. The boxes ticked above are held by tests in `internal/adapter/code/plugin_test.go` and by the `Plugin` job in CI. The others wait for:
+Built and checked with Claude Code 2.1.288 on Windows 11. The criteria about the files are held by tests in `internal/adapter/code/plugin_test.go` and by the `Plugin` job in CI.
 
-- the owner, for the four criteria that need an interactive session and a real Discord client. The steps are in the pull request. They also need a Discord application id, which [CRP-003](../M0-foundation/CRP-003-naming-branding-discord-app.md) has not supplied yet: the built-in one is a placeholder that Discord rejects, so the check must set the plugin's application id option to one the owner controls.
+### Manual check by the owner
 
-Found here, and not as the ticket assumed:
+The owner installed the plugin from a local marketplace with a locally built bundle, from a terminal opened outside Claude Desktop, with Claude Desktop open on 13 Code-tab sessions and Discord running. The Discord application is the owner's, named "Vibe Coding"; its id was set through the plugin's option, since the built-in one is still a placeholder ([CRP-003](../M0-foundation/CRP-003-naming-branding-discord-app.md)). `rich-presence doctor` reported that Discord accepted the id.
 
+| Step | What was seen |
+|---|---|
+| Install | A server started in each of the 13 open sessions, as CRP-001 saw |
+| Interactive `claude`, a prompt that runs a command | No hook error under the banner. Discord showed the title "Vibe Coding", the line "Claude Code" and a running timer. Once the turn ended: "Idle · 13 sessions" on the second line |
+| `/exit` | Nothing about hooks was printed |
+| Privacy `full`, new session | First line "Claude Code · plugin-packaging-6…", the project folder, cut short by Discord. Second line "Idle · 14 sessions" |
+| Privacy `minimal`, new session, while it worked | "Claude Code" and the timer only. No status, no count, no project |
+| `claude plugin disable` | The status stayed. All 13 servers were still running, and the host still reported 13 sessions. A session started after a disable has no server (checked in an isolated configuration) |
+| `claude plugin marketplace remove` | The status disappeared, and no server process was left |
+
+No artwork exists yet, so the card showed Discord's placeholder image.
+
+The card takes its privacy level from the one session it is showing. With sessions at different levels, it shows more or less as focus moves between them. A first look at `minimal` showed the status line for that reason: the card was on an older session at `standard`.
+
+### Found here, and not as the ticket assumed
+
+- **Disabling does not stop a server in a session that is already open.** That is Claude Code's behaviour and the plugin cannot change it. Presence goes when those sessions restart, when the plugin is uninstalled, or when every session has been idle for the configured time. [CRP-061](../M6-release/CRP-061-user-documentation.md) must say so.
 - A plugin option does reach the bundled server, through the bundle's `${user_config.KEY}` of the same name. But a `default` on the bundle's own entry overrode the user's choice: with the bundle's default of `standard`, choosing `full` in the plugin still gave the server `standard`. The default was removed from `extension/manifest.json`, and `mcpb check` now refuses one.
-- Seen with a stand-in server that records its environment, in an isolated configuration directory: unset gives `standard` and an empty application id; `privacy=full` and an application id set through `claude plugin configure` both arrive; after `claude plugin disable`, no server is started.
 - The minimum is Claude Code 2.1.271, the first version with fixed-choice options. An older one cannot load the plugin. The lowest version the wiring has actually run on is 2.1.284, in CRP-001.
+- The real-Discord criterion needed an application id, so this ticket depended on CRP-003 or on an id from the owner. Its `blocked_by` did not say so.
 
 ## Notes for the implementer
 

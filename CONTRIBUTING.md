@@ -215,7 +215,7 @@ claude plugin validate --strict ./plugin
 claude plugin validate --strict .
 ```
 
-Two facts about settings, found by [CRP-042](docs/tickets/M4-claude-code/CRP-042-plugin-packaging.md) with Claude Code 2.1.288:
+Two facts about settings, found by [CRP-042](docs/tickets/done/CRP-042-plugin-packaging.md) with Claude Code 2.1.288:
 
 - An option in the plugin's `userConfig` reaches the bundled server through the `${user_config.KEY}` reference of the same name in the bundle's manifest. So the two files declare the same keys.
 - A `default` on the bundle's own `user_config` entry wins over the value the user chose in the plugin. So the bundle declares no defaults, and `mcpb check` refuses one. The server's own defaults apply to an empty value.
