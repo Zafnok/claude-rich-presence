@@ -3,7 +3,7 @@ id: CRP-066
 title: Limit the connections and sessions a host holds
 milestone: M6 Release
 type: feature
-status: todo
+status: in-progress
 priority: P2
 blocked_by: [CRP-062]
 blocks: []
