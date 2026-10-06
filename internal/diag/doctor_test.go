@@ -190,6 +190,8 @@ func TestChecks(t *testing.T) {
 		{"no host", host(diag.HostAnswer{State: diag.HostAbsent}), diag.CheckHost, diag.Warn,
 			"no host is running",
 			"Start a Claude session; the first one becomes the host"},
+		{"host not asked", host(diag.HostAnswer{State: diag.HostUnasked}), diag.CheckHost, diag.Warn,
+			"no host was asked, because the runtime directory is not safe to use", "Fix the runtime directory, then run this again"},
 		{"silent host", host(diag.HostAnswer{}), diag.CheckHost, diag.Fail,
 			"something holds the control socket and did not answer",
 			"Close every Claude session so the host exits, then start one again"},

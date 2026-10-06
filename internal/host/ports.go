@@ -17,6 +17,12 @@ import (
 // failure to take the lock the node tries to follow a host.
 var ErrLocked = errors.New("host lock is held by another process")
 
+// ErrUnsafe is what Config.Dial returns, alone or wrapped, when it will not
+// connect because the control socket is somewhere another user could be
+// listening. The node sends nothing, reports it once, and tries again as
+// after any round that reached no host.
+var ErrUnsafe = errors.New("the control socket is not in a safe place")
+
 // Clock is the time source. The real implementation wraps time.Now and
 // time.AfterFunc; tests use internal/testutil/fakeclock.
 type Clock interface {
@@ -69,7 +75,8 @@ type Config struct {
 	// Acquire tries once, without waiting, to take the host lock.
 	Acquire func() (Lock, error)
 	// Dial connects to the control socket. It gives up when ctx ends, and
-	// must not wait without limit otherwise.
+	// must not wait without limit otherwise. It returns ErrUnsafe when it
+	// refuses to connect.
 	Dial func(ctx context.Context) (io.ReadWriteCloser, error)
 	// Discord makes the connection to Discord for one term as host.
 	Discord func() Discord

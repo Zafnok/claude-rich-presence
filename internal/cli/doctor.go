@@ -93,6 +93,10 @@ func (s system) doctorPorts(getenv func(string) string) diag.Ports {
 			switch {
 			case errors.Is(err, ctransport.ErrNoHost):
 				return diag.HostAnswer{State: diag.HostAbsent}
+			case errors.Is(err, ctransport.ErrUnsafeDir):
+				// Nothing was connected to. The runtime directory check
+				// says what is wrong with it.
+				return diag.HostAnswer{State: diag.HostUnasked}
 			case err != nil:
 				return diag.HostAnswer{State: diag.HostSilent}
 			}

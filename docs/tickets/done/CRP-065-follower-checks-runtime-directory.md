@@ -3,7 +3,7 @@ id: CRP-065
 title: A follower checks the runtime directory before it dials
 milestone: M6 Release
 type: feature
-status: todo
+status: done
 priority: P1
 blocked_by: [CRP-062]
 blocks: []
@@ -42,12 +42,12 @@ On Linux without `XDG_RUNTIME_DIR`, on macOS without `TMPDIR`, and for the short
 
 ## Acceptance criteria
 
-- [ ] On Unix, a test makes a runtime directory with mode 0755 that holds a listening socket, and `Dial` returns the new error without connecting: the listener accepts nothing.
-- [ ] On Unix, a test shows `Dial` refusing a directory that is a symbolic link to a safe one.
-- [ ] `checkDir` remains the one place the rules are written, and its ownership case is exercised for `Dial` with an injected owner, as `TestCheckDir` does for `Prepare`.
-- [ ] A node test shows that a node whose lock cannot be tried and whose dial is refused sends nothing and logs the refusal once.
-- [ ] `status` exits with a failure and a fixed message when the directory is refused.
-- [ ] The threat model names these tests against the threat "another local user being the host".
+- [x] On Unix, a test makes a runtime directory with mode 0755 that holds a listening socket, and `Dial` returns the new error without connecting: the listener accepts nothing.
+- [x] On Unix, a test shows `Dial` refusing a directory that is a symbolic link to a safe one.
+- [x] `checkDir` remains the one place the rules are written, and its ownership case is exercised for `Dial` with an injected owner, as `TestCheckDir` does for `Prepare`.
+- [x] A node test shows that a node whose lock cannot be tried and whose dial is refused sends nothing and logs the refusal once.
+- [x] `status` exits with a failure and a fixed message when the directory is refused.
+- [x] The threat model names these tests against the threat "another local user being the host".
 
 ## Notes for the implementer
 

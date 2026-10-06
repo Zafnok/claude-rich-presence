@@ -35,7 +35,13 @@ func (s system) hostConfig(cfg config.Config, paths ctransport.Paths, getenv fun
 			return lock{held}, nil
 		},
 		Dial: func(ctx context.Context) (io.ReadWriteCloser, error) {
-			return ctransport.Dial(ctx, paths.Socket, dialTimeout)
+			conn, err := ctransport.Dial(ctx, paths.Socket, dialTimeout)
+			if errors.Is(err, ctransport.ErrUnsafeDir) {
+				// The node logs a class and not this error, which is
+				// dropped here.
+				return nil, host.ErrUnsafe
+			}
+			return conn, err
 		},
 		Discord: func() host.Discord {
 			return discordLink{session.New(session.Config{

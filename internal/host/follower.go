@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/Zafnok/claude-rich-presence/internal/control/protocol"
@@ -13,6 +14,14 @@ import (
 // mayAsk says whether an older host may be asked to stand down.
 func (n *Node) follow(ctx context.Context, mayAsk bool) outcome {
 	conn, err := n.dial(ctx)
+	if errors.Is(err, ErrUnsafe) {
+		if !n.dialWarned {
+			n.dialWarned = true
+			// The error is not logged: only its class is.
+			n.log.Error("the control socket is not in a safe place, so this process shows no presence", diag.ErrorClass("socket_unsafe"))
+		}
+		return missed
+	}
 	if err != nil {
 		n.log.Debug("no presence host could be reached")
 		return missed

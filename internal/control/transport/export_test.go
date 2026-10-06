@@ -4,6 +4,7 @@ package transport
 var (
 	CheckDir          = checkDir
 	ClassifyDialError = classifyDialError
+	DialAs            = dial
 )
 
 const (

@@ -126,6 +126,7 @@ type Node struct {
 	// haste is how many rounds are still to be tried in a hurry.
 	haste      int
 	lockWarned bool // a lock that cannot be tried has been reported
+	dialWarned bool // a dial that was refused as unsafe has been reported
 }
 
 // New checks the configuration and returns a node. The caller must call Run,

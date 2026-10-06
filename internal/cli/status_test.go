@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -82,6 +83,20 @@ func TestStatusAsksTheHost(t *testing.T) {
 	}
 	if code := s.finish(); code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
+	}
+}
+
+// The runtime directory is refused when it is not the user's alone. A file in
+// its place is what every operating system refuses.
+func TestStatusRefusesAnUnsafeRuntimeDirectory(t *testing.T) {
+	w := newWorld(t)
+	if err := os.WriteFile(w.runtime, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	code, stdout, stderr := w.run("status")
+	want := "rich-presence: status: the runtime directory is not safe to use, so no host was asked; run `rich-presence doctor`\n"
+	if code != 1 || stdout != "" || stderr != want {
+		t.Errorf("got code %d, stdout %q, stderr %q; want 1, nothing, and %q", code, stdout, stderr, want)
 	}
 }
 

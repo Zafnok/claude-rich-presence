@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/Zafnok/claude-rich-presence/internal/config"
@@ -38,6 +39,21 @@ func TestHostConfigPorts(t *testing.T) {
 		_, err := blocked.Acquire()
 		if err == nil || errors.Is(err, host.ErrLocked) {
 			t.Errorf("Acquire() error = %v, want a failure that is not ErrLocked", err)
+		}
+	})
+
+	t.Run("a socket in an unsafe directory is not dialled", func(t *testing.T) {
+		file := w.runtime + "-not-a-directory"
+		if err := os.WriteFile(file, nil, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = os.Remove(file) })
+		socket := filepath.Join(file, "s")
+		blocked := w.sys.hostConfig(config.Default(), ctransport.Paths{Dir: file, Socket: socket, Lock: "y"}, w.env.get, nil)
+		conn, err := blocked.Dial(context.Background())
+		// Only the node's own error comes back: the transport's is dropped.
+		if conn != nil || err != host.ErrUnsafe {
+			t.Errorf("Dial() = %v, %v, want nil and exactly ErrUnsafe", conn, err)
 		}
 	})
 
