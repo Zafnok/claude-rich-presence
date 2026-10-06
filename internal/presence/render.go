@@ -45,7 +45,11 @@ func Render(sessions []domain.Session, now time.Time, set Settings) (domain.Acti
 		LargeImage: assetLogo,
 		LargeText:  surface,
 		Type:       domain.ActivityPlaying,
+		Button:     button(s.Link),
 	}
+	// The button is the focus session's and is shown at every level: a link is
+	// its own opt-in, made per project (ADR-0012).
+	//
 	// Anything but standard or full is treated as minimal, where only "in
 	// use, and for how long" is shown. The status stays out of the small
 	// image as well as the text.

@@ -380,12 +380,31 @@ func (t *term) receive(source uint64, m protocol.Message) {
 		var session *domain.Session
 		if m.Session != nil {
 			s := m.Session.Domain()
+			s.Link = t.n.checked(s.Link)
 			session = &s
 		}
 		t.submit(request{op: opSync, source: source, session: session})
 	case protocol.Event:
-		t.submit(request{op: opEvent, source: source, event: m.Event.Domain()})
+		e := m.Event.Domain()
+		e.Link = t.n.checked(e.Link)
+		t.submit(request{op: opEvent, source: source, event: e})
 	}
+}
+
+// checked is a repository link as the host will publish it, or empty when
+// there is none or it is not valid. The host trusts no follower's link: it
+// validates each again, and warns of one it drops without repeating it.
+func (n *Node) checked(raw string) string {
+	if raw == "" {
+		return ""
+	}
+	if n.link != nil {
+		if link, ok := n.link(raw); ok {
+			return link
+		}
+	}
+	n.log.Warn("a repository link was not accepted and is not published", diag.ErrorClass("link_invalid"))
+	return ""
 }
 
 // submit hands a request to the goroutine that owns the registry, which

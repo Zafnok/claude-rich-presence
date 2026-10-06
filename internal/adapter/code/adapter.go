@@ -124,6 +124,9 @@ type session struct {
 	// it, which is empty unless the level is full.
 	privacy domain.Privacy
 	name    string
+	// link is the repository link resolved with them, or empty. It comes from
+	// the resolver and from nothing a tool call holds (ADR-0012).
+	link string
 }
 
 // New checks the options, builds an adapter and starts its pump. The caller
@@ -277,7 +280,7 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 	cwd := h.get(fieldCwd)
 	if a.resolve != nil && cwd != "" {
 		settings := a.resolveSettings(cwd)
-		next.privacy, next.name = settings.Privacy, settings.Name
+		next.privacy, next.name, next.link = settings.Privacy, settings.Name, settings.Link
 	}
 	raised := rank(next.privacy) > rank(a.session.privacy)
 	lowered := rank(next.privacy) < rank(a.session.privacy)
@@ -291,10 +294,13 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 		next.project = project
 		renamed = true
 	}
+	// A session's link is set when it opens and by nothing after, so a change
+	// of link reopens the session, as a lower level does.
+	reopened := lowered || next.link != a.session.link
 	moved := h.get(fieldSessionID) != next.id
-	if id := h.get(fieldSessionID); moved || lowered {
-		// A new id, as the first hook brings and as a clear does, or a lower
-		// level. The session moves to the new id, or reopens under the same
+	if id := h.get(fieldSessionID); moved || reopened {
+		// A new id, as the first hook brings and as a clear does, a lower
+		// level, or another link. The session moves to the new id, or reopens under the same
 		// one: the old session ends, and the new one opens with the same start
 		// time, so no second session appears and none is left behind. Ending
 		// is how the host forgets what was published at the higher level,
@@ -347,7 +353,7 @@ func (a *Adapter) receive(arguments, meta json.RawMessage) (accepted bool) {
 			e.Kind = ""
 		}
 	}
-	if e.Kind == "" && (moved || lowered) {
+	if e.Kind == "" && (moved || reopened) {
 		// The session reopened at its original start time. Without an event
 		// at the present, it would look idle since then.
 		e = a.event(next.id, domain.KindSessionRefreshed, now)
@@ -400,6 +406,7 @@ func (a *Adapter) openedEvent(s session) domain.Event {
 	e.Model = s.model
 	e.Project = s.project
 	e.Privacy = s.privacy
+	e.Link = s.link
 	return restrictEvent(s.privacy, e)
 }
 
@@ -426,6 +433,9 @@ func restrict(level domain.Privacy, batch []domain.Event) []domain.Event {
 //     activity and says nothing else.
 //   - standard: also status, tool kind and model family.
 //   - full: also the project name.
+//
+// The repository link of a session opened event is kept at every level: it
+// is published because the project's profile sets it, whatever the level.
 func restrictEvent(level domain.Privacy, e domain.Event) domain.Event {
 	switch level {
 	case domain.PrivacyFull:
@@ -438,5 +448,5 @@ func restrictEvent(level domain.Privacy, e domain.Event) domain.Event {
 	if kind != domain.KindSessionOpened && kind != domain.KindSessionEnded {
 		kind = domain.KindSessionRefreshed
 	}
-	return domain.Event{SessionID: e.SessionID, Surface: e.Surface, At: e.At, Kind: kind, Privacy: e.Privacy}
+	return domain.Event{SessionID: e.SessionID, Surface: e.Surface, At: e.At, Kind: kind, Privacy: e.Privacy, Link: e.Link}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -45,6 +46,23 @@ func TestSetActivityMatchesFixture(t *testing.T) {
 	}
 	if nonce != fixtureNonce {
 		t.Errorf("returned nonce %q, want %q", nonce, fixtureNonce)
+	}
+}
+
+func TestSetActivityWithAButtonMatchesFixture(t *testing.T) {
+	a := &domain.Activity{
+		Details:    "Competitive | In a Match",
+		State:      "In a Group",
+		Start:      time.Unix(1507665886, 0),
+		LargeImage: "numbani_map",
+		LargeText:  "Numbani",
+		SmallImage: "pharah_profile",
+		SmallText:  "Pharah",
+		Button:     domain.Button{Label: "View on GitHub", URL: "https://github.com/me/visions"},
+	}
+	f, _ := codec.SetActivity(9999, fixedNonce, a)
+	if got := wire(t, f); got != fixtureSetActivityButton {
+		t.Errorf("got  %q\nwant %q", got, fixtureSetActivityButton)
 	}
 }
 
@@ -90,6 +108,14 @@ func TestActivityFields(t *testing.T) {
 		{"type below the range", domain.Activity{Type: -1}, `{}`},
 		{"text is not escaped for HTML", domain.Activity{Details: `a <b> & "c"`}, `{"details":"a <b> & \"c\""}`},
 		{"text beyond ASCII", domain.Activity{State: "naïve ✓"}, `{"state":"naïve ✓"}`},
+		{"a button", domain.Activity{Button: domain.Button{Label: "View repository", URL: "https://example.org/a/b"}}, `{"buttons":[{"label":"View repository","url":"https://example.org/a/b"}]}`},
+		{"a button is not escaped for HTML", domain.Activity{Button: domain.Button{Label: "A & B", URL: "https://example.org/a/b?c&d"}}, `{"buttons":[{"label":"A & B","url":"https://example.org/a/b?c&d"}]}`},
+		{"a label of 32 characters", domain.Activity{Button: domain.Button{Label: strings.Repeat("é", 32), URL: "https://e.org"}}, `{"buttons":[{"label":"` + strings.Repeat("é", 32) + `","url":"https://e.org"}]}`},
+		{"a label of 33 characters", domain.Activity{Button: domain.Button{Label: strings.Repeat("a", 33), URL: "https://e.org"}}, `{}`},
+		{"a button without a label", domain.Activity{Button: domain.Button{URL: "https://e.org"}}, `{}`},
+		{"a button without a link", domain.Activity{Button: domain.Button{Label: "View"}}, `{}`},
+		{"a link of 512 bytes", domain.Activity{Button: domain.Button{Label: "View", URL: strings.Repeat("a", 512)}}, `{"buttons":[{"label":"View","url":"` + strings.Repeat("a", 512) + `"}]}`},
+		{"a link of 513 bytes", domain.Activity{Button: domain.Button{Label: "View", URL: strings.Repeat("a", 513)}}, `{}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

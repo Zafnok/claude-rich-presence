@@ -90,6 +90,7 @@ type Node struct {
 	discord  func() Discord
 	render   func([]domain.Session, time.Time, presence.Settings) (domain.Activity, bool)
 	settings presence.Settings
+	link     func(string) (string, bool)
 	clock    Clock
 	jitter   func() float64
 	counters *diag.Counters
@@ -155,6 +156,7 @@ func New(cfg Config) (*Node, error) {
 		discord:  cfg.Discord,
 		render:   cfg.Render,
 		settings: cfg.Settings,
+		link:     cfg.Link,
 		clock:    cfg.Clock,
 		jitter:   cfg.Jitter,
 		counters: cfg.Counters,

@@ -194,7 +194,7 @@ The phrase is meant to be stable. The adapter holds it for the life of the sessi
 
 Privacy is not one setting for everything. The configuration file can hold a profile per project directory, giving that project its own privacy level, a display name, and optionally a link to its repository. So a user can stay at `minimal` everywhere and opt one project in to a summary and a link, shown as a button on the activity.
 
-The link comes only from the user's configuration. It is never detected automatically, never taken from the model, and is validated strictly: `https`, an allowed host, no credentials, no query. The binary does not check that a repository is public, because that would need a network request. A plugin skill does the setup inside a Claude Code session, checks visibility with the user's own GitHub CLI, shows what will be published, and writes the profile once the user approves the edit. Proposed in [ADR-0012](adr/0012-project-profiles-and-repository-link.md). A profile can also hide a project entirely, and the whole presence can be paused for a while.
+The link comes only from the user's configuration. It is never detected automatically, never taken from the model, and is validated strictly: `https`, an allowed host, no credentials, no query. The binary does not check that a repository is public, because that would need a network request. A plugin skill does the setup inside a Claude Code session, checks visibility with the user's own GitHub CLI, shows what will be published, and writes the profile once the user approves the edit. Decided in [ADR-0012](adr/0012-project-profiles-and-repository-link.md). A profile can also hide a project entirely, and the whole presence can be paused for a while.
 
 ### Layout, personality and extras
 
@@ -246,7 +246,7 @@ The adapter tells the surfaces apart from the client name in the MCP `initialize
 
 ## Not in the first release
 
-- Project profiles, the activity summary, the repository link, and everything in M7: the summary-first layout, personalities, hide and pause, the status line bridge and moments. They are planned and ticketed, and ship when their tickets are done, without holding the first release.
+- Project profiles, the activity summary, and everything in M7: the summary-first layout, personalities, hide and pause, the status line bridge and moments. They are planned and ticketed, and ship when their tickets are done, without holding the first release.
 - Cowork, cloud sessions, remote and WSL setups.
 - A separate Discord application per surface.
 - A second button, external image URLs, user-defined text templates beyond the privacy levels.

@@ -3,10 +3,10 @@ id: CRP-048
 title: Repository link for opted-in projects
 milestone: M4 Claude Code
 type: feature
-status: todo
+status: done
 priority: P1
 blocked_by: [CRP-014, CRP-042, CRP-077]
-blocks: []
+blocks: [CRP-080]
 model: claude-sonnet-5-5
 effort: high
 size: M
@@ -53,18 +53,22 @@ Two things are not yet known and are settled here on a real Discord: how a butto
 
 ## Acceptance criteria
 
-- [ ] A session in a profiled project with a link produces an activity with one button carrying that link. A session elsewhere produces none.
-- [ ] With two sessions, the button shown is the focus session's, and it changes when focus changes.
-- [ ] A `presence_event` or `presence_summary` call cannot set or change the link. A test passes a link in every input field and asserts no button results.
-- [ ] A follower that sends an invalid link over the control channel has it dropped by the host, and the session is otherwise accepted.
-- [ ] An older host ignores the new field, and a newer host accepts a follower that does not send it.
-- [ ] The codec's output for an activity with a button matches a fixture, and an activity without one is unchanged from before.
-- [ ] An end-to-end scenario shows the button at the fake Discord for a profiled directory, and its absence otherwise.
-- [ ] The `share-project` skill refuses to write a profile for a repository the GitHub CLI reports as private, and never writes a link containing credentials. Checked by running it on a public repository, a private one, and one with a token in its remote URL, with the results recorded.
-- [ ] The same record states, for each Claude Code permission mode, whether the user was asked to approve the skill's edit to the configuration file. ADR-0012 assumes they are asked in the default modes; if not, the skill gains an explicit confirmation step of its own and the ADR is corrected.
-- [ ] `docs/research/crp-048-repository-link.md` records how the button appears to the user and to a second account. If it is not visible to others, the ticket switches to the text line's URL field as ADR-0012 allows, and records that.
-- [ ] ADR-0012 is marked Accepted with the display mechanism that was confirmed.
-- [ ] The user documentation explains that the link is per project, that the program cannot tell whether a repository is public, and how to remove a profile.
+- [x] A session in a profiled project with a link produces an activity with one button carrying that link. A session elsewhere produces none.
+- [x] With two sessions, the button shown is the focus session's, and it changes when focus changes.
+- [x] A `presence_event` or `presence_summary` call cannot set or change the link. A test passes a link in every input field and asserts no button results.
+- [x] A follower that sends an invalid link over the control channel has it dropped by the host, and the session is otherwise accepted.
+- [x] An older host ignores the new field, and a newer host accepts a follower that does not send it.
+- [x] The codec's output for an activity with a button matches a fixture, and an activity without one is unchanged from before.
+- [x] An end-to-end scenario shows the button at the fake Discord for a profiled directory, and its absence otherwise.
+- [x] The `share-project` skill refuses to write a profile for a repository the GitHub CLI reports as private, and never writes a link containing credentials. Checked by running it on a public repository, a private one, and one with a token in its remote URL, with the results recorded.
+- [x] The same record states, for each Claude Code permission mode, whether the user was asked to approve the skill's edit to the configuration file. ADR-0012 assumes they are asked in the default modes; if not, the skill gains an explicit confirmation step of its own and the ADR is corrected.
+- [x] `docs/research/crp-048-repository-link.md` records how the button appears to the user and to a second account. If it is not visible to others, the ticket switches to the text line's URL field as ADR-0012 allows, and records that.
+- [x] ADR-0012 is marked Accepted with the display mechanism that was confirmed.
+- [x] The user documentation explains that the link is per project, that the program cannot tell whether a repository is public, and how to remove a profile.
+
+## Outcome
+
+Done on 2026-10-05. The link is shown as a button. On a real Discord desktop client another account sees it and it opens the repository; the user does not see their own. The `share-project` skill was run on a public repository, a private one and one with a token in its remote, and behaved as designed. In auto mode Claude Code did not ask the user to approve the skill's edit, so the skill's own confirmation is the consent step and ADR-0012 was corrected. What was not observed, mobile above all, is listed in [the findings](../../research/crp-048-repository-link.md#not-tested).
 
 ## Notes for the implementer
 

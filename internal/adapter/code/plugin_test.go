@@ -267,9 +267,9 @@ func TestPluginIsJSONAndMarkdownOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The manifest, the hook file and the two skills.
-	if files != 4 {
-		t.Errorf("found %d files, want 4", files)
+	// The manifest, the hook file and the three skills.
+	if files != 5 {
+		t.Errorf("found %d files, want 5", files)
 	}
 	if !slices.Contains(strings.Split(readText(t, repoRoot+"/.gitignore"), "\n"), "plugin/.mcpb-cache/") {
 		t.Error(".gitignore does not ignore plugin/.mcpb-cache/")

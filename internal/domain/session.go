@@ -23,6 +23,10 @@ type Session struct {
 	// Project is the project name, or empty when the adapter did not send one.
 	Project string
 	Privacy Privacy
+	// Link is the repository link to publish for the session, or empty. It is
+	// set when the session opens and by nothing after. The domain carries it
+	// and does not judge it: the adapter and the host validate it (ADR-0012).
+	Link string
 	// Start is when the session began. It feeds the elapsed timer and travels
 	// with the session through a failover.
 	Start        time.Time
@@ -89,9 +93,19 @@ func newSession(e Event) Session {
 		Surface:      e.Surface,
 		Status:       StatusIdle,
 		Privacy:      PrivacyMinimal,
+		Link:         openingLink(e),
 		Start:        e.At,
 		LastActivity: e.At,
 	}
+}
+
+// openingLink is the link of the session an event creates: that of a session
+// opened event, and none for any other kind.
+func openingLink(e Event) string {
+	if e.Kind != KindSessionOpened {
+		return ""
+	}
+	return e.Link
 }
 
 // apply returns the session after a valid event of any kind but session ended.
@@ -160,7 +174,7 @@ func (s Session) Validate() error {
 	case s.Subagents < 0:
 		reason = "negative subagent count"
 	default:
-		reason = checkCommon(s.ID, s.Surface, s.Model, s.Project)
+		reason = checkCommon(s.ID, s.Surface, s.Model, s.Project, s.Link)
 	}
 	if reason != "" {
 		return fmt.Errorf("%w: %s", ErrInvalidSession, reason)

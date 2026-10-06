@@ -11,6 +11,9 @@ type Settings struct {
 	// adapter cleans what it is given again with domain.CleanName, so that
 	// no resolver can have it publish a name the host would refuse.
 	Name string
+	// Link is the repository link of the project's profile, validated by the
+	// configuration, or empty. It is published at every level.
+	Link string
 }
 
 // Resolver gives the settings for a working directory. The adapter calls it

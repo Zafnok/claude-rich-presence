@@ -24,6 +24,10 @@ type EventData struct {
 	Model   string `json:"model,omitempty"`
 	Project string `json:"project,omitempty"`
 	Privacy string `json:"privacy,omitempty"`
+	// Link is a repository link, on a session opened event. It is not judged
+	// here beyond the limit on a line: the host validates it and drops it
+	// alone when it is not valid (ADR-0012).
+	Link string `json:"link,omitempty"`
 }
 
 // SessionState is a session on the wire, as a sync carries it. See EventData
@@ -40,6 +44,8 @@ type SessionState struct {
 	Start        int64 `json:"start"`
 	LastActivity int64 `json:"last_activity"`
 	Subagents    int   `json:"subagents"`
+	// Link is a repository link. See EventData.
+	Link string `json:"link,omitempty"`
 }
 
 // EventFromDomain converts an event for the wire. Times are cut to the
@@ -54,6 +60,7 @@ func EventFromDomain(e domain.Event) EventData {
 		Model:     e.Model,
 		Project:   e.Project,
 		Privacy:   string(e.Privacy),
+		Link:      e.Link,
 	}
 }
 
@@ -69,6 +76,7 @@ func (e EventData) Domain() domain.Event {
 		Model:     e.Model,
 		Project:   e.Project,
 		Privacy:   domain.Privacy(e.Privacy),
+		Link:      e.Link,
 	}
 }
 
@@ -86,6 +94,7 @@ func SessionFromDomain(s domain.Session) SessionState {
 		Start:        toMillis(s.Start),
 		LastActivity: toMillis(s.LastActivity),
 		Subagents:    s.Subagents,
+		Link:         s.Link,
 	}
 }
 
@@ -103,6 +112,7 @@ func (s SessionState) Domain() domain.Session {
 		Start:        fromMillis(s.Start),
 		LastActivity: fromMillis(s.LastActivity),
 		Subagents:    s.Subagents,
+		Link:         s.Link,
 	}
 }
 
