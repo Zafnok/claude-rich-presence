@@ -54,13 +54,14 @@ func TestClaudeDesktop(t *testing.T) {
 	}
 
 	// A Claude Code session at work takes the focus, and the app is counted.
+	// The timer stays the app's, which opened first, a second or more before.
 	eventually(t, "the next second", func() bool { return time.Now().Unix() > alone.Start })
 	coding := s.start("coding")
 	coding.awaitStatus("Role: follower", "Sessions: 2")
 	coding.hook("UserPromptSubmit")
 	both := awaitShown(t, srv, "the Code session and the count", lines(surfaceLine, "Thinking · 2 sessions"))
-	if both.Start <= alone.Start {
-		t.Errorf("the elapsed timer starts at %d, want the Code session's own start, after the app's %d", both.Start, alone.Start)
+	if both.Start != alone.Start {
+		t.Errorf("the elapsed timer starts at %d, want the app's %d, the earliest start of the two", both.Start, alone.Start)
 	}
 	second.awaitStatus("Role: passive", "Sessions: 2")
 	coding.finish()

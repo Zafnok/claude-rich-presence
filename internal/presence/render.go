@@ -31,8 +31,10 @@ type Settings struct {
 // sessions, in any order, with the same time and settings give the same
 // result.
 //
-// The elapsed timer is the focus session's own start time. It jumps when
-// focus moves to another session and at no other time.
+// The elapsed timer is the earliest start time among the sessions, whichever
+// of them is the focus session: how long Claude has been open in any form.
+// It does not move when focus does. It moves once, forward, when the session
+// that started first closes, to the next earliest start.
 func Render(sessions []domain.Session, now time.Time, set Settings) (domain.Activity, bool) {
 	if len(sessions) == 0 || allIdleSince(sessions, now, set.IdleClear) {
 		return domain.Activity{}, false
@@ -41,7 +43,7 @@ func Render(sessions []domain.Session, now time.Time, set Settings) (domain.Acti
 	surface := surfacePhrases[s.Surface]
 	a := domain.Activity{
 		Details:    line(surface),
-		Start:      s.Start,
+		Start:      earliestStart(sessions),
 		LargeImage: assetLogo,
 		LargeText:  surface,
 		Type:       domain.ActivityPlaying,
@@ -69,6 +71,18 @@ func Render(sessions []domain.Session, now time.Time, set Settings) (domain.Acti
 		a.Details = line(surface, s.Project)
 	}
 	return a, true
+}
+
+// earliestStart returns the earliest start time among the sessions, of which
+// there is at least one.
+func earliestStart(sessions []domain.Session) time.Time {
+	start := sessions[0].Start
+	for _, s := range sessions[1:] {
+		if s.Start.Before(start) {
+			start = s.Start
+		}
+	}
+	return start
 }
 
 // allIdleSince reports whether every session is idle and was last active

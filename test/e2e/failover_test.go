@@ -9,7 +9,8 @@ import (
 )
 
 // E3: two sessions, one working and one idle. The working one is the
-// follower, so that what is shown cannot be the host showing itself.
+// follower, so that what is shown cannot be the host showing itself. The
+// elapsed timer is the idle one's, which started first.
 func TestTwoSessions(t *testing.T) {
 	t.Parallel()
 	s := newScene(t)
@@ -22,17 +23,14 @@ func TestTwoSessions(t *testing.T) {
 	// The elapsed timer counts in seconds. The second session starts in a
 	// later second than the first, so that the two starts can be told apart.
 	eventually(t, "the next second", func() bool { return time.Now().Unix() > alone.Start })
-	before := time.Now().Unix()
 	working := s.start("working")
-	after := time.Now().Unix()
 	working.awaitStatus("Role: follower", "Sessions: 2")
 
 	working.hook("UserPromptSubmit")
 	working.hook("PreToolUse", "tool_name", "Read")
 	both := awaitShown(t, srv, "the working session and the count", lines(surfaceLine, "Reading files · 2 sessions"))
-	if both.Start < before || both.Start > after {
-		t.Errorf("the elapsed timer starts at %d, want the working session's start, between %d and %d; the idle one started at %d",
-			both.Start, before, after, alone.Start)
+	if both.Start != alone.Start {
+		t.Errorf("the elapsed timer starts at %d, want the idle session's %d, the earliest start of the two", both.Start, alone.Start)
 	}
 
 	working.finish()
@@ -40,7 +38,9 @@ func TestTwoSessions(t *testing.T) {
 }
 
 // E4 and E5: the host goes away while a follower lives, cleanly and by being
-// killed.
+// killed. The host's session started first, so the elapsed timer is its start
+// until it goes. Then the timer moves forward once, to the follower's own
+// start, which the follower carried with it: not to the moment it took over.
 func TestHostLeaves(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -64,23 +64,29 @@ func TestHostLeaves(t *testing.T) {
 			first := awaitShown(t, srv, "the first session", lines(surfaceLine, ""))
 			eventually(t, "the next second", func() bool { return time.Now().Unix() > first.Start })
 
+			opening := time.Now().Unix()
 			follower := s.start("second")
+			opened := time.Now().Unix()
 			follower.awaitStatus("Role: follower", "Sessions: 2")
 			follower.hook("UserPromptSubmit")
 			follower.hook("PreToolUse", "tool_name", "Bash")
 			before := awaitShown(t, srv, "the follower's work", lines(surfaceLine, "Running commands · 2 sessions"))
-			if before.Conn != 1 || before.Start == first.Start {
-				t.Fatalf("before the host left, Discord showed %v; want the follower's own start, not the host's %d, on the first connection", before, first.Start)
+			if before.Conn != 1 || before.Start != first.Start {
+				t.Fatalf("before the host left, Discord showed %v; want the host's start %d, the earliest of the two, on the first connection", before, first.Start)
 			}
 
+			// The takeover happens in a later second than the follower's
+			// start, so that the two can be told apart.
+			eventually(t, "the second after the follower started", func() bool { return time.Now().Unix() > opened })
 			tt.leave(host)
 
 			follower.awaitStatus("Role: host", "Discord: connected", "Sessions: 1")
 			restored := awaitShown(t, srv, "the follower's work, from the follower", func(v shown) bool {
 				return v.Conn == 2 && lines(surfaceLine, "Running commands")(v)
 			})
-			if restored.Start != before.Start {
-				t.Errorf("the elapsed timer restarted: it began at %d and now begins at %d", before.Start, restored.Start)
+			if restored.Start < opening || restored.Start > opened {
+				t.Errorf("the elapsed timer begins at %d, want the follower's own start, between %d and %d; a later time means it restarted at the takeover",
+					restored.Start, opening, opened)
 			}
 			if got := lastOn(t, srv, 1); got.Clear != tt.cleared {
 				t.Errorf("the last thing on the old host's connection was %v; want a clear: %t", got, tt.cleared)

@@ -37,7 +37,7 @@ When a summary exists, **the text lines belong to it**. Everything else has a fi
 | Small image hover text | Status in words, then the secondary facts the user has enabled | The same |
 | Large image | The project's or personality's artwork | Logo |
 | Large image hover text | Project name, then further facts the user has enabled | The same, where the level allows |
-| Timer | Elapsed time of the focus session | The same |
+| Timer | Elapsed time since the earliest start among the open sessions | The same |
 | Button | The repository link, for an opted-in project ([ADR-0012](0012-project-profiles-and-repository-link.md)) | The same |
 | Member-list line | Set to show line 1, so the summary is what people see next to the user's name | Default |
 
