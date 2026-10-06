@@ -110,7 +110,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-063](M6-release/CRP-063-code-signing.md) | Code signing and notarisation | 002, 052, 060 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-064](M6-release/CRP-064-directory-submission.md) | Directory submission | 003, 060, 061 | Owner, with Haiku 4.5 | n/a | S |
 | [CRP-065](done/CRP-065-follower-checks-runtime-directory.md) | A follower checks the runtime directory before it dials | 062 | Opus 5.5 | high | S |
-| [CRP-066](M6-release/CRP-066-limit-connections-and-sessions.md) | Limit the connections and sessions a host holds | 062 | Sonnet 5.5 | high | S |
+| [CRP-066](done/CRP-066-limit-connections-and-sessions.md) | Limit the connections and sessions a host holds | 062 | Sonnet 5.5 | high | S |
 | [CRP-067](done/CRP-067-clean-published-text.md) | Clean every piece of text before it is published | 062 | Sonnet 5.5 | medium | S |
 | [CRP-068](M6-release/CRP-068-check-discord-socket-owner.md) | Check who owns the Discord socket on Unix | 062 | Sonnet 5.5 | high | S |
 | [CRP-070](M7-personalisation/CRP-070-spike-discord-display.md) | Spike: how Discord displays an activity | none | Sonnet 5.5 | medium | S |

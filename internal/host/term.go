@@ -16,6 +16,21 @@ import (
 // local is the source of the node's own session. Connections count from 1.
 const local = 0
 
+// maxConns is how many connections a host serves at once. One over that is
+// closed as it is accepted.
+//
+// A follower holds one connection for as long as its session lasts, and a
+// status command holds one for a moment, so a machine has about as many
+// connections as it has sessions of Claude open: a handful, and seldom more
+// than ten. 256 is far above anything real, so no user meets it, and it is
+// small enough to bound what a confused peer costs the host. A connection
+// costs a goroutine, an open file and a buffer of at most one line, 64 KiB,
+// which is 16 MiB for all of them at the worst.
+//
+// It bounds the sessions as well. A connection holds one session (see
+// registry), so a host holds at most maxConns and its own.
+const maxConns = 256
+
 // term is one term as host: from taking the lock to giving it up.
 type term struct {
 	n       *Node
@@ -291,7 +306,15 @@ func (t *term) accept(l Listener) (served bool) {
 			return served
 		}
 		served = true
-		id, l := t.admit(conn)
+		id, l, ok := t.admit(conn)
+		if !ok {
+			// Nothing is read from it and nothing is said to it. To a
+			// follower this is a host that went away, and it tries again
+			// later.
+			t.n.counters.ConnectionRejected()
+			_ = conn.Close()
+			continue
+		}
 		t.handlers.Add(1)
 		go func() {
 			defer t.handlers.Done()
@@ -322,13 +345,18 @@ func closeWith(ctx context.Context, c io.Closer) (closeNow func()) {
 }
 
 // admit records a connection, so that hangUp can close it, and numbers it.
-func (t *term) admit(conn io.ReadWriteCloser) (uint64, *link) {
+// It reports false, and records nothing, when the host already serves as
+// many connections as it will.
+func (t *term) admit(conn io.ReadWriteCloser) (uint64, *link, bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	if len(t.conns) >= maxConns {
+		return 0, nil, false
+	}
 	t.lastConn++
 	l := &link{conn: conn}
 	t.conns[t.lastConn] = l
-	return t.lastConn, l
+	return t.lastConn, l, true
 }
 
 // dismiss closes a connection and forgets it.
@@ -367,7 +395,7 @@ func (t *term) converse(id uint64, l *link) {
 		t.mu.Lock()
 		l.welcomed = true
 		t.mu.Unlock()
-		// The sessions of a connection end with it.
+		// The session of a connection ends with it.
 		defer t.submit(request{op: opClosed, source: id})
 	}
 	for {

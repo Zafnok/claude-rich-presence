@@ -10,6 +10,7 @@ const (
 	HasteWait      = hasteWait
 	HasteTries     = hasteTries
 	QueueSize      = queueSize
+	MaxConns       = maxConns
 )
 
 var (
