@@ -46,7 +46,7 @@ The plugin is JSON and Markdown only. It points at the MCPB bundle and declares 
 
 ## Acceptance criteria
 
-- [ ] `claude plugin validate --strict` passes for the plugin and the marketplace, in CI.
+- [x] `claude plugin validate --strict` passes for the plugin and the marketplace, in CI.
 - [x] The plugin directory contains no executable, no script, and no top-level `bin/`.
 - [ ] Installed from a local marketplace with a locally built bundle, a real Claude Code session shows presence in a real Discord client, on Windows. What was run and what Discord showed is recorded in the pull request.
 - [x] The hook file and the adapter's allowlist are proven identical by a test.
@@ -60,9 +60,8 @@ The plugin is JSON and Markdown only. It points at the MCPB bundle and declares 
 
 ## State on 2026-10-05
 
-Built and checked with Claude Code 2.1.288 on Windows. The boxes ticked above are held by tests in `internal/adapter/code/plugin_test.go`. The others wait for:
+Built and checked with Claude Code 2.1.288 on Windows. The boxes ticked above are held by tests in `internal/adapter/code/plugin_test.go` and by the `Plugin` job in CI. The others wait for:
 
-- the first CI run of the new `Plugin` job, for the validation criterion;
 - the owner, for the four criteria that need an interactive session and a real Discord client. The steps are in the pull request. They also need a Discord application id, which [CRP-003](../M0-foundation/CRP-003-naming-branding-discord-app.md) has not supplied yet: the built-in one is a placeholder that Discord rejects, so the check must set the plugin's application id option to one the owner controls.
 
 Found here, and not as the ticket assumed:
