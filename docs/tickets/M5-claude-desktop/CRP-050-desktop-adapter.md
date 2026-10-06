@@ -3,7 +3,7 @@ id: CRP-050
 title: Claude Desktop adapter
 milestone: M5 Claude Desktop
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-002, CRP-033, CRP-043]
 blocks: [CRP-052, CRP-053]
