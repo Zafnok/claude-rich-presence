@@ -3,7 +3,7 @@ id: CRP-015
 title: Decide what the elapsed timer shows when several sessions are open
 milestone: M1 Core
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-011, CRP-042]
 blocks: []
