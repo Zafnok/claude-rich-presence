@@ -289,6 +289,7 @@ func TestDecode(t *testing.T) {
 		{"unknown fields", `{"type":"hello","protocol":1,"version":"1","colour":"blue","nested":{"a":[1]}}`, protocol.Hello{Protocol: 1, Version: "1"}},
 		{"unknown fields on a message with none", `{"type":"status","verbose":true}`, protocol.Status{}},
 		{"unknown fields in an event", `{"type":"event","event":{"session_id":"s","surface":"code","at":1,"kind":"idle","prompt":"x"}}`, protocol.Event{Event: validEvent()}},
+		{"unknown fields in a sync", `{"type":"sync","session":{"id":"s","surface":"code","status":"idle","privacy":"minimal","start":1,"last_activity":1,"from_a_later_version":"https://example.org/a/b"}}`, protocol.Sync{Session: ptr(validSession())}},
 		{"unknown reason", `{"type":"refuse","reason":"moon_phase"}`, protocol.Refuse{Reason: protocol.ReasonOther}},
 		{"unknown discord state", `{"type":"status_result","discord":"napping","version":"1"}`, protocol.StatusResult{Discord: protocol.DiscordUnknown, Version: "1"}},
 		{"sessions and uptime default to zero", `{"type":"status_result","discord":"connected","version":"1"}`, protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "1"}},
@@ -477,6 +478,7 @@ func TestDomainEventRoundTrips(t *testing.T) {
 		e := domain.Event{
 			SessionID: sessionID, Surface: domain.SurfaceDesktop, At: at, Kind: kind,
 			Tool: domain.ToolSearching, Model: "sonnet", Project: "example-project", Privacy: domain.PrivacyFull,
+			Link: "https://github.com/me/example-project",
 		}
 		got, err := protocol.Decode(encode(t, protocol.Event{Event: protocol.EventFromDomain(e)}))
 		if err != nil {
@@ -499,6 +501,7 @@ func TestDomainSessionRoundTrips(t *testing.T) {
 			ID: sessionID, Surface: domain.SurfaceCode, Status: status, Model: "opus",
 			Project: "example-project", Privacy: domain.PrivacyStandard,
 			Start: start, LastActivity: start.Add(90 * time.Second), Subagents: 3,
+			Link: "https://github.com/me/example-project",
 		}
 		if status == domain.StatusWorking {
 			s.Tool = domain.ToolEditing
@@ -513,6 +516,44 @@ func TestDomainSessionRoundTrips(t *testing.T) {
 		}
 		if err := back.Validate(); err != nil {
 			t.Errorf("%s: %v", status, err)
+		}
+	}
+}
+
+// TestTheLinkIsAdditive is the compatibility of the link field in both
+// directions. A message without a link is, byte for byte, what it was before
+// the field existed, so an older host reads it as before; and a host reads a
+// follower that sends none as having none. An older host ignores the field
+// as it ignores any it does not know, which TestDecode shows.
+func TestTheLinkIsAdditive(t *testing.T) {
+	without := string(encode(t, protocol.Sync{Session: ptr(validSession())})) + string(encode(t, protocol.Event{Event: validEvent()}))
+	if strings.Contains(without, "link") {
+		t.Errorf("messages without a link mention one: %s", without)
+	}
+
+	got, err := protocol.Decode([]byte(`{"type":"sync","session":{"id":"s","surface":"code","status":"idle","privacy":"minimal","start":1,"last_activity":1}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if link := got.(protocol.Sync).Session.Link; link != "" {
+		t.Errorf("a session sent without a link has %q", link)
+	}
+
+	// What the link holds is not judged here. An invalid one is the host's
+	// to drop, and must not cost the session by failing the line.
+	for _, link := range []string{"https://github.com/me/visions", "not a link", "https://user:token@github.com/me/visions", strings.Repeat("a", 2000)} {
+		for _, m := range []protocol.Message{
+			session(func(s *protocol.SessionState) { s.Link = link }),
+			event(func(e *protocol.EventData) { e.Link = link }),
+		} {
+			back, err := protocol.Decode(encode(t, m))
+			if err != nil {
+				t.Errorf("a %s with a link of %d bytes: %v", m.Type(), len(link), err)
+				continue
+			}
+			if !reflect.DeepEqual(back, m) {
+				t.Errorf("round trip\n got %#v\nwant %#v", back, m)
+			}
 		}
 	}
 }
@@ -565,16 +606,17 @@ func fields(t reflect.Type, prefix string) []string {
 // TestMessagesCarryOnlyTheListedFields is the whole of what can cross the
 // channel. There is no field for prompt text, tool input, a file path or
 // anything else free-form: the only strings are ids, closed vocabularies, the
-// model label, the project name and the binary version, each of which is
-// bounded. Adding a field fails this test until it is listed here and in
+// model label, the project name, the repository link and the binary version.
+// Each is bounded, the link by the limit on a line and then by the host,
+// which validates it. Adding a field fails this test until it is listed here and in
 // docs/protocol/control.md.
 func TestMessagesCarryOnlyTheListedFields(t *testing.T) {
 	eventFields := []string{
-		"event.at int64", "event.kind string", "event.model string", "event.privacy string",
+		"event.at int64", "event.kind string", "event.link string", "event.model string", "event.privacy string",
 		"event.project string", "event.session_id string", "event.surface string", "event.tool string",
 	}
 	sessionFields := []string{
-		"session.id string", "session.last_activity int64", "session.model string",
+		"session.id string", "session.last_activity int64", "session.link string", "session.model string",
 		"session.privacy string", "session.project string", "session.start int64",
 		"session.status string", "session.subagents int", "session.surface string", "session.tool string",
 	}

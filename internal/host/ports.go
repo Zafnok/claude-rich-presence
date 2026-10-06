@@ -60,8 +60,8 @@ type Discord interface {
 	State() protocol.DiscordState
 }
 
-// Config is what a Node is built from. Every field but Settings and Logger is
-// required.
+// Config is what a Node is built from. Every field but Settings, Link and
+// Logger is required.
 type Config struct {
 	// Version is this binary's version. It is what decides, between two
 	// nodes, which should be host.
@@ -77,7 +77,13 @@ type Config struct {
 	// Settings.
 	Render   func(sessions []domain.Session, now time.Time, set presence.Settings) (domain.Activity, bool)
 	Settings presence.Settings
-	Clock    Clock
+	// Link validates a repository link a session arrives with, and returns it
+	// in its published form. It is config.ValidateLink with the user's hosts,
+	// the function the adapter's link was validated with (ADR-0012). A link
+	// it refuses is dropped and the session is kept. When it is nil every
+	// link is dropped.
+	Link  func(raw string) (string, bool)
+	Clock Clock
 	// Jitter returns a number from 0 to 1, which places each wait between
 	// half of the backoff delay and all of it. It is called from more than
 	// one goroutine.

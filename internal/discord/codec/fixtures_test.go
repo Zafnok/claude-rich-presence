@@ -22,6 +22,17 @@ const (
 		`"small_image":"pharah_profile","small_text":"Pharah"}}},` +
 		`"nonce":"647d814a-4cf8-4fbb-948f-898abd24f55b"}`
 
+	// Opcode 1, length 386. The same activity with one button, in the shape of
+	// the buttons field of Discord's activity object, checked on 2026-10-05.
+	fixtureSetActivityButton = "\x01\x00\x00\x00\x82\x01\x00\x00" +
+		`{"cmd":"SET_ACTIVITY","args":{"pid":9999,"activity":{` +
+		`"state":"In a Group","details":"Competitive | In a Match",` +
+		`"timestamps":{"start":1507665886},` +
+		`"assets":{"large_image":"numbani_map","large_text":"Numbani",` +
+		`"small_image":"pharah_profile","small_text":"Pharah"},` +
+		`"buttons":[{"label":"View on GitHub","url":"https://github.com/me/visions"}]}},` +
+		`"nonce":"647d814a-4cf8-4fbb-948f-898abd24f55b"}`
+
 	// Opcode 1, length 105.
 	fixtureClearActivity = "\x01\x00\x00\x00\x69\x00\x00\x00" +
 		`{"cmd":"SET_ACTIVITY","args":{"pid":9999,"activity":null},` +

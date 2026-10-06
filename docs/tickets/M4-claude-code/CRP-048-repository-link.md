@@ -66,6 +66,16 @@ Two things are not yet known and are settled here on a real Discord: how a butto
 - [ ] ADR-0012 is marked Accepted with the display mechanism that was confirmed.
 - [ ] The user documentation explains that the link is per project, that the program cannot tell whether a repository is public, and how to remove a profile.
 
+## Remaining
+
+The code, the skill and the documentation are in place and every automated criterion is met. The ticket stays `in-progress` for the criteria that need a real Discord and an interactive Claude Code session, which have not been run:
+
+- how the button appears to the user and to a second account, on desktop and on mobile;
+- the `share-project` skill on a public repository, a private one and one with a token in its remote, and whether Claude Code asks to approve the edit in each permission mode;
+- ADR-0012 marked Accepted, once the display is confirmed.
+
+The steps and the tables to fill in are in [the findings](../../research/crp-048-repository-link.md#checks-for-the-owner).
+
 ## Notes for the implementer
 
 - CRP-070 measures how buttons display for each activity type and to whom. If it has run, use its findings for the validation step here. One other project reports that buttons show only for one activity type.

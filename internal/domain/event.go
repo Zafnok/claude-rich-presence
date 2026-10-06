@@ -11,6 +11,8 @@ const (
 	MaxIDLen      = 128
 	MaxModelLen   = 64
 	MaxProjectLen = 128
+	// MaxLinkLen is Discord's limit on the URL of a button.
+	MaxLinkLen = 512
 )
 
 // ErrInvalidEvent is wrapped by every error Event.Validate returns.
@@ -62,6 +64,7 @@ func (k Kind) Valid() bool {
 //   - Model: required on model changed; optional on session opened and
 //     session refreshed.
 //   - Project and Privacy: optional on session opened and session refreshed.
+//   - Link: optional on session opened, and read from no other kind.
 //
 // A field set on a kind that does not carry it is validated and then ignored.
 type Event struct {
@@ -74,6 +77,10 @@ type Event struct {
 	Model   string
 	Project string
 	Privacy Privacy
+	// Link is the repository link of the session's project profile, or empty.
+	// The adapter takes it from the user's configuration and from nowhere
+	// else (ADR-0012).
+	Link string
 }
 
 // Validate reports whether the event may be applied. The error names the
@@ -94,7 +101,7 @@ func (e Event) Validate() error {
 	case e.Kind == KindModelChanged && e.Model == "":
 		reason = "model changed without a model"
 	default:
-		reason = checkCommon(e.SessionID, e.Surface, e.Model, e.Project)
+		reason = checkCommon(e.SessionID, e.Surface, e.Model, e.Project, e.Link)
 	}
 	if reason != "" {
 		return fmt.Errorf("%w: %s", ErrInvalidEvent, reason)
@@ -104,7 +111,7 @@ func (e Event) Validate() error {
 
 // checkCommon checks the fields events and sessions share. It returns what is
 // wrong, or the empty string.
-func checkCommon(id string, surface Surface, model, project string) string {
+func checkCommon(id string, surface Surface, model, project, link string) string {
 	switch {
 	case id == "":
 		return "session id is empty"
@@ -116,6 +123,8 @@ func checkCommon(id string, surface Surface, model, project string) string {
 		return "model is too long"
 	case len(project) > MaxProjectLen:
 		return "project is too long"
+	case len(link) > MaxLinkLen:
+		return "link is too long"
 	}
 	return ""
 }

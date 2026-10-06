@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed.** The profile mechanism needs nothing verified. How Discord displays a link is confirmed in [CRP-048](../../tickets/M4-claude-code/CRP-048-repository-link.md). Extends [ADR-0008](0008-privacy-and-safety-by-default.md) and replaces the directory allowlist first sketched in [ADR-0011](0011-model-authored-activity-summary.md).
+**Proposed.** The profile mechanism needs nothing verified. The link is built as a button in [CRP-048](../../tickets/M4-claude-code/CRP-048-repository-link.md); how Discord displays it to the user and to other people has not yet been observed on a real Discord, and this ADR stays Proposed until it has. See [the findings](../../research/crp-048-repository-link.md). Extends [ADR-0008](0008-privacy-and-safety-by-default.md) and replaces the directory allowlist first sketched in [ADR-0011](0011-model-authored-activity-summary.md).
 
 ## Context
 
@@ -18,7 +18,7 @@ Facts:
 | A git remote URL can embed credentials, as in `https://user:token@host/...` | Known git behaviour |
 | Whether a repository is public can only be learned by asking its host over the network | Design |
 | Our binary makes no network requests | [ADR-0008](0008-privacy-and-safety-by-default.md) |
-| Claude Code asks the user before editing a file outside the working directory, in its default permission modes | Believed from normal use. Not re-read in the documentation for this ADR; confirmed in CRP-048 |
+| Claude Code asks the user before editing a file outside the working directory in its manual and accept-edits modes. In auto mode, which is the starting mode of interactive sessions from Claude Code 2.1.283, a classifier reviews such an edit and the user is not asked. In the mode that bypasses permissions nothing asks | Docs, read 2026-10-05 for CRP-048. Not yet observed |
 | A session in the Claude Desktop Code tab may run in a worktree under the project's own directory | Observed |
 
 ## Decision
@@ -55,10 +55,10 @@ This replaces the separate allowlist in ADR-0011: enabling the summary for chose
    - within Discord's length limit.
    
    A link that fails validation is dropped with a warning that does not echo it.
-4. **Shown as a button** on the activity, labelled for the host, such as "View on GitHub". Shown for the focus session only. If CRP-048 finds that buttons are not visible where it matters, the text line's URL field is the alternative.
+4. **Shown as a button** on the activity, labelled for the host, such as "View on GitHub". Shown for the focus session only, and at every privacy level: the link is its own per-project opt-in, and a user who sets one at `minimal` has asked for it to be shown. If CRP-048 finds that buttons are not visible where it matters, the text line's URL field is the alternative.
 5. **The binary does not check that the repository is public.** That would need a network request. Instead:
    - opting in is an explicit, per-project act;
-   - the plugin provides a skill, `share-project`, that performs the setup inside a Claude Code session: it reads the remote, checks visibility with the user's own GitHub CLI when available, shows exactly what would be published, and on confirmation writes the profile by editing the configuration file, which goes through Claude Code's normal permission prompt;
+   - the plugin provides a skill, `share-project`, that performs the setup inside a Claude Code session: it reads the remote, checks visibility with the user's own GitHub CLI when available, shows exactly what would be published, asks the user to confirm that summary, and only then writes the profile by editing the configuration file. The skill's own question is the consent step, because Claude Code's permission prompt for the edit is not shown in every permission mode. Where the prompt is shown it is a second check, and the skill does nothing to avoid it;
    - the documentation says plainly that a link to a private repository reveals its owner and name and leads nowhere.
 6. There is **no tool that lets the model change configuration**. A profile is written by the user, or by an edit the user approves.
 
@@ -81,7 +81,7 @@ Chat has no project. Profiles and links apply to Claude Code sessions only.
 - The binary stays offline. The cost is that it cannot notice a repository being made private later; the link then goes dead until the profile is removed.
 - Matching is by directory, so a clone or worktree of the same repository elsewhere is not covered unless it has its own profile. Worktrees under the project directory are covered.
 - The control protocol gains a validated link field and a display-name field. Both are additive.
-- In permission modes that skip prompts, text in a repository could talk Claude into editing the configuration file to opt that project in. The result would be a link and a phrase about that project being published. This is recorded as a risk; it is bounded by validation and by the fact that the user chose a mode without prompts.
+- In permission modes that do not ask the user about an edit outside the working directory, which now include the starting mode of interactive sessions, text in a repository could talk Claude into editing the configuration file to opt that project in. The result would be a link and a phrase about that project being published. This is recorded as a risk; it is bounded by validation, by the skill's rule that only the user's own request starts it, and in auto mode by the classifier that reviews the edit.
 
 ## Alternatives considered
 

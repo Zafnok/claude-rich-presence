@@ -123,6 +123,9 @@ func show(e domain.Event) string {
 	if e.Privacy != "" {
 		s += " privacy=" + string(e.Privacy)
 	}
+	if e.Link != "" {
+		s += " link=" + e.Link
+	}
 	return s
 }
 

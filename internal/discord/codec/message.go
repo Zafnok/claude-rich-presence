@@ -50,6 +50,20 @@ type activity struct {
 	Timestamps *timestamps `json:"timestamps,omitempty"`
 	Assets     *assets     `json:"assets,omitempty"`
 	Type       int         `json:"type,omitempty"`
+	Buttons    []button    `json:"buttons,omitempty"`
+}
+
+// Discord's limits on a button: at most two, each with a label of 1 to 32
+// characters and a URL of 1 to 512. Checked against the documentation on
+// 2026-10-05.
+const (
+	maxButtonLabel = 32
+	maxButtonURL   = 512
+)
+
+type button struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
 }
 
 type timestamps struct {
@@ -105,7 +119,19 @@ func wireActivity(a *domain.Activity) *activity {
 	if a.Type >= 0 && int(a.Type) < len(activityTypes) {
 		w.Type = activityTypes[a.Type]
 	}
+	w.Buttons = wireButtons(a.Button)
 	return w
+}
+
+// wireButtons is the button as Discord takes it, in a list, or nothing when
+// it is outside Discord's limits: Discord rejects the whole activity over one
+// bad button. One button is all this project sends, of the two allowed.
+func wireButtons(b domain.Button) []button {
+	label := len([]rune(b.Label))
+	if label < 1 || label > maxButtonLabel || b.URL == "" || len(b.URL) > maxButtonURL {
+		return nil
+	}
+	return []button{button(b)}
 }
 
 // Kind says what a decoded frame is.

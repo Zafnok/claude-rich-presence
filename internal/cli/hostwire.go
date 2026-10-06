@@ -55,6 +55,7 @@ func (s system) hostConfig(cfg config.Config, paths ctransport.Paths, getenv fun
 		},
 		Render:   presence.Render,
 		Settings: presence.Settings{IdleClear: cfg.IdleClearAfter},
+		Link:     func(raw string) (string, bool) { return config.ValidateLink(raw, cfg.LinkHosts) },
 		Clock:    s.clock,
 		Jitter:   jitter,
 		Counters: &diag.Counters{},

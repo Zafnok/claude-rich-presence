@@ -10,6 +10,9 @@ type Settings struct {
 	// level. It may be empty. It must be at most domain.MaxProjectLen bytes,
 	// and the configuration cleans names to that.
 	Name string
+	// Link is the repository link of the project's profile, validated by the
+	// configuration, or empty. It is published at every level.
+	Link string
 }
 
 // Resolver gives the settings for a working directory. The adapter calls it

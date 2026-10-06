@@ -190,7 +190,7 @@ func (m *mcpSession) codeAdapter() (adapter, error) {
 		Privacy: m.cfg.Privacy,
 		Resolve: func(cwd string) code.Settings {
 			s := m.cfg.Effective(goos, cwd)
-			return code.Settings{Privacy: s.Privacy, Name: s.Name}
+			return code.Settings{Privacy: s.Privacy, Name: s.Name, Link: s.Link}
 		},
 		ProvisionalID: m.sys.sessionID(),
 		Publisher:     line.publisher,

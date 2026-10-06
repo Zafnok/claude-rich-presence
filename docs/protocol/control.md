@@ -108,6 +108,7 @@ The session object:
 | `model` | string, at most 64 bytes | No | A short model family label |
 | `project` | string, at most 128 bytes | No | The project name, as the adapter's privacy level allows |
 | `privacy` | [word](#words) | Yes | `minimal`, `standard` or `full` |
+| `link` | string | No | The repository link of the session's project profile. See [The link](#the-link) |
 | `start` | [time](#times) | Yes | When the session began. It feeds the elapsed timer and survives a change of host |
 | `last_activity` | [time](#times) | Yes | When the session last did something |
 | `subagents` | integer, 0 or more | No | How many subagents are running. Absent means 0 |
@@ -142,6 +143,7 @@ The event object:
 | `model` | string, at most 64 bytes | No | A short model family label. The domain requires it on `model_changed` |
 | `project` | string, at most 128 bytes | No | The project name |
 | `privacy` | [word](#words) | No | `minimal`, `standard` or `full` |
+| `link` | string | No | The repository link of the session's project profile. Read on `session_opened` only. See [The link](#the-link) |
 
 Kinds: `session_opened`, `session_refreshed`, `turn_started`, `tool_started`, `tool_finished`, `attention_needed`, `idle`, `turn_finished`, `compaction_started`, `compaction_finished`, `model_changed`, `subagent_started`, `subagent_stopped`, `session_ended`.
 
@@ -220,9 +222,17 @@ An integer: milliseconds since 1970-01-01 00:00 UTC. It must be greater than 0.
 
 A string of at most 32 bytes from a closed vocabulary: surface, status, event kind, tool kind, privacy level. The codec carries the word and checks only its length. The receiver's domain model decides whether it knows the word. This is what lets a vocabulary grow without a new protocol version: see rule 3 below.
 
+## The link
+
+`link` was added without a new protocol version, because it is additive in both directions. A host from before the field ignores it, as it ignores any field it does not know, and shows no button. A host that knows the field reads a follower that does not send it as having no link.
+
+The link comes from a project profile in the user's own configuration and from nowhere else ([ADR-0012](../architecture/adr/0012-project-profiles-and-repository-link.md)). The host trusts no follower's link. It validates each with the function the configuration uses, against the hosts in its own configuration, and publishes the result. A link that fails is dropped alone, with a warning that does not repeat it: the session is kept and the connection stays open. For that reason the field has no length limit of its own here. It is bounded by the limit on a line, and what the host accepts is at most 512 bytes.
+
+A session's link is set when the session opens, by a `session_opened` event or by a sync, and by nothing after. A follower whose link changes ends the session and opens it again.
+
 ## What the channel cannot carry
 
-The fields above are all there is. No message has a field for prompt text, tool input or output, an assistant message, a file path, a transcript path or a tool name, and a test fails if a field is added without being listed. The only strings that are not from a closed vocabulary are the session id, the model label, the project name and the binary version, and each has a length limit. The activity summary ([ADR-0011](../architecture/adr/0011-model-authored-activity-summary.md)) is not in protocol version 1.
+The fields above are all there is. No message has a field for prompt text, tool input or output, an assistant message, a file path, a transcript path or a tool name, and a test fails if a field is added without being listed. The only strings that are not from a closed vocabulary are the session id, the model label, the project name, the repository link and the binary version. Each has a length limit, and the link is validated by the host as [The link](#the-link) describes. The activity summary ([ADR-0011](../architecture/adr/0011-model-authored-activity-summary.md)) is not in protocol version 1.
 
 ## Errors
 

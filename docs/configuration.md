@@ -51,7 +51,7 @@ Each entry of `projects` is an object:
 | `privacy` | No | The privacy level for this project. It may be lower or higher than the global one |
 | `name` | No | A display name, shown in place of the directory name |
 | `areas` | No | The project's main parts, such as "battle engine" or "story" |
-| `link` | No | The repository's address |
+| `link` | No | The repository's address, shown as a button. See [Sharing a project](#sharing-a-project) |
 
 ### Example
 
@@ -111,6 +111,20 @@ https://github.com/owner/repository
 - The SSH form, `git@github.com:owner/repository.git`, is not accepted and is not converted.
 
 The program makes no network requests, so it cannot tell whether a repository is public. A link to a private repository reveals its owner and name and leads nowhere.
+
+### Sharing a project
+
+A profile with a `link` puts one button on your Discord status, such as "View on GitHub", while a session inside that project is the one your status describes. With several sessions open, the button belongs to the session in focus, and it goes away when focus moves to a session whose project has no link.
+
+- **The link is per project.** There is no setting that turns links on everywhere, and nothing is detected from a project's git configuration. A project has a link only if its own profile sets one.
+- **The link does not depend on the privacy level.** It is shown for that project at `minimal` too, because setting it is its own decision. The owner and the repository name are part of the link, so a link names the project even where the project name is otherwise hidden.
+- **The program cannot tell whether a repository is public.** It makes no network requests. A link to a private repository reveals its owner and name to everyone who can see your status, and leads nowhere. If you make a repository private later, remove the link.
+- **The label comes from the host**: GitHub, GitLab, Bitbucket and Codeberg are named, and any other host listed in `link_hosts` gets "View repository".
+- **A change applies to new sessions.** A session that is already open keeps the settings it started with.
+
+In Claude Code, the plugin's `share-project` skill does the setup for the project you are in: ask Claude to share this project in your Discord status. It reads the git remote, checks with your own GitHub CLI that the repository is public when it can, shows you exactly what will be published, and edits the configuration file once you confirm. It refuses a repository that the GitHub CLI reports as private.
+
+**To stop sharing a project**, ask Claude to stop sharing it, which runs the same skill, or edit the file yourself: delete the `link` line from the project's entry to keep its other settings, or delete the whole entry. Then restart the sessions that are open.
 
 ### When an entry is wrong
 

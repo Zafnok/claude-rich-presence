@@ -28,6 +28,15 @@ type Activity struct {
 	SmallImage string
 	SmallText  string
 	Type       ActivityType
+	// Button is the one button shown, or the zero value for none.
+	Button Button
+}
+
+// Button is a labelled link on the activity. The codec leaves out a button
+// that is outside Discord's limits.
+type Button struct {
+	Label string
+	URL   string
 }
 
 // Equal reports whether Discord would display a and b the same, so that a
