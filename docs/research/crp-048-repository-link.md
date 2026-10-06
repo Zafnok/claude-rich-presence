@@ -1,8 +1,8 @@
 # CRP-048 findings: the repository link
 
-Ticket: [CRP-048](../tickets/M4-claude-code/CRP-048-repository-link.md). Decision: [ADR-0012](../architecture/adr/0012-project-profiles-and-repository-link.md).
+Ticket: [CRP-048](../tickets/done/CRP-048-repository-link.md). Decision: [ADR-0012](../architecture/adr/0012-project-profiles-and-repository-link.md).
 
-**Coverage.** The link is built and tested end to end against the fake Discord. On a real Discord, on the Windows desktop client, the button is shown to another account and opens the link, and is not shown to the user on their own profile. Mobile was not checked. How the `share-project` skill behaves in a real Claude Code session has **not been observed**. What remains is written out under [Checks for the owner](#checks-for-the-owner). Nothing below fills that gap with an assumption.
+**Coverage.** The link is built and tested end to end against the fake Discord. On a real Discord, on the Windows desktop client, the button is shown to another account and opens the link, and is not shown to the user on their own profile. Mobile was not checked. The `share-project` skill was run in a real Claude Code session on a public repository, a private one and one with a token in its remote, and behaved as designed in each. What was not observed is listed under [Not tested](#not-tested).
 
 ## What was built
 
@@ -96,7 +96,7 @@ Needs an interactive Claude Code session with the plugin loaded from this branch
 |---|---|---|
 | A public GitHub repository, GitHub CLI signed in | Reports it public, shows the summary, writes the profile after a yes | **As expected**, 2026-10-05, Claude Code 2.1.290 on Windows, auto mode, started in a worktree of this repository. It read the remote, ran `gh repo view` for the visibility, proposed eight areas, asked one question naming the link, and wrote the file only after "Yes, write it as shown". It chose the main checkout as the profile's path, not the worktree, which covers the worktrees inside it |
 | A private GitHub repository | Stops with an explanation and writes nothing, even when asked to go on | **As expected**, 2026-10-05, same setup. `gh repo view` reported the repository private; the skill stopped, explained that the link would reveal the owner and name and lead to a not-found page, and left the configuration file as it was. It was not then asked to go on regardless |
-| A repository whose `origin` is `https://user:token@github.com/owner/repo.git` | The link shown and written has no credential, and the token is not repeated | |
+| A repository whose `origin` is `https://user:token@github.com/owner/repo.git` | The link shown and written has no credential, and the token is not repeated | **As expected**, 2026-10-05, same setup, with a made-up token. The skill warned that the remote holds a credential without repeating it, suggested resetting the remote and revoking the token, and offered an entry whose link was the plain `https://github.com/owner/repo`. Git's own output of the remote, in the tool result, did show the URL. The run was stopped at the confirmation |
 | GitHub CLI signed out | Says it could not check and asks whether the repository is public | |
 | "Stop sharing this project" | Shows the profile, asks whether to remove the link or the whole entry, and edits accordingly | |
 
@@ -104,6 +104,9 @@ For each of the manual, accept-edits and auto modes, note whether Claude Code it
 
 ## Not tested
 
-- Everything in [Checks for the owner](#checks-for-the-owner).
+- The button on Discord's mobile app, for the user and for another account.
+- The button at `minimal` on a real Discord. The tests show it is sent.
+- The skill with the GitHub CLI signed out, and its "remove" path.
+- The skill in a permission mode other than auto. For those the table above is the documentation's account.
 - A host other than `github.com`, on a real Discord.
 - macOS and Linux, beyond the automated tests in CI.

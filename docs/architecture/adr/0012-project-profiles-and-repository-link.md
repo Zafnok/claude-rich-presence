@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted**, 2026-10-05. The link is shown as a button, built in [CRP-048](../../tickets/M4-claude-code/CRP-048-repository-link.md). On a real Discord desktop client another account sees the button and it opens the link; the user does not see it on their own profile. Mobile was not checked. See [the findings](../../research/crp-048-repository-link.md). Extends [ADR-0008](0008-privacy-and-safety-by-default.md) and replaces the directory allowlist first sketched in [ADR-0011](0011-model-authored-activity-summary.md).
+**Accepted**, 2026-10-05. The link is shown as a button, built in [CRP-048](../../tickets/done/CRP-048-repository-link.md). On a real Discord desktop client another account sees the button and it opens the link; the user does not see it on their own profile. Mobile was not checked. See [the findings](../../research/crp-048-repository-link.md). Extends [ADR-0008](0008-privacy-and-safety-by-default.md) and replaces the directory allowlist first sketched in [ADR-0011](0011-model-authored-activity-summary.md).
 
 ## Context
 

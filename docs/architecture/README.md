@@ -246,7 +246,7 @@ The adapter tells the surfaces apart from the client name in the MCP `initialize
 
 ## Not in the first release
 
-- Project profiles, the activity summary, the repository link, and everything in M7: the summary-first layout, personalities, hide and pause, the status line bridge and moments. They are planned and ticketed, and ship when their tickets are done, without holding the first release.
+- Project profiles, the activity summary, and everything in M7: the summary-first layout, personalities, hide and pause, the status line bridge and moments. They are planned and ticketed, and ship when their tickets are done, without holding the first release.
 - Cowork, cloud sessions, remote and WSL setups.
 - A separate Discord application per surface.
 - A second button, external image URLs, user-defined text templates beyond the privacy levels.
