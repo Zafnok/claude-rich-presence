@@ -89,9 +89,11 @@
 //     opened, or fails, it tries again with backoff, and meanwhile the node
 //     hosts its own session alone.
 //   - One goroutine per connection reads its lines, so a follower that
-//     stalls delays nobody else. A connection owns the sessions its events
-//     created and the session it synced last, and they are removed when it
+//     stalls delays nobody else. A connection owns one session: the one
+//     its latest event or sync named. It is removed when the connection
 //     closes. Only a sync moves a session from one connection to another.
+//     There are at most maxConns connections; one more is closed as it is
+//     accepted.
 //   - One goroutine announces a change of pause to every welcomed
 //     connection. A follower that has stopped reading holds it up, and
 //     nothing else.

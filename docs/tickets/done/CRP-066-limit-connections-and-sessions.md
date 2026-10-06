@@ -3,7 +3,7 @@ id: CRP-066
 title: Limit the connections and sessions a host holds
 milestone: M6 Release
 type: feature
-status: todo
+status: done
 priority: P2
 blocked_by: [CRP-062]
 blocks: []
@@ -40,11 +40,11 @@ A real follower holds one connection and one session: `host.Node` replaces its s
 
 ## Acceptance criteria
 
-- [ ] A test opens connections up to the ceiling, each welcomed, and shows the next one closed without a welcome while the others keep working.
-- [ ] A test shows that closing one connection lets a new one in.
-- [ ] A test sends events for two session ids on one connection and shows the host holding one session, the later.
-- [ ] `TestRandomStartsPublishesAndStops` and `TestABurstOfNodesElectsOneHost` still pass with the ceiling in place.
-- [ ] The threat model names these tests against the threat "a hostile follower using unlimited connections or sessions".
+- [x] A test opens connections up to the ceiling, each welcomed, and shows the next one closed without a welcome while the others keep working.
+- [x] A test shows that closing one connection lets a new one in.
+- [x] A test sends events for two session ids on one connection and shows the host holding one session, the later.
+- [x] `TestRandomStartsPublishesAndStops` and `TestABurstOfNodesElectsOneHost` still pass with the ceiling in place.
+- [x] The threat model names these tests against the threat "a hostile follower using unlimited connections or sessions".
 
 ## Notes for the implementer
 

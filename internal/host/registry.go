@@ -10,7 +10,8 @@ import (
 type op int
 
 const (
-	// opEvent applies one event from a source.
+	// opEvent applies one event from a source. If it is for another session
+	// than the one the source holds, that session replaces it.
 	opEvent op = iota
 	// opSync replaces what a source holds with one session, or with none.
 	opSync
@@ -36,14 +37,19 @@ type request struct {
 
 // registry is the host's sessions and which source each belongs to. It is
 // used from one goroutine and has no lock.
+//
+// A source holds one session at most, as a real follower does: a node has
+// one session, and replaces it when the id changes. So a source that names
+// one session id after another holds the latest, and the registry is never
+// larger than the number of sources.
 type registry struct {
 	sessions *domain.Registry
 	// owners maps a session id to the source it belongs to: the one whose
-	// event created it, or the latest to sync it. Only a sync moves a
-	// session to another source. So a follower that reconnects before its
-	// old connection is seen to close keeps its session, and what is still
-	// to be read on the old connection can neither take the session back
-	// nor end it.
+	// event created it, or the latest to sync it. No source appears twice.
+	// Only a sync moves a session to another source. So a follower that
+	// reconnects before its old connection is seen to close keeps its
+	// session, and what is still to be read on the old connection can
+	// neither take the session back nor end it.
 	owners map[string]uint64
 	// pause is the latest pause or resume the host was offered.
 	pause protocol.PauseState
@@ -68,9 +74,11 @@ func (r *registry) apply(req request, counters *diag.Counters) (changed bool) {
 		}
 		if req.event.Kind == domain.KindSessionEnded {
 			delete(r.owners, id)
-		} else {
-			r.owners[id] = req.source
+			return true
 		}
+		r.owners[id] = req.source
+		// The session replaces any other the source held.
+		r.release(req.source, id)
 		return true
 	case opSync:
 		keep := ""
@@ -97,8 +105,8 @@ func (r *registry) apply(req request, counters *diag.Counters) (changed bool) {
 	return true
 }
 
-// release removes every session of a source but the one named keep, and
-// reports whether there was any.
+// release removes the session of a source unless it is the one named keep,
+// and reports whether it removed one.
 func (r *registry) release(source uint64, keep string) (removed bool) {
 	for id, owner := range r.owners {
 		if owner == source && id != keep {

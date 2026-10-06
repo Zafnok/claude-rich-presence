@@ -9,6 +9,7 @@ type Counters struct {
 	eventsDropped  atomic.Int64
 	reconnects     atomic.Int64
 	failovers      atomic.Int64
+	connsRejected  atomic.Int64
 }
 
 // EventReceived counts one event received.
@@ -23,21 +24,27 @@ func (c *Counters) Reconnected() { c.reconnects.Add(1) }
 // FailedOver counts one takeover of the host role.
 func (c *Counters) FailedOver() { c.failovers.Add(1) }
 
+// ConnectionRejected counts one connection a host closed as it accepted it,
+// because it was serving as many as it will.
+func (c *Counters) ConnectionRejected() { c.connsRejected.Add(1) }
+
 // Counts is the value of every counter at one moment.
 type Counts struct {
-	EventsReceived int64
-	EventsDropped  int64
-	Reconnects     int64
-	Failovers      int64
+	EventsReceived      int64
+	EventsDropped       int64
+	Reconnects          int64
+	Failovers           int64
+	ConnectionsRejected int64
 }
 
 // Snapshot returns the current counts.
 func (c *Counters) Snapshot() Counts {
 	return Counts{
-		EventsReceived: c.eventsReceived.Load(),
-		EventsDropped:  c.eventsDropped.Load(),
-		Reconnects:     c.reconnects.Load(),
-		Failovers:      c.failovers.Load(),
+		EventsReceived:      c.eventsReceived.Load(),
+		EventsDropped:       c.eventsDropped.Load(),
+		Reconnects:          c.reconnects.Load(),
+		Failovers:           c.failovers.Load(),
+		ConnectionsRejected: c.connsRejected.Load(),
 	}
 }
 
@@ -48,5 +55,6 @@ func (c Counts) Attrs() []Attr {
 		Count("events_dropped", c.EventsDropped),
 		Count("reconnects", c.Reconnects),
 		Count("failovers", c.Failovers),
+		Count("connections_rejected", c.ConnectionsRejected),
 	}
 }
