@@ -3,7 +3,7 @@ id: CRP-008
 title: Fix two flaky tests in the scheduler and the session manager
 milestone: M0 Foundation
 type: chore
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-005, CRP-013, CRP-023, CRP-024]
 blocks: []
