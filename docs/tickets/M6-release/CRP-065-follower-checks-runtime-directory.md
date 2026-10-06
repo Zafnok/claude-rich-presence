@@ -3,7 +3,7 @@ id: CRP-065
 title: A follower checks the runtime directory before it dials
 milestone: M6 Release
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-062]
 blocks: []
