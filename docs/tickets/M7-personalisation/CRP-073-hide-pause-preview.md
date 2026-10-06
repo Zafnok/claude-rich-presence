@@ -3,7 +3,7 @@ id: CRP-073
 title: Hide, pause and preview
 milestone: M7 Personalisation
 type: feature
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-014, CRP-042, CRP-077]
 blocks: []
