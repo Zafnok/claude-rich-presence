@@ -3,7 +3,7 @@ id: CRP-080
 title: Check the repository link button on Discord's mobile app
 milestone: M4 Claude Code
 type: owner-task
-status: in-progress
+status: done
 priority: P2
 blocked_by: [CRP-048]
 blocks: []
@@ -42,11 +42,11 @@ The check needs a phone with the Discord app and, for the second half, another a
 
 ## Acceptance criteria
 
-- [ ] The findings record, for the mobile app, what the owner sees on their own profile: activity, button, and whether the button opens the link.
-- [ ] The findings record the same for another account, or say plainly that no second account was available and leave that row open.
-- [ ] The phone's operating system and the Discord app's version are recorded with the date.
-- [ ] `docs/configuration.md` says where the button is visible, and says nothing that was not observed.
-- [ ] If the button is missing on mobile for other people, a follow-up ticket exists and is linked from the findings.
+- [x] The findings record, for the mobile app, what the owner sees on their own profile: activity, button, and whether the button opens the link.
+- [x] The findings record the same for another account, or say plainly that no second account was available and leave that row open.
+- [x] The phone's operating system and the Discord app's version are recorded with the date.
+- [x] `docs/configuration.md` says where the button is visible, and says nothing that was not observed.
+- [x] If the button is missing on mobile for other people, a follow-up ticket exists and is linked from the findings.
 
 ## Notes for the implementer
 

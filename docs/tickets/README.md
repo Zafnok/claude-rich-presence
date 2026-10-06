@@ -122,7 +122,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-077](done/CRP-077-per-project-settings-in-adapter.md) | Per-project privacy level and display name in the Claude Code adapter | 014, 041 | Sonnet 5.5 | high | M |
 | [CRP-078](done/CRP-078-open-at-minimal-with-profiles.md) | Open a profiled session at the lowest level until its first hook | 077 | Sonnet 5.5 | medium | S |
 | [CRP-079](M4-claude-code/CRP-079-claude-code-manual-checks.md) | Manual checks in a real Claude Code | 042, 043 | Owner, with Sonnet 5.5 | low | S |
-| [CRP-080](M4-claude-code/CRP-080-repository-link-on-mobile.md) | Check the repository link button on Discord's mobile app | 048 | Owner, with Sonnet 5.5 | low | S |
+| [CRP-080](done/CRP-080-repository-link-on-mobile.md) | Check the repository link button on Discord's mobile app | 048 | Owner, with Sonnet 5.5 | low | S |
 
 ## Dependency graph
 
