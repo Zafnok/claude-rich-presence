@@ -97,10 +97,11 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-047](M4-claude-code/CRP-047-activity-summary.md) | Activity summary in Claude Code | 014, 042, 046, 077 | Sonnet 5.5 | high | M |
 | [CRP-048](M4-claude-code/CRP-048-repository-link.md) | Repository link for opted-in projects | 014, 042, 077 | Sonnet 5.5 | high | M |
 | [CRP-049](M4-claude-code/CRP-049-shared-area-rollup.md) | Shared-area roll-up across sessions | 047 | Sonnet 5.5 | medium | S |
-| [CRP-050](M5-claude-desktop/CRP-050-desktop-adapter.md) | Claude Desktop adapter | 002, 033, 043 | Sonnet 5.5 | medium | S |
+| [CRP-050](done/CRP-050-desktop-adapter.md) | Claude Desktop adapter | 002, 033, 043 | Sonnet 5.5 | medium | S |
 | [CRP-051](done/CRP-051-mcpb-bundle.md) | MCPB bundle | 001, 033 | Sonnet 5.5 | medium | S |
 | [CRP-052](M5-claude-desktop/CRP-052-desktop-validation.md) | Desktop validation on real machines | 002, 042, 050, 051 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-053](M5-claude-desktop/CRP-053-desktop-summary.md) | Activity summary in Claude Desktop Chat | 047, 050 | Sonnet 5.5 | medium | S |
+| [CRP-054](M5-claude-desktop/CRP-054-desktop-idle-clear.md) | Decide how long Claude Desktop is shown when nothing else is running | 050 | Sonnet 5.5 | medium | S |
 | [CRP-060](M6-release/CRP-060-release-pipeline.md) | Release pipeline | 003, 005, 007, 042, 043, 051 | Sonnet 5.5 | high | M |
 | [CRP-061](M6-release/CRP-061-user-documentation.md) | User documentation | 003, 042, 052 | Haiku 4.5 | n/a | S |
 | [CRP-062](M6-release/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S |
@@ -161,6 +162,7 @@ flowchart TD
     C051["051 MCPB bundle"]
     C052["052 Desktop validation"]
     C053["053 summary, Desktop"]
+    C054["054 Desktop idle rule"]
     C060["060 release"]
     C061["061 user docs"]
     C062["062 security review"]
@@ -252,6 +254,7 @@ flowchart TD
     C051 --> C052
     C047 --> C053
     C050 --> C053
+    C050 --> C054
     C003 --> C060
     C005 --> C060
     C007 --> C060
@@ -303,7 +306,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 6 | 008, 033 |
 | 7 | 035, 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
-| 9 | 045, 047, 048, 052, 060, 073, 075, 079 |
+| 9 | 045, 047, 048, 052, 054, 060, 073, 075, 079 |
 | 10 | 049, 053, 061, 063, 071, 072 |
 | 11 | 064, 074 |
 

@@ -3,10 +3,10 @@ id: CRP-050
 title: Claude Desktop adapter
 milestone: M5 Claude Desktop
 type: feature
-status: in-progress
+status: done
 priority: P1
 blocked_by: [CRP-002, CRP-033, CRP-043]
-blocks: [CRP-052, CRP-053]
+blocks: [CRP-052, CRP-053, CRP-054]
 model: claude-sonnet-5-5
 effort: medium
 size: S
@@ -57,16 +57,16 @@ Package `internal/adapter/desktop`, and its wiring in `internal/cli`:
 
 ## Acceptance criteria
 
-- [ ] With the Claude Desktop client name, `tools/list` returns only `presence_status`.
-- [ ] With the Claude Code client name, behaviour is unchanged.
-- [ ] A Desktop session and a working Code session together render the Code session in focus, with a count of two.
-- [ ] A Desktop session alone renders the Desktop phrase with an elapsed timer.
-- [ ] Input closing removes the session and, if it was the last, clears presence.
-- [ ] With a client name starting with `local-agent-mode-`, no session is published, the host lock is never requested, and `tools/list` returns only `presence_status`.
-- [ ] Two adapters started as Claude Desktop starts them, one of each client name, result in exactly one `desktop` session on the host.
-- [ ] Losing the host, losing Discord and being asked to stand down each leave the process running with its input open.
-- [ ] A process whose input closes before `initialize` exits without having requested the host lock or dialled the host.
-- [ ] E13 passes on all three operating systems.
+- [x] With the Claude Desktop client name, `tools/list` returns only `presence_status`.
+- [x] With the Claude Code client name, behaviour is unchanged.
+- [x] A Desktop session and a working Code session together render the Code session in focus, with a count of two.
+- [x] A Desktop session alone renders the Desktop phrase with an elapsed timer.
+- [x] Input closing removes the session and, if it was the last, clears presence.
+- [x] With a client name starting with `local-agent-mode-`, no session is published, the host lock is never requested, and `tools/list` returns only `presence_status`.
+- [x] Two adapters started as Claude Desktop starts them, one of each client name, result in exactly one `desktop` session on the host.
+- [x] Losing the host, losing Discord and being asked to stand down each leave the process running with its input open.
+- [x] A process whose input closes before `initialize` exits without having requested the host lock or dialled the host.
+- [x] E13 passes on all three operating systems.
 
 ## Notes for the implementer
 

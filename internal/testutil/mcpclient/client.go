@@ -25,6 +25,14 @@ const ProtocolVersion = "2025-11-25"
 // ClaudeCode is the client name Claude Code gives in initialize.
 const ClaudeCode = "claude-code"
 
+// The client names Claude Desktop gives the two copies of the server it runs
+// (CRP-002): the one that serves the app, and a second, whose name ends in
+// the display name of the extension.
+const (
+	ClaudeDesktop       = "claude-ai"
+	ClaudeDesktopSecond = "local-agent-mode-Rich Presence"
+)
+
 // Options says what to start. Binary is required.
 type Options struct {
 	// Binary is the path of the executable.

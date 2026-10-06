@@ -137,10 +137,16 @@ func TestMCPEndsOnSignal(t *testing.T) {
 
 func TestMCPEndsWhenInputClosesBeforeInitialize(t *testing.T) {
 	w := newWorld(t)
-	w.discord(t)
+	srv := w.discord(t)
 	s := w.startSession(t)
 	if code := s.finish(); code != 0 {
 		t.Errorf("exit code = %d, want 0", code)
+	}
+	// Claude Desktop starts a copy at launch that it never initializes. It
+	// must leave no trace: no lock asked for, no host dialled.
+	w.noRuntimeDirectory(t)
+	if events := srv.Events(); len(events) != 0 {
+		t.Errorf("Discord was contacted: %v", events)
 	}
 }
 

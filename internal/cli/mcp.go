@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/Zafnok/claude-rich-presence/internal/adapter/code"
+	"github.com/Zafnok/claude-rich-presence/internal/adapter/desktop"
 	"github.com/Zafnok/claude-rich-presence/internal/config"
 	"github.com/Zafnok/claude-rich-presence/internal/control/protocol"
 	ctransport "github.com/Zafnok/claude-rich-presence/internal/control/transport"
@@ -79,17 +80,27 @@ func adapterDiscord(d protocol.DiscordState) code.Discord {
 	return ""
 }
 
-// startPresence starts a host node unless presence is off, in which case it
-// starts nothing: no lock file, no socket. Whatever stops the node from
-// starting also turns presence off and not the server, because presence must
-// never impair Claude (ADR-0008).
-func (s system) startPresence(cfg config.Config, getenv func(string) string, log *diag.Logger) presenceLine {
+// runtimePaths is where the lock and the socket of the host are, or false
+// when presence is off: switched off, running remotely, or with no usable
+// runtime directory. Whatever stops presence from starting turns presence off
+// and not the server, because presence must never impair Claude (ADR-0008).
+func runtimePaths(cfg config.Config, getenv func(string) string, log *diag.Logger) (ctransport.Paths, bool) {
 	if !cfg.Enabled || getenv(EnvRemote) == "true" {
-		return off()
+		return ctransport.Paths{}, false
 	}
 	paths, err := ctransport.Locate(getenv)
 	if err != nil {
 		log.Error("presence is off: there is no usable runtime directory", diag.ErrorClass("runtime_directory"))
+		return ctransport.Paths{}, false
+	}
+	return paths, true
+}
+
+// startPresence starts a host node unless presence is off, in which case it
+// starts nothing: no lock file, no socket.
+func (s system) startPresence(cfg config.Config, getenv func(string) string, log *diag.Logger) presenceLine {
+	paths, on := runtimePaths(cfg, getenv, log)
+	if !on {
 		return off()
 	}
 	node, err := host.New(s.hostConfig(cfg, paths, getenv, log))
@@ -109,55 +120,188 @@ func (s system) startPresence(cfg config.Config, getenv func(string) string, log
 	}}
 }
 
-// mcpSession is one run of the mcp command.
-type mcpSession struct {
-	sys      system
-	cfg      config.Config
-	log      *diag.Logger
-	presence presenceLine
-
-	mu      sync.Mutex
-	adapter *code.Adapter
+// adapter is what stands between the client and presence: the tools the
+// client is offered, and the session they report.
+type adapter interface {
+	Tools() []mcp.Tool
+	// Open publishes the session, and Close ends it.
+	Open()
+	Close()
 }
 
-// initialize runs when the client initializes. The adapter is chosen by the
-// client's name once there is more than one; until then every client is
-// Claude Code (CRP-050 adds the choice here).
-func (m *mcpSession) initialize(mcp.ClientInfo) []mcp.Tool {
+// mcpSession is one run of the mcp command.
+type mcpSession struct {
+	sys    system
+	cfg    config.Config
+	log    *diag.Logger
+	getenv func(string) string
+
+	mu sync.Mutex
+	// ended is set by shutdown, after which nothing is started.
+	ended bool
+	// end ends the session of the adapter, and stop gives up what presence
+	// holds. Each is nil until initialize has set it.
+	end  func()
+	stop func()
+}
+
+// initialize runs when the client initializes, and chooses the adapter by
+// the name the client gives. Until then the process has taken no lock, opened
+// no connection and published nothing: Claude Desktop starts a copy at launch
+// that it never initializes (CRP-002).
+func (m *mcpSession) initialize(client mcp.ClientInfo) []mcp.Tool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.ended {
+		return nil
+	}
+	switch desktop.Recognise(client.Name) {
+	case desktop.ClientDesktop:
+		return m.open(m.desktopAdapter())
+	case desktop.ClientPassive:
+		return m.open(m.passiveAdapter())
+	}
+	return m.open(m.codeAdapter())
+}
+
+// open opens the session of an adapter and returns its tools.
+func (m *mcpSession) open(a adapter, err error) []mcp.Tool {
+	if err != nil {
+		m.log.Error("no tools are offered: the adapter could not be built", diag.ErrorClass("adapter_config"))
+		return nil
+	}
+	a.Open()
+	m.end = a.Close
+	return a.Tools()
+}
+
+// present starts presence for a client that reports a session.
+func (m *mcpSession) present() presenceLine {
+	line := m.sys.startPresence(m.cfg, m.getenv, m.log)
+	m.stop = line.stop
+	return line
+}
+
+// codeAdapter is the adapter of a Claude Code session.
+func (m *mcpSession) codeAdapter() (adapter, error) {
+	line := m.present()
 	goos := m.sys.goos
-	adapter, err := code.New(code.Options{
+	return code.New(code.Options{
 		Privacy: m.cfg.Privacy,
 		Resolve: func(cwd string) code.Settings {
 			s := m.cfg.Effective(goos, cwd)
 			return code.Settings{Privacy: s.Privacy, Name: s.Name}
 		},
 		ProvisionalID: m.sys.sessionID(),
-		Publisher:     m.presence.publisher,
-		Status:        m.presence.status,
+		Publisher:     line.publisher,
+		Status:        line.status,
 		Clock:         m.sys.clock,
 	})
-	if err != nil {
-		m.log.Error("no tools are offered: the adapter could not be built", diag.ErrorClass("adapter_config"))
-		return nil
-	}
-	adapter.Open()
-	m.mu.Lock()
-	m.adapter = adapter
-	m.mu.Unlock()
-	return adapter.Tools()
 }
 
-// shutdown ends the session's events and then the node: the adapter's last
-// event reaches the node before the node gives up its role, which clears the
-// presence it holds.
+// desktopAdapter is the adapter of the copy of the server that reports
+// Claude Desktop. Its session lasts as long as the process, under one id.
+func (m *mcpSession) desktopAdapter() (adapter, error) {
+	line := m.present()
+	return desktop.New(desktop.Options{
+		Privacy:   m.cfg.Privacy,
+		ID:        m.sys.sessionID(),
+		Publisher: line.publisher,
+		Status:    desktopStatus{line.status},
+		Clock:     m.sys.clock,
+	})
+}
+
+// passiveAdapter is the adapter of the second copy Claude Desktop runs. It
+// is not a node: it never tries the host lock and never follows a host. Its
+// status tool reports what the host says of itself.
+func (m *mcpSession) passiveAdapter() (adapter, error) {
+	status := desktop.StatusSource(desktopStatus{offStatus{}})
+	if paths, on := runtimePaths(m.cfg, m.getenv, m.log); on {
+		asker := &hostAsker{ask: func() (protocol.StatusResult, error) { return m.sys.ask(paths.Socket) }}
+		m.stop = asker.stop
+		status = asker
+	}
+	return desktop.NewPassive(m.cfg.Privacy, status)
+}
+
+// desktopStatus is a status in the words of the Desktop adapter, which are
+// the same words.
+type desktopStatus struct{ source code.StatusSource }
+
+func (d desktopStatus) Status() desktop.Status {
+	s := d.source.Status()
+	return desktop.Status{Role: desktop.Role(s.Role), Discord: desktop.Discord(s.Discord), Sessions: s.Sessions}
+}
+
+// hostAsker is the status of a process that is not a node. A status tool may
+// not wait for the host (ADR-0008), so Status answers with what the host said
+// last and asks again on another goroutine, as the status of a follower does.
+// The first answer is therefore unknown.
+type hostAsker struct {
+	// ask is the question the status command puts to the host.
+	ask func() (protocol.StatusResult, error)
+
+	mu      sync.Mutex
+	last    desktop.Status
+	asking  bool
+	stopped bool
+	// pending counts the goroutine that is asking, if there is one.
+	pending sync.WaitGroup
+}
+
+func (h *hostAsker) Status() desktop.Status {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if !h.asking && !h.stopped {
+		h.asking = true
+		h.pending.Add(1)
+		go h.refresh()
+	}
+	last := h.last
+	last.Role = desktop.RolePassive
+	return last
+}
+
+// refresh asks the host once. A host that does not answer, or is not there,
+// leaves the connection unknown and the count at zero.
+func (h *hostAsker) refresh() {
+	defer h.pending.Done()
+	var next desktop.Status
+	defer func() {
+		// A panic costs the answer and nothing else.
+		_ = recover()
+		h.mu.Lock()
+		h.last, h.asking = next, false
+		h.mu.Unlock()
+	}()
+	if result, err := h.ask(); err == nil {
+		next = desktop.Status{Discord: desktop.Discord(adapterDiscord(result.Discord)), Sessions: result.Sessions}
+	}
+}
+
+// stop waits for a question that is on its way, and lets no other start.
+func (h *hostAsker) stop() {
+	h.mu.Lock()
+	h.stopped = true
+	h.mu.Unlock()
+	h.pending.Wait()
+}
+
+// shutdown ends the events of the session and then the node: the last event
+// of the adapter reaches the node before the node gives up its role, which
+// clears the presence it holds.
 func (m *mcpSession) shutdown() {
 	m.mu.Lock()
-	adapter := m.adapter
+	m.ended = true
+	end, stop := m.end, m.stop
 	m.mu.Unlock()
-	if adapter != nil {
-		adapter.Close()
+	if end != nil {
+		end()
 	}
-	m.presence.stop()
+	if stop != nil {
+		stop()
+	}
 }
 
 // runMCP serves the tools over standard input and output until the input
@@ -175,7 +319,7 @@ func (s system) runMCP(args []string, stdin io.Reader, stdout, stderr io.Writer,
 	ctx, stopSignals := s.notify(context.Background())
 	defer stopSignals()
 
-	m := &mcpSession{sys: s, cfg: cfg, log: log, presence: s.startPresence(cfg, getenv, log)}
+	m := &mcpSession{sys: s, cfg: cfg, log: log, getenv: getenv}
 	var once sync.Once
 	shutdown := func() { once.Do(m.shutdown) }
 
