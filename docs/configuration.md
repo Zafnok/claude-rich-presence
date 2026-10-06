@@ -125,6 +125,7 @@ A profile with a `link` puts one button on your Discord status, such as "View on
 - **The link is per project.** There is no setting that turns links on everywhere, and nothing is detected from a project's git configuration. A project has a link only if its own profile sets one.
 - **The link does not depend on the privacy level.** It is shown for that project at `minimal` too, because setting it is its own decision. The owner and the repository name are part of the link, so a link names the project even where the project name is otherwise hidden.
 - **The program cannot tell whether a repository is public.** It makes no network requests. A link to a private repository reveals its owner and name to everyone who can see your status, and leads nowhere. If you make a repository private later, remove the link.
+- **Other people see the button; you may not.** On Discord's desktop app the button is shown to other people on your profile and is not shown to you on your own. On the mobile app it is shown to other people too. Your own profile on mobile has not been checked.
 - **The label comes from the host**: GitHub, GitLab, Bitbucket and Codeberg are named, and any other host listed in `link_hosts` gets "View repository".
 - **A change applies to new sessions.** A session that is already open keeps the settings it started with.
 

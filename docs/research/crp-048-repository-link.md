@@ -2,7 +2,7 @@
 
 Ticket: [CRP-048](../tickets/done/CRP-048-repository-link.md). Decision: [ADR-0012](../architecture/adr/0012-project-profiles-and-repository-link.md).
 
-**Coverage.** The link is built and tested end to end against the fake Discord. On a real Discord, on the Windows desktop client, the button is shown to another account and opens the link, and is not shown to the user on their own profile. Mobile was not checked. The `share-project` skill was run in a real Claude Code session on a public repository, a private one and one with a token in its remote, and behaved as designed in each. What was not observed is listed under [Not tested](#not-tested).
+**Coverage.** The link is built and tested end to end against the fake Discord. On a real Discord, on the Windows desktop client, the button is shown to another account and opens the link, and is not shown to the user on their own profile. On Discord's mobile app the button is shown to another account and works; the user's own profile on mobile was not checked. The `share-project` skill was run in a real Claude Code session on a public repository, a private one and one with a token in its remote, and behaved as designed in each. What was not observed is listed under [Not tested](#not-tested).
 
 ## What was built
 
@@ -39,7 +39,7 @@ Read on 2026-10-05, in the activity object of Discord's gateway documentation an
 | A real Discord accepts an activity with a button over the local pipe | Observed 2026-10-05, Windows desktop client: the activity was shown with both text lines and the timer, and the log has no error. An activity is accepted or rejected whole |
 | The user sees the button on their own profile | **No**, on the desktop client's own profile popout. Observed 2026-10-05, at `full`: the name, both lines and the timer were shown and no button |
 | Another account sees the button on desktop | **Yes.** Observed 2026-10-05, at `full`: a "View on GitHub" button under the activity on the profile card, and it opened the repository |
-| Another account sees the button on mobile | **Not observed** |
+| Another account sees the button on mobile | **Yes.** Observed 2026-10-06, at `standard`, in a screenshot from a friend's phone: "Playing", the application name, both text lines, the timer and a "View on GitHub" button under them on the profile. The friend reported that the button works |
 | The button shows for the "playing" activity type, which is the one sent | Yes, as above. Other types were not tried; CRP-070 measures them |
 
 ## Permission modes
@@ -82,11 +82,11 @@ Record, for each row, what is seen:
 | The user | Desktop, own profile | No | Not applicable | 2026-10-05, at `full`. Everything else on the card was shown |
 | The user | Mobile, own profile | | | |
 | Second account | Desktop, profile card | Yes | Yes, to the right repository | 2026-10-05, at `full` |
-| Second account | Mobile, profile | | | |
+| Second account | Mobile, profile | Yes | Yes, as the friend reported | 2026-10-06, at `standard`. The button sits under the activity, inside its card. The phone's operating system and the Discord app's version are not yet recorded |
 
 Run it once more with `-Privacy minimal` and confirm the button is still there with only the first text line.
 
-The second account sees the button, so the button stands and the text line's URL field is not needed. The mobile rows and the run at `minimal` are still open.
+The second account sees the button, so the button stands and the text line's URL field is not needed. That holds on mobile too, for another account. The user's own row on mobile and the run at `minimal` are still open.
 
 ### 2. The `share-project` skill
 
@@ -104,7 +104,7 @@ For each of the manual, accept-edits and auto modes, note whether Claude Code it
 
 ## Not tested
 
-- The button on Discord's mobile app, for the user and for another account. Ticketed as [CRP-080](../tickets/M4-claude-code/CRP-080-repository-link-on-mobile.md).
+- The button on Discord's mobile app on the user's own profile. Another account was checked under [CRP-080](../tickets/M4-claude-code/CRP-080-repository-link-on-mobile.md).
 - The button at `minimal` on a real Discord. The tests show it is sent.
 - The skill with the GitHub CLI signed out, and its "remove" path.
 - The skill in a permission mode other than auto. For those the table above is the documentation's account.
