@@ -530,6 +530,32 @@ func TestTheActivityIsClearedWhenTheIdlePeriodEnds(t *testing.T) {
 	}
 }
 
+func TestNoIdleTimerIsArmedWhileADesktopSessionIsOpen(t *testing.T) {
+	const period = 15 * time.Minute
+	w, a := hosting(t, idleClear(period))
+	w.sleeping(1)
+
+	q := w.join("desktop")
+	q.welcomed("1.0.0")
+	desktop := protocol.SessionFromDomain(domain.Session{
+		ID: "session-desktop", Surface: domain.SurfaceDesktop, Status: domain.StatusIdle,
+		Privacy: domain.PrivacyStandard, Start: w.clock.Now(), LastActivity: w.clock.Now(),
+	})
+	q.say(protocol.Sync{Session: &desktop})
+	w.eventually("the Desktop session to be held and the timer dropped", func() bool {
+		return len(a.held()) == 2 && w.clock.Timers() == 0
+	})
+
+	// However long passes, something is shown and no timer is armed.
+	w.clock.Advance(100 * period)
+	if last, _ := a.discord().last(); !last.show {
+		t.Error("nothing is shown while a Desktop session is open")
+	}
+	if got := w.clock.Timers(); got != 0 {
+		t.Errorf("%d timers are armed while a Desktop session is open, want none", got)
+	}
+}
+
 func TestAHostWhoseSocketCannotBeOpenedServesItselfAndRetries(t *testing.T) {
 	w := newWorld(t)
 	a := w.spawn("a").open()

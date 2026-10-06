@@ -384,6 +384,7 @@ func TestRenderShowsNothing(t *testing.T) {
 		}, period, true},
 		{"clearing off", []domain.Session{idle("a", 100*time.Hour)}, 0, true},
 		{"negative period is off", []domain.Session{idle("a", 100*time.Hour)}, -time.Second, true},
+		{"desktop alone, long past the threshold", []domain.Session{onDesktop(idle("d", 100*time.Hour))}, period, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -393,6 +394,47 @@ func TestRenderShowsNothing(t *testing.T) {
 			}
 			if !ok && !a.Equal(domain.Activity{}) {
 				t.Errorf("activity = %+v, want the zero value when nothing is shown", a)
+			}
+		})
+	}
+}
+
+// onDesktop moves a session to Claude Desktop.
+func onDesktop(s domain.Session) domain.Session {
+	s.Surface = domain.SurfaceDesktop
+	return s
+}
+
+// TestDesktopIsShownForAsLongAsItIsOpen checks that the idle period ends the
+// showing of Claude Code sessions and never of a Claude Desktop session.
+func TestDesktopIsShownForAsLongAsItIsOpen(t *testing.T) {
+	const period = 15 * time.Minute
+	set := presence.Settings{IdleClear: period}
+	idle := func(id string, ago time.Duration) domain.Session {
+		return session(id, func(s *domain.Session) {
+			s.Status = domain.StatusIdle
+			s.LastActivity = now.Add(-ago)
+		})
+	}
+	desktop := onDesktop(idle("d", 100*time.Hour))
+	tests := []struct {
+		name     string
+		sessions []domain.Session
+		want     string
+	}{
+		{"desktop beside code idle past the period", []domain.Session{idle("a", time.Hour), desktop, idle("b", 2*time.Hour)}, "Claude Desktop"},
+		{"desktop beside code idle within the period", []domain.Session{idle("a", time.Minute), desktop}, "Claude Code"},
+		{"desktop beside one recent and one old code session", []domain.Session{idle("a", time.Hour), desktop, idle("b", time.Minute)}, "Claude Code"},
+		{"desktop beside old code that is not idle", []domain.Session{desktop, session("a", func(s *domain.Session) { s.LastActivity = now.Add(-time.Hour) })}, "Claude Code"},
+		{"two desktop sessions", []domain.Session{desktop, onDesktop(idle("e", 200*time.Hour))}, "Claude Desktop"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if a := mustRender(t, tt.sessions, set); a.LargeText != tt.want {
+				t.Errorf("the card is for %q, want %q", a.LargeText, tt.want)
+			}
+			if wait, ok := presence.ClearsIn(tt.sessions, now, set); ok {
+				t.Errorf("ClearsIn = %v, want no moment while a Desktop session is open", wait)
 			}
 		})
 	}
