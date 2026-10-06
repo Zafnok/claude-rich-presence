@@ -37,6 +37,12 @@ Two more environment variables exist for tests and unusual setups. They are not 
 
 What each privacy level publishes is in [ADR-0008](architecture/adr/0008-privacy-and-safety-by-default.md).
 
+### What `full` publishes
+
+`full` adds the project name to what `standard` publishes. The project name is the name of the directory Claude is working in, unless a [project profile](#project-profiles) gives that directory a display name.
+
+Claude can create directories and work in them. So at `full` the project name can be text that Claude chose, and not only the names of directories you made. It is cleaned before it is published, exactly as a display name is: one line of at most 128 bytes, with no formatting characters, no mention or link syntax, and no control or invisible characters. Cleaning limits how the name is shown, not what it says. If that matters to you, keep the global level at `standard` and set `full` only in the profiles of the projects you want named.
+
 ## Project profiles
 
 A profile gives one project its own settings, so that a few chosen projects can be visible while everything else stays private. Profiles are designed in [ADR-0012](architecture/adr/0012-project-profiles-and-repository-link.md).

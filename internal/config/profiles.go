@@ -7,8 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/Zafnok/claude-rich-presence/internal/domain"
 )
@@ -51,10 +49,6 @@ const (
 )
 
 const problemPrivacy = "must be minimal, standard or full"
-
-// markup is removed from display names and areas: the characters Discord
-// reads as formatting, as a mention or as a link.
-const markup = "*`~|<>[]\\@"
 
 // Profile is what the user set for one project. Profiles come from the
 // user's configuration file and from nowhere else (ADR-0012).
@@ -228,8 +222,10 @@ func validHost(h string) bool {
 // CleanName makes a display name safe to show: one line, with control
 // characters, invisible characters and markup removed, runs of spaces
 // collapsed, and cut to MaxNameLen. The result is empty if nothing is left.
+// It is domain.CleanName, which the adapters apply to a directory name and
+// the host checks every project name against.
 func CleanName(name string) string {
-	return clean(name, MaxNameLen)
+	return domain.CleanName(name)
 }
 
 // CleanAreas cleans each area as CleanName does, to MaxAreaLen, drops those
@@ -239,7 +235,7 @@ func CleanName(name string) string {
 func CleanAreas(areas []string) (kept []string, over bool) {
 	var seen []string
 	for _, area := range areas {
-		area = clean(area, MaxAreaLen)
+		area = domain.CleanText(area, MaxAreaLen)
 		key := strings.ToLower(area)
 		if area == "" || slices.Contains(seen, key) {
 			continue
@@ -251,34 +247,6 @@ func CleanAreas(areas []string) (kept []string, over bool) {
 		kept = append(kept, area)
 	}
 	return kept, false
-}
-
-// clean is the cleaning CleanName describes, to a limit in bytes.
-func clean(s string, limit int) string {
-	var b strings.Builder
-	space := false
-	for _, r := range s {
-		switch {
-		case unicode.IsSpace(r) || unicode.IsControl(r):
-			space = true
-			continue
-		case r == utf8.RuneError || unicode.Is(unicode.Cf, r) || strings.ContainsRune(markup, r):
-			continue
-		}
-		need := utf8.RuneLen(r)
-		if space && b.Len() > 0 {
-			need++
-		}
-		if b.Len()+need > limit {
-			break
-		}
-		if need > utf8.RuneLen(r) {
-			b.WriteByte(' ')
-		}
-		space = false
-		b.WriteRune(r)
-	}
-	return b.String()
 }
 
 // applyProfiles reads the settings that only the file can hold, link_hosts

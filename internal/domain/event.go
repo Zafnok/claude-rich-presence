@@ -111,6 +111,10 @@ func (e Event) Validate() error {
 
 // checkCommon checks the fields events and sessions share. It returns what is
 // wrong, or the empty string.
+//
+// The model and the project are text that reaches a Discord text line, and
+// they may come from another process, so each must already be as its adapter
+// would have made it.
 func checkCommon(id string, surface Surface, model, project, link string) string {
 	switch {
 	case id == "":
@@ -123,6 +127,10 @@ func checkCommon(id string, surface Surface, model, project, link string) string
 		return "model is too long"
 	case len(project) > MaxProjectLen:
 		return "project is too long"
+	case !modelLabel(model):
+		return "model is not a model label"
+	case CleanName(project) != project:
+		return "project is not clean"
 	case len(link) > MaxLinkLen:
 		return "link is too long"
 	}
