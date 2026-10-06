@@ -38,8 +38,13 @@
 // exit code 1. A panic is recovered, logged by class, and reported as a fixed
 // line on standard error, because what it carried may be work content.
 //
-// The adapter is Claude Code's whatever client initializes: the surface is
-// chosen from the client's name once there is a second adapter (CRP-050).
+// Nothing is started before the client initializes: no lock is tried, no
+// connection is opened and nothing is published. The adapter is then chosen
+// by the name the client gives. Claude Desktop runs two copies of the server
+// (CRP-002). The one its app initializes reports that the app is open, as a
+// node like any other. The second is not a node: it holds no session, never
+// tries the lock, and its status tool asks the host as the status command
+// does. Any other client is Claude Code.
 //
 // # The status command
 //
