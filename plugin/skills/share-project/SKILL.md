@@ -24,7 +24,7 @@ It is JSON. Profiles are the entries of its `projects` list.
 
 ## Share a project
 
-1. **Find the project root and its remote.** Run `git rev-parse --show-toplevel` and `git remote get-url origin`. If this is not a git repository or has no `origin`, say so and stop.
+1. **Find the project root and its remote.** Run `git rev-parse --show-toplevel` and `git remote get-url origin`. If this is not a git repository or has no `origin`, say so and stop. In a linked worktree, the project root is the main checkout, which `git worktree list` prints first: a profile covers the directories inside its path, and a worktree elsewhere is not covered.
 
 2. **Build the link.** It must end up exactly as `https://<host>/<owner>/<repository>`.
    - Convert an SSH remote: `git@github.com:owner/repo.git` and `ssh://git@github.com/owner/repo.git` both become `https://github.com/owner/repo`.

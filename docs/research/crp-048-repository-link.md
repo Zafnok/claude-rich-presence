@@ -57,7 +57,7 @@ ADR-0012 assumed that Claude Code asks the user before editing a file outside th
 
 So the assumption does not hold in the mode most sessions now start in. As the ticket provides for that case, the skill has an explicit confirmation step of its own: it shows the link, the name, the level and the entry it will write, and writes only after a clear yes. ADR-0012 and risk R19 are corrected to say so.
 
-None of this was observed in a session. The table is the documentation's account.
+Observed once, on 2026-10-05 with Claude Code 2.1.290 in auto mode: the skill's write of a new `config.json` under the user profile was "Allowed by auto mode classifier" and Claude Code asked the user nothing. The only question the user saw was the skill's own. That agrees with the documentation's row for `auto`. The other modes were not observed.
 
 ## Checks for the owner
 
@@ -94,7 +94,7 @@ Needs an interactive Claude Code session with the plugin loaded from this branch
 
 | Case | Expected | Observed |
 |---|---|---|
-| A public GitHub repository, GitHub CLI signed in | Reports it public, shows the summary, writes the profile after a yes | |
+| A public GitHub repository, GitHub CLI signed in | Reports it public, shows the summary, writes the profile after a yes | **As expected**, 2026-10-05, Claude Code 2.1.290 on Windows, auto mode, started in a worktree of this repository. It read the remote, ran `gh repo view` for the visibility, proposed eight areas, asked one question naming the link, and wrote the file only after "Yes, write it as shown". It chose the main checkout as the profile's path, not the worktree, which covers the worktrees inside it |
 | A private GitHub repository | Stops with an explanation and writes nothing, even when asked to go on | |
 | A repository whose `origin` is `https://user:token@github.com/owner/repo.git` | The link shown and written has no credential, and the token is not repeated | |
 | GitHub CLI signed out | Says it could not check and asks whether the repository is public | |
