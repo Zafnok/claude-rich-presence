@@ -149,6 +149,7 @@ func TestTheIntervalIsTheOneInTheConfiguration(t *testing.T) {
 
 	h.m.Set(activity("a"))
 	srv.Await(fakediscord.KindSetActivity, 1)
+	h.written()
 	h.clock.Advance(time.Second)
 	h.m.Set(activity("b"))
 	h.timers(1)
@@ -173,6 +174,7 @@ func TestAnIntervalThatIsNotPositiveIsTheDiscordLimit(t *testing.T) {
 
 			h.m.Set(activity("a"))
 			srv.Await(fakediscord.KindSetActivity, 1)
+			h.written()
 			h.m.Set(activity("b"))
 			h.timers(1)
 			h.clock.Advance(schedule.DiscordInterval - 1)
@@ -237,6 +239,7 @@ func TestAnUpdateDueWhileTheConnectionIsLostIsRefusedAndDoesNotCount(t *testing.
 	h.ready(1)
 	h.m.Set(activity("a"))
 	srv.Await(fakediscord.KindSetActivity, 1)
+	h.written()
 	h.m.Set(activity("b"))
 	h.timers(1)
 
@@ -428,6 +431,7 @@ func TestClearIsSentLikeAnyOtherUpdate(t *testing.T) {
 
 	h.m.Set(activity("a"))
 	srv.Await(fakediscord.KindSetActivity, 1)
+	h.written()
 	h.m.Clear()
 	h.timers(1)
 	h.clock.Advance(interval)
@@ -516,6 +520,10 @@ func TestStopWhileReadyClearsBeforeClosing(t *testing.T) {
 	h.ready(1)
 	h.m.Set(activity("a"))
 	srv.Await(fakediscord.KindSetActivity, 1)
+	// The server has the activity before the manager's write of it has
+	// returned, and a stop during a write hangs up, with no clear. The
+	// acknowledgement is handled only once the write is over.
+	eventually(t, "the acknowledgement", func() bool { return h.m.Status().LastUpdate.Equal(start) })
 
 	h.cancel()
 	h.wait()
