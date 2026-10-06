@@ -94,7 +94,9 @@ func TestMCPSecondSessionFollows(t *testing.T) {
 	w.sys.sessionID = func() string { return "second-session" }
 	follower := w.startSession(t)
 	follower.initialize()
-	follower.awaitStatus("Role: follower")
+	// The clock runs while waiting: a follower that dialled before the host
+	// was listening tries again only after a wait.
+	w.passUntilStatus(t, follower, "Role: follower")
 	first.awaitStatus("Sessions: 2")
 
 	if code := follower.finish(); code != 0 {

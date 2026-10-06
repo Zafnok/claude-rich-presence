@@ -298,7 +298,9 @@ func TestMCPHidesASessionInAProjectProfiledOff(t *testing.T) {
 	w.sys.sessionID = func() string { return "second-session" }
 	visible := w.startSession(t)
 	visible.initialize()
-	visible.awaitStatus("Role: follower")
+	// The clock runs while waiting: a follower that dialled before the host
+	// was listening tries again only after a wait.
+	w.passUntilStatus(t, visible, "Role: follower")
 	visible.hook("UserPromptSubmit", "visible", "/work/elsewhere")
 	c := w.awaitTold(t, srv, "the visible session thinking", stateBegins("Thinking"))
 	if strings.Contains(c.State, "sessions") {
