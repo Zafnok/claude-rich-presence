@@ -72,7 +72,7 @@ Property names and scanner details are settled in [CRP-006](../tickets/M0-founda
 | Any pull request | `/code-review` before requesting human review |
 | Host election, failover, Discord session manager, transports | Reviewed with Opus 5.5 at high effort, focusing on races, shutdown and error paths |
 | Anything touching what leaves the adapter | Checked against the allowlist in [ADR-0008](adr/0008-privacy-and-safety-by-default.md) |
-| Before the first release | [CRP-062](../tickets/M6-release/CRP-062-security-review.md) |
+| Before the first release | [CRP-062](../tickets/done/CRP-062-security-review.md) |
 
 ## Manual verification
 

@@ -3,10 +3,10 @@ id: CRP-062
 title: Security review and threat model
 milestone: M6 Release
 type: chore
-status: todo
+status: done
 priority: P1
 blocked_by: [CRP-043]
-blocks: []
+blocks: [CRP-065, CRP-066, CRP-067, CRP-068]
 model: claude-opus-5-5
 effort: high
 size: S
@@ -47,11 +47,17 @@ The program runs in every Claude session, listens on a local socket, parses inpu
 
 ## Acceptance criteria
 
-- [ ] The threat model exists and every listed threat has a mitigation and a named test, or an accepted-risk note with a reason.
-- [ ] `SECURITY.md` exists and GitHub private vulnerability reporting is enabled. Enabling it is an owner action.
-- [ ] The no-network test exists and passes.
-- [ ] Every finding is a ticket with a severity. No finding of high severity is open at the first stable release.
-- [ ] The review states what it did not cover.
+- [x] The threat model exists and every listed threat has a mitigation and a named test, or an accepted-risk note with a reason.
+- [x] `SECURITY.md` exists and GitHub private vulnerability reporting is enabled. Enabling it is an owner action.
+- [x] The no-network test exists and passes.
+- [x] Every finding is a ticket with a severity. No finding of high severity is open at the first stable release.
+- [x] The review states what it did not cover.
+
+## Outcome
+
+The [threat model](../../architecture/threat-model.md), [SECURITY.md](../../../SECURITY.md) and the no-network test `TestTheBinaryLinksNoNetworkClient` in `test/e2e` exist. The review found one medium and three low findings, filed as CRP-065 to CRP-068.
+
+The owner enabled private vulnerability reporting on 2026-10-05. Checked the same day: `gh api repos/Zafnok/claude-rich-presence/private-vulnerability-reporting` answers `{"enabled":true}`.
 
 ## Notes for the implementer
 
