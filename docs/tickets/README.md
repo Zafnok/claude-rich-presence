@@ -76,6 +76,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-012](done/CRP-012-configuration.md) | Configuration | 004, 005 | Sonnet 5.5 | medium | M |
 | [CRP-013](done/CRP-013-update-scheduler.md) | Update scheduler | 004, 005 | Sonnet 5.5 | high | S |
 | [CRP-014](done/CRP-014-project-profiles.md) | Project profiles in configuration | 012 | Sonnet 5.5 | medium | M |
+| [CRP-015](M1-core/CRP-015-steady-timer-across-sessions.md) | Decide what the elapsed timer shows when several sessions are open | 011, 042 | Sonnet 5.5 | medium | S |
 | [CRP-020](done/CRP-020-discord-codec.md) | Discord IPC codec | 004, 005, 010 | Sonnet 5.5 | medium | S |
 | [CRP-021](done/CRP-021-discord-transport.md) | Discord transport: pipe and socket dialers | 004, 005, 022 | Opus 5.5 | high | M |
 | [CRP-022](done/CRP-022-fake-discord-server.md) | Fake Discord IPC server for tests | 004, 005 | Sonnet 5.5 | high | M |
@@ -137,6 +138,7 @@ flowchart TD
     C012["012 config"]
     C013["013 scheduler"]
     C014["014 project profiles"]
+    C015["015 steady timer"]
     C020["020 codec"]
     C021["021 transport"]
     C022["022 fake Discord"]
@@ -193,6 +195,8 @@ flowchart TD
     C004 --> C013
     C005 --> C013
     C012 --> C014
+    C011 --> C015
+    C042 --> C015
     C004 --> C020
     C005 --> C020
     C010 --> C020
@@ -306,7 +310,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 6 | 008, 033 |
 | 7 | 035, 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
-| 9 | 045, 047, 048, 052, 054, 060, 073, 075, 079 |
+| 9 | 015, 045, 047, 048, 052, 054, 060, 073, 075, 079 |
 | 10 | 049, 053, 061, 063, 071, 072 |
 | 11 | 064, 074 |
 
