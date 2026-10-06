@@ -39,7 +39,7 @@ Read on 2026-10-05, in the activity object of Discord's gateway documentation an
 | A real Discord accepts an activity with a button over the local pipe | Observed 2026-10-05, Windows desktop client: the activity was shown with both text lines and the timer, and the log has no error. An activity is accepted or rejected whole |
 | The user sees the button on their own profile | **No**, on the desktop client's own profile popout. Observed 2026-10-05, at `full`: the name, both lines and the timer were shown and no button |
 | Another account sees the button on desktop | **Yes.** Observed 2026-10-05, at `full`: a "View on GitHub" button under the activity on the profile card, and it opened the repository |
-| Another account sees the button on mobile | **Yes.** Observed 2026-10-06, at `standard`, in a screenshot from a friend's phone: "Playing", the application name, both text lines, the timer and a "View on GitHub" button under them on the profile. The friend reported that the button works |
+| Another account sees the button on mobile | **Yes.** Observed 2026-10-06, at `standard`, in a screenshot from a friend's phone: "Playing", the application name, both text lines, the timer and a "View on GitHub" button under them on the profile. The friend reported that the button opened the repository on GitHub. Android, on a recent Pixel phone |
 | The button shows for the "playing" activity type, which is the one sent | Yes, as above. Other types were not tried; CRP-070 measures them |
 
 ## Permission modes
@@ -82,7 +82,7 @@ Record, for each row, what is seen:
 | The user | Desktop, own profile | No | Not applicable | 2026-10-05, at `full`. Everything else on the card was shown |
 | The user | Mobile, own profile | | | |
 | Second account | Desktop, profile card | Yes | Yes, to the right repository | 2026-10-05, at `full` |
-| Second account | Mobile, profile | Yes | Yes, as the friend reported | 2026-10-06, at `standard`. The button sits under the activity, inside its card. The phone's operating system and the Discord app's version are not yet recorded |
+| Second account | Mobile, profile | Yes | Yes, to the repository on GitHub, as the friend reported | 2026-10-06, at `standard`. The button sits under the activity, inside its card. Android, on a recent Pixel phone, reported as fully up to date; the exact Android and Discord app version numbers were not given |
 
 Run it once more with `-Privacy minimal` and confirm the button is still there with only the first text line.
 
