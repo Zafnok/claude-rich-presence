@@ -250,19 +250,17 @@ func (h *harness) wait() {
 func (h *harness) cleanup() {
 	h.t.Helper()
 	h.cancel()
-	deadline := time.After(watchdog)
-	for stopped := false; !stopped; {
+	eventually(h.t, "Run to return", func() bool {
 		select {
 		case <-h.done:
-			stopped = true
-		case <-time.After(100 * time.Millisecond):
+			return true
+		default:
 			// A test may end with a fake Discord that will not acknowledge
 			// the final clear. Only the clock ends that wait.
 			h.clock.Advance(session.ClearTimeout)
-		case <-deadline:
-			h.t.Fatal("timed out waiting for Run to return")
+			return false
 		}
-	}
+	})
 	wantNoGoroutines(h.t)
 	if log := h.logs.String(); strings.Contains(log, "details-") || strings.Contains(log, "state-") {
 		h.t.Errorf("the log holds activity content:\n%s", log)
@@ -280,6 +278,16 @@ func (h *harness) awaitState(s session.State, n int) {
 func (h *harness) timers(n int) {
 	h.t.Helper()
 	within(h.t, "timers to be armed", func() { h.clock.WaitForTimers(n) })
+}
+
+// written waits until the manager's write is over, for a test with nothing
+// else on the clock. The server has a frame before the write of it has
+// returned, with the write's timeout still armed: a test that then counts
+// timers can take that one for the scheduler's, and moving the clock past it
+// hangs up.
+func (h *harness) written() {
+	h.t.Helper()
+	h.timers(0)
 }
 
 // inBackoff waits until the manager has become disconnected for the nth time

@@ -372,6 +372,23 @@ func (s *scene) start(name string) *session {
 
 func (s *scene) startBinary(binary, name string) *session {
 	s.t.Helper()
+	c := s.launch(binary, name)
+	c.Initialize(mcpclient.ClaudeCode)
+	return c
+}
+
+// startAs starts the current binary and initializes it under a client name
+// that is not the one Claude Code gives.
+func (s *scene) startAs(client, name string) *session {
+	s.t.Helper()
+	c := s.launch(built.current, name)
+	c.Initialize(client)
+	return c
+}
+
+// launch starts a binary and leaves it uninitialized.
+func (s *scene) launch(binary, name string) *session {
+	s.t.Helper()
 	c := &session{
 		Client: mcpclient.Start(s.t, mcpclient.Options{Binary: binary, Env: s.processEnviron(), Patience: patience}),
 		t:      s.t,
@@ -381,7 +398,6 @@ func (s *scene) startBinary(binary, name string) *session {
 	s.mu.Lock()
 	s.sessions = append(s.sessions, c)
 	s.mu.Unlock()
-	c.Initialize(mcpclient.ClaudeCode)
 	return c
 }
 

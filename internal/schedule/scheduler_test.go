@@ -26,6 +26,19 @@ type recorder struct {
 	calls chan emission
 	// refuse makes emit report that it did not take the update.
 	refuse atomic.Bool
+	// settle is the scheduler's Settle.
+	settle func()
+}
+
+// record starts a scheduler on clock whose consumer is the recorder returned.
+// fake is the clock the emissions are timed by, which clock wraps or is.
+func record(t *testing.T, clock Clock, fake *fakeclock.Clock) (*Scheduler[string], *recorder) {
+	t.Helper()
+	rec := &recorder{t: t, clock: fake, calls: make(chan emission, 16)}
+	s := New(clock, interval, rec.emit)
+	rec.settle = s.Settle
+	t.Cleanup(s.Stop)
+	return s, rec
 }
 
 // emit takes every update, unless refuse is set.
@@ -34,12 +47,16 @@ func (r *recorder) emit(value string, show bool) bool {
 	return !r.refuse.Load()
 }
 
-// next waits for the next emission. The deadline only turns a hang into a
-// failure; no test depends on real time passing.
+// next waits for the next emission, and for the scheduler to have recorded
+// the answer to it. An emission arrives here from inside emit, before emit has
+// returned: without the second wait a test would go on while the scheduler was
+// still reading refuse, or had yet to record a refusal. The deadline only
+// turns a hang into a failure; no test depends on real time passing.
 func (r *recorder) next() emission {
 	r.t.Helper()
 	select {
 	case e := <-r.calls:
+		r.settle()
 		return e
 	case <-time.After(30 * time.Second):
 		r.t.Fatal("no emission")
@@ -68,9 +85,7 @@ func (r *recorder) wantNoMore() {
 func newScheduler(t *testing.T) (*Scheduler[string], *fakeclock.Clock, *recorder) {
 	t.Helper()
 	clock := fakeclock.New(start)
-	rec := &recorder{t: t, clock: clock, calls: make(chan emission, 16)}
-	s := New(clock, interval, rec.emit)
-	t.Cleanup(s.Stop)
+	s, rec := record(t, clock, clock)
 	return s, clock, rec
 }
 
@@ -85,6 +100,20 @@ func schedulerGoroutines() int {
 		}
 	}
 	return n
+}
+
+// blockedInSettle reports whether a goroutine is parked inside Settle, waiting
+// for the delivery under way.
+func blockedInSettle() bool {
+	buf := make([]byte, 1<<20)
+	buf = buf[:runtime.Stack(buf, true)]
+	for _, g := range strings.Split(string(buf), "\n\n") {
+		header, _, _ := strings.Cut(g, "\n")
+		if strings.Contains(header, "sync.Mutex.Lock") && strings.Contains(g, ").Settle(") {
+			return true
+		}
+	}
+	return false
 }
 
 // wantNoGoroutines waits for every scheduler loop to be gone. A goroutine that
@@ -287,6 +316,9 @@ func TestSettleWaitsForADeliveryThatIsUnderWay(t *testing.T) {
 		return true
 	})
 	defer s.Stop()
+	// A test that fails must still let the consumer go, or Stop never returns.
+	letGo := sync.OnceFunc(func() { close(release) })
+	defer letGo()
 
 	// With nothing under way it returns at once.
 	s.Settle()
@@ -298,12 +330,20 @@ func TestSettleWaitsForADeliveryThatIsUnderWay(t *testing.T) {
 		s.Settle()
 		close(settled)
 	}()
-	select {
-	case <-settled:
-		t.Fatal("Settle returned while the consumer was still deciding")
-	case <-time.After(50 * time.Millisecond):
+	// Settle must be seen waiting, which a Settle that returns early never is.
+	deadline := time.Now().Add(30 * time.Second)
+	for !blockedInSettle() {
+		select {
+		case <-settled:
+			t.Fatal("Settle returned while the consumer was still deciding")
+		default:
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("Settle neither returned nor waited")
+		}
+		runtime.Gosched()
 	}
-	close(release)
+	letGo()
 	select {
 	case <-settled:
 	case <-time.After(30 * time.Second):
@@ -391,9 +431,7 @@ func (c *steppingClock) Now() time.Time {
 
 func TestClockSteppingBackDelaysButDoesNotStall(t *testing.T) {
 	clock := &steppingClock{Clock: fakeclock.New(start)}
-	rec := &recorder{t: t, clock: clock.Clock, calls: make(chan emission, 16)}
-	s := New(clock, interval, rec.emit)
-	t.Cleanup(s.Stop)
+	s, rec := record(t, clock, clock.Clock)
 
 	s.Submit("a")
 	rec.want(emission{"a", true, 0})
@@ -411,16 +449,29 @@ func TestClockSteppingBackDelaysButDoesNotStall(t *testing.T) {
 
 func TestTimerIsKeptThroughABurst(t *testing.T) {
 	clock := &countingClock{Clock: fakeclock.New(start)}
-	rec := &recorder{t: t, clock: clock.Clock, calls: make(chan emission, 16)}
-	s := New(clock, interval, rec.emit)
-	t.Cleanup(s.Stop)
+	s, rec := record(t, clock, clock.Clock)
 
 	s.Submit("a")
 	rec.want(emission{"a", true, 0})
+	// The scheduler is let finish with each submission before the next thing
+	// happens. One that it was still looking at when the clock moved would
+	// find its timer fired with time left to wait, and arm another.
 	for _, v := range []string{"b", "c", "d", "e"} {
+		looks := clock.looks.Load()
 		s.Submit(v)
+		deadline := time.Now().Add(30 * time.Second)
+		for clock.looks.Load() == looks {
+			if time.Now().After(deadline) {
+				t.Fatalf("the scheduler did not look at %q", v)
+			}
+			runtime.Gosched()
+		}
+		// It reads the clock inside the step that Settle waits for.
+		s.Settle()
 	}
-	clock.WaitForTimers(1)
+	if clock.Timers() != 1 {
+		t.Fatalf("%d timers armed during the burst, want 1", clock.Timers())
+	}
 	clock.Advance(interval)
 	rec.want(emission{"e", true, interval})
 	s.Stop()
@@ -429,10 +480,17 @@ func TestTimerIsKeptThroughABurst(t *testing.T) {
 	}
 }
 
-// countingClock counts the timers armed on it.
+// countingClock counts the timers armed on it, and the times it is read,
+// which the scheduler does once each time it looks at what to do.
 type countingClock struct {
 	*fakeclock.Clock
 	armed atomic.Int64
+	looks atomic.Int64
+}
+
+func (c *countingClock) Now() time.Time {
+	c.looks.Add(1)
+	return c.Clock.Now()
 }
 
 func (c *countingClock) AfterFunc(d time.Duration, f func()) func() bool {

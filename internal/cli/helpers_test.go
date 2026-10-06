@@ -188,10 +188,16 @@ func itoa(n int) string {
 	return string(b)
 }
 
-// initialize performs the handshake.
+// initialize performs the handshake as Claude Code.
 func (s *client) initialize() {
 	s.t.Helper()
-	s.send(initializeLine)
+	s.initializeAs("claude-code")
+}
+
+// initializeAs performs the handshake under a client name.
+func (s *client) initializeAs(name string) {
+	s.t.Helper()
+	s.send(strings.Replace(initializeLine, "claude-code", name, 1))
 	if s.receive()["error"] != nil {
 		s.t.Fatal("initialize failed")
 	}

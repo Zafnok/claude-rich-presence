@@ -70,7 +70,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-005](done/CRP-005-ci-pipeline.md) | CI pipeline and the coverage gate | 004 | Sonnet 5.5 | medium | M |
 | [CRP-006](M0-foundation/CRP-006-sonarqube-cloud.md) | SonarQube Cloud integration | 005 | Sonnet 5.5 | low | S |
 | [CRP-007](done/CRP-007-supply-chain-policy.md) | Supply-chain policy enforcement | 005 | Sonnet 5.5 | low | S |
-| [CRP-008](M0-foundation/CRP-008-flaky-tests.md) | Fix two flaky tests in the scheduler and the session manager | 005, 013, 023, 024 | Opus 5.5 | high | S |
+| [CRP-008](done/CRP-008-flaky-tests.md) | Fix two flaky tests in the scheduler and the session manager | 005, 013, 023, 024 | Opus 5.5 | high | S |
 | [CRP-010](done/CRP-010-domain-model.md) | Domain model: events, sessions, registry | 004, 005 | Sonnet 5.5 | high | M |
 | [CRP-011](done/CRP-011-presence-renderer.md) | Presence renderer | 010 | Sonnet 5.5 | medium | M |
 | [CRP-012](done/CRP-012-configuration.md) | Configuration | 004, 005 | Sonnet 5.5 | medium | M |
@@ -97,10 +97,11 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-047](M4-claude-code/CRP-047-activity-summary.md) | Activity summary in Claude Code | 014, 042, 046, 077 | Sonnet 5.5 | high | M |
 | [CRP-048](M4-claude-code/CRP-048-repository-link.md) | Repository link for opted-in projects | 014, 042, 077 | Sonnet 5.5 | high | M |
 | [CRP-049](M4-claude-code/CRP-049-shared-area-rollup.md) | Shared-area roll-up across sessions | 047 | Sonnet 5.5 | medium | S |
-| [CRP-050](M5-claude-desktop/CRP-050-desktop-adapter.md) | Claude Desktop adapter | 002, 033, 043 | Sonnet 5.5 | medium | S |
+| [CRP-050](done/CRP-050-desktop-adapter.md) | Claude Desktop adapter | 002, 033, 043 | Sonnet 5.5 | medium | S |
 | [CRP-051](done/CRP-051-mcpb-bundle.md) | MCPB bundle | 001, 033 | Sonnet 5.5 | medium | S |
 | [CRP-052](M5-claude-desktop/CRP-052-desktop-validation.md) | Desktop validation on real machines | 002, 042, 050, 051 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-053](M5-claude-desktop/CRP-053-desktop-summary.md) | Activity summary in Claude Desktop Chat | 047, 050 | Sonnet 5.5 | medium | S |
+| [CRP-054](M5-claude-desktop/CRP-054-desktop-idle-clear.md) | Decide how long Claude Desktop is shown when nothing else is running | 050 | Sonnet 5.5 | medium | S |
 | [CRP-060](M6-release/CRP-060-release-pipeline.md) | Release pipeline | 003, 005, 007, 042, 043, 051 | Sonnet 5.5 | high | M |
 | [CRP-061](M6-release/CRP-061-user-documentation.md) | User documentation | 003, 042, 052 | Haiku 4.5 | n/a | S |
 | [CRP-062](done/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S |
@@ -165,6 +166,7 @@ flowchart TD
     C051["051 MCPB bundle"]
     C052["052 Desktop validation"]
     C053["053 summary, Desktop"]
+    C054["054 Desktop idle rule"]
     C060["060 release"]
     C061["061 user docs"]
     C062["062 security review"]
@@ -260,6 +262,7 @@ flowchart TD
     C051 --> C052
     C047 --> C053
     C050 --> C053
+    C050 --> C054
     C003 --> C060
     C005 --> C060
     C007 --> C060
@@ -315,7 +318,7 @@ Tickets in the same wave have no dependencies on each other and can run in paral
 | 6 | 008, 033 |
 | 7 | 035, 043, 051, 076 |
 | 8 | 042, 044 only if CRP-001 failed, 050, 062 |
-| 9 | 045, 047, 048, 052, 060, 065, 066, 067, 068, 073, 075, 079 |
+| 9 | 045, 047, 048, 052, 054, 060, 065, 066, 067, 068, 073, 075, 079 |
 | 10 | 049, 053, 061, 063, 071, 072 |
 | 11 | 064, 074 |
 
@@ -350,7 +353,7 @@ Rules for keeping cost down without losing quality:
 4. **Review is cheaper than rework.** Run `/code-review` on every pull request. For the Opus tickets, review with Opus as well.
 5. **Spikes are time-boxed.** A spike that has not answered its questions in its box stops and reports what it found.
 
-By this plan thirty-seven tickets run on Sonnet 5.5, eleven on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
+By this plan thirty-eight tickets run on Sonnet 5.5, eleven on Opus 5.5 (one of them conditional), one on Haiku 4.5, and four are owner tasks with light model assistance.
 
 ## Owner actions
 
