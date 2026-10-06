@@ -116,6 +116,43 @@ func (s SessionState) Domain() domain.Session {
 	}
 }
 
+// PreviewOf is what a host shows, for the wire: an activity, or nothing when
+// shown is false. The start is cut to the millisecond.
+func PreviewOf(a domain.Activity, shown bool) PreviewResult {
+	if !shown {
+		return PreviewResult{}
+	}
+	return PreviewResult{
+		Shown:       true,
+		Details:     a.Details,
+		State:       a.State,
+		Start:       toMillis(a.Start),
+		LargeImage:  a.LargeImage,
+		LargeText:   a.LargeText,
+		SmallImage:  a.SmallImage,
+		SmallText:   a.SmallText,
+		ButtonLabel: a.Button.Label,
+		ButtonURL:   a.Button.URL,
+	}
+}
+
+// Activity undoes PreviewOf. It reports false when nothing is shown.
+func (m PreviewResult) Activity() (domain.Activity, bool) {
+	if !m.Shown {
+		return domain.Activity{}, false
+	}
+	return domain.Activity{
+		Details:    m.Details,
+		State:      m.State,
+		Start:      fromMillis(m.Start),
+		LargeImage: m.LargeImage,
+		LargeText:  m.LargeText,
+		SmallImage: m.SmallImage,
+		SmallText:  m.SmallText,
+		Button:     domain.Button{Label: m.ButtonLabel, URL: m.ButtonURL},
+	}, true
+}
+
 func (e EventData) check() error {
 	return firstError(
 		checkText("event.session_id", e.SessionID, true, domain.MaxIDLen),

@@ -67,7 +67,7 @@ func TestStatusAsksTheHost(t *testing.T) {
 	if code != 0 || stderr != "" {
 		t.Fatalf("got code %d, stderr %q; want 0 and nothing", code, stderr)
 	}
-	want := []string{"Role: host", "Discord: connected", "Sessions: 1", "Version: 1.2.3", "Uptime: "}
+	want := []string{"Role: host", "Discord: connected", "Sessions: 1", "Version: 1.2.3", "Uptime: ", "Paused: no"}
 	lines := strings.Split(strings.TrimSuffix(stdout, "\n"), "\n")
 	if len(lines) != len(want) {
 		t.Fatalf("stdout = %q, want %d lines", stdout, len(want))
@@ -240,7 +240,9 @@ func TestUptimeIsPrintedAsADuration(t *testing.T) {
 		}
 	})
 	code, stdout, _ := w.run("status")
-	want := "Role: host\nDiscord: connecting\nSessions: 2\nVersion: 9.9.9\nUptime: 1h30m0s\n"
+	// The host the test plays says nothing of a pause, as one from before
+	// pausing does.
+	want := "Role: host\nDiscord: connecting\nSessions: 2\nVersion: 9.9.9\nUptime: 1h30m0s\nPaused: unavailable, the presence host is an older version\n"
 	if code != 0 || stdout != want {
 		t.Errorf("got code %d, stdout %q; want 0 and %q", code, stdout, want)
 	}

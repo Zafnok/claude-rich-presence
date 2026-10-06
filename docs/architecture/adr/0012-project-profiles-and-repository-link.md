@@ -68,7 +68,7 @@ This replaces the separate allowlist in ADR-0011: enabling the summary for chose
 2. **Pausing** switches the whole presence off for a period or until resumed, without changing any setting. It is held by the presence host and survives a change of host.
 3. Pausing is done through a tool the model calls when the user asks. That is acceptable where a tool that writes profiles is not, because a pause can only reduce what is published.
 
-Ticketed as [CRP-073](../../tickets/M7-personalisation/CRP-073-hide-pause-preview.md).
+Ticketed as [CRP-073](../../tickets/done/CRP-073-hide-pause-preview.md).
 
 ### Not for Claude Desktop Chat
 

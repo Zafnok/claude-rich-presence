@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/Zafnok/claude-rich-presence/internal/domain"
 )
 
 // The protocol versions this binary speaks. A change an older host cannot
@@ -22,6 +24,9 @@ const (
 	// MaxWordLen bounds a word from a closed vocabulary, such as an event
 	// kind. The words themselves are judged by the domain, not here.
 	MaxWordLen = 32
+	// MaxCardTextLen bounds each piece of text in a preview. It is Discord's
+	// longest limit on any of them, that of a button's URL.
+	MaxCardTextLen = domain.MaxLinkLen
 )
 
 // The errors a message can fail with. Each is wrapped with the name of the
@@ -35,14 +40,18 @@ var (
 
 // The message types, as they appear in the "type" field.
 const (
-	TypeHello        = "hello"
-	TypeWelcome      = "welcome"
-	TypeRefuse       = "refuse"
-	TypeSync         = "sync"
-	TypeEvent        = "event"
-	TypeStandDown    = "stand_down"
-	TypeStatus       = "status"
-	TypeStatusResult = "status_result"
+	TypeHello         = "hello"
+	TypeWelcome       = "welcome"
+	TypeRefuse        = "refuse"
+	TypeSync          = "sync"
+	TypeEvent         = "event"
+	TypeStandDown     = "stand_down"
+	TypeStatus        = "status"
+	TypeStatusResult  = "status_result"
+	TypePause         = "pause"
+	TypeResume        = "resume"
+	TypePreview       = "preview"
+	TypePreviewResult = "preview_result"
 )
 
 // Message is one line on the control channel. The set is closed: the types
@@ -97,6 +106,56 @@ type StatusResult struct {
 	Sessions      int          `json:"sessions"`
 	Version       string       `json:"version"`
 	UptimeSeconds int64        `json:"uptime_seconds"`
+	// Pause is the pause the host holds. A host that can pause always sends
+	// it, so nil means a host from before pausing.
+	Pause *PauseState `json:"pause,omitempty"`
+}
+
+// Pause asks the host to show nothing: until the time Until, or until a
+// resume when Until is zero. It can only take presence away.
+type Pause struct {
+	// Until and At are in Unix milliseconds.
+	Until int64 `json:"until,omitempty"`
+	// At is when the user asked. Of two requests the host keeps the later.
+	At int64 `json:"at"`
+}
+
+// Resume ends a pause.
+type Resume struct {
+	// At is when the user asked, as in Pause.
+	At int64 `json:"at"`
+}
+
+// PauseState is the latest pause or resume the host was given.
+type PauseState struct {
+	// Paused says the latest request was a pause. One with an Until that has
+	// passed has ended.
+	Paused bool `json:"paused"`
+	// Until is when the pause ends, or zero for a pause until resumed.
+	Until int64 `json:"until,omitempty"`
+	// At is when the user asked, or zero if nothing was ever asked.
+	At int64 `json:"at,omitempty"`
+}
+
+// Preview asks the host for a PreviewResult.
+type Preview struct{}
+
+// PreviewResult is the card as the host last handed it to Discord. Unlike a
+// StatusResult it can name a project, so it is for the user's own eyes and
+// is never logged.
+type PreviewResult struct {
+	// Shown is false when the host shows nothing. The rest is then empty.
+	Shown   bool   `json:"shown"`
+	Details string `json:"details,omitempty"`
+	State   string `json:"state,omitempty"`
+	// Start is the beginning of the elapsed timer, in Unix milliseconds.
+	Start       int64  `json:"start,omitempty"`
+	LargeImage  string `json:"large_image,omitempty"`
+	LargeText   string `json:"large_text,omitempty"`
+	SmallImage  string `json:"small_image,omitempty"`
+	SmallText   string `json:"small_text,omitempty"`
+	ButtonLabel string `json:"button_label,omitempty"`
+	ButtonURL   string `json:"button_url,omitempty"`
 }
 
 // Unknown is a message whose type this binary does not know. It is to be
@@ -189,6 +248,18 @@ func (Status) Type() string { return TypeStatus }
 func (StatusResult) Type() string { return TypeStatusResult }
 
 // Type implements Message.
+func (Pause) Type() string { return TypePause }
+
+// Type implements Message.
+func (Resume) Type() string { return TypeResume }
+
+// Type implements Message.
+func (Preview) Type() string { return TypePreview }
+
+// Type implements Message.
+func (PreviewResult) Type() string { return TypePreviewResult }
+
+// Type implements Message.
 func (Unknown) Type() string { return "" }
 
 // typed is the "type" field every encoded message starts with.
@@ -242,6 +313,29 @@ func (m StatusResult) wire() (any, error) {
 	}{typed{TypeStatusResult}, m}, m.check()
 }
 
+func (m Pause) wire() (any, error) {
+	return struct {
+		typed
+		Pause
+	}{typed{TypePause}, m}, m.check()
+}
+
+func (m Resume) wire() (any, error) {
+	return struct {
+		typed
+		Resume
+	}{typed{TypeResume}, m}, m.check()
+}
+
+func (m Preview) wire() (any, error) { return typed{TypePreview}, m.check() }
+
+func (m PreviewResult) wire() (any, error) {
+	return struct {
+		typed
+		PreviewResult
+	}{typed{TypePreviewResult}, m}, m.check()
+}
+
 func (Unknown) wire() (any, error) {
 	return nil, invalid("type")
 }
@@ -282,8 +376,41 @@ func (m StatusResult) check() error {
 		return invalid("status_result.sessions")
 	case m.UptimeSeconds < 0:
 		return invalid("status_result.uptime_seconds")
+	case m.Pause != nil && m.Pause.Until < 0:
+		return invalid("status_result.pause.until")
+	case m.Pause != nil && m.Pause.At < 0:
+		return invalid("status_result.pause.at")
 	}
 	return checkBinaryVersion("status_result.version", m.Version)
+}
+
+func (m Pause) check() error {
+	if m.Until < 0 {
+		return invalid("pause.until")
+	}
+	return checkTime("pause.at", m.At)
+}
+
+func (m Resume) check() error { return checkTime("resume.at", m.At) }
+
+func (Preview) check() error { return nil }
+
+func (m PreviewResult) check() error {
+	start := error(nil)
+	if m.Start < 0 {
+		start = invalid("preview_result.start")
+	}
+	return firstError(
+		checkText("preview_result.details", m.Details, false, MaxCardTextLen),
+		checkText("preview_result.state", m.State, false, MaxCardTextLen),
+		start,
+		checkText("preview_result.large_image", m.LargeImage, false, MaxCardTextLen),
+		checkText("preview_result.large_text", m.LargeText, false, MaxCardTextLen),
+		checkText("preview_result.small_image", m.SmallImage, false, MaxCardTextLen),
+		checkText("preview_result.small_text", m.SmallText, false, MaxCardTextLen),
+		checkText("preview_result.button_label", m.ButtonLabel, false, MaxCardTextLen),
+		checkText("preview_result.button_url", m.ButtonURL, false, MaxCardTextLen),
+	)
 }
 
 // checkVersions checks the two fields hello and welcome share.

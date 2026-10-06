@@ -57,12 +57,17 @@ func TestPrivacyValid(t *testing.T) {
 		domain.PrivacyMinimal:  true,
 		domain.PrivacyStandard: true,
 		domain.PrivacyFull:     true,
-		"":                     false,
-		"everything":           false,
+		// A hidden session is never published, so off is not a level one has.
+		domain.PrivacyOff: false,
+		"":                false,
+		"everything":      false,
 	}
 	for p, want := range cases {
 		if got := p.Valid(); got != want {
 			t.Errorf("Privacy(%q).Valid() = %v, want %v", p, got, want)
+		}
+		if got, want := p.Settable(), want || p == domain.PrivacyOff; got != want {
+			t.Errorf("Privacy(%q).Settable() = %v, want %v", p, got, want)
 		}
 	}
 }

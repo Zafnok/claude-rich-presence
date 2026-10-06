@@ -25,7 +25,7 @@ The file is JSON. Its location:
 | Setting | Values | Default | Environment |
 |---|---|---|---|
 | `enabled` | `true`, `false` | `true` | Yes |
-| `privacy` | `minimal`, `standard`, `full` | `standard` | Yes |
+| `privacy` | `off`, `minimal`, `standard`, `full` | `standard` | Yes |
 | `discord_application_id` | A numeric string | The project's application id | Yes |
 | `idle_clear_after` | A duration such as `15m`. `0` means never | `15m` | Yes |
 | `min_update_interval` | A duration such as `15s`, at least `4s` | `15s` | Yes |
@@ -35,7 +35,7 @@ The file is JSON. Its location:
 
 Two more environment variables exist for tests and unusual setups. They are not settings and have no entry in the file. `RICH_PRESENCE_RUNTIME_DIR` moves the directory of the control socket ([ADR-0006](architecture/adr/0006-control-channel.md)). `RICH_PRESENCE_DISCORD_ENDPOINT` replaces the search for Discord with one endpoint name ([ADR-0018](architecture/adr/0018-discord-endpoint-override.md)).
 
-What each privacy level publishes is in [ADR-0008](architecture/adr/0008-privacy-and-safety-by-default.md).
+What each privacy level publishes is in [ADR-0008](architecture/adr/0008-privacy-and-safety-by-default.md). `off` publishes nothing: see [Hiding a project](#hiding-a-project).
 
 ### What `full` publishes
 
@@ -54,7 +54,7 @@ Each entry of `projects` is an object:
 | Field | Required | Meaning |
 |---|---|---|
 | `path` | Yes | The project's directory, as an absolute path |
-| `privacy` | No | The privacy level for this project. It may be lower or higher than the global one |
+| `privacy` | No | The privacy level for this project. It may be lower or higher than the global one, and `off` hides the project |
 | `name` | No | A display name, shown in place of the directory name |
 | `areas` | No | The project's main parts, such as "battle engine" or "story" |
 | `link` | No | The repository's address, shown as a button. See [Sharing a project](#sharing-a-project) |
@@ -118,7 +118,46 @@ https://github.com/owner/repository
 
 The program makes no network requests, so it cannot tell whether a repository is public. A link to a private repository reveals its owner and name and leads nowhere.
 
-### Sharing a project
+### Hiding a project
+
+The privacy level `off` keeps a session off Discord entirely ([ADR-0012](architecture/adr/0012-project-profiles-and-repository-link.md), "Hiding and pausing"). A hidden session is never sent to the process that holds the Discord connection. So it is not counted among your sessions, it is never the one the card describes, and if it is your only session the card is not shown at all.
+
+Set it in a project's profile to hide that project:
+
+```json
+{
+  "projects": [
+    { "path": "/home/me/work/client-project", "privacy": "off" }
+  ]
+}
+```
+
+Set it as the global `privacy` to hide everything except the projects whose profiles name another level.
+
+Two things follow from where a session's level comes from, which is the directory its hooks report:
+
+- When any level in your configuration is `off`, a new session stays hidden until its first hook says which directory it is in. In Claude Code that is your first prompt. Without an `off` anywhere, a new session is shown at once, at `minimal`.
+- A session that moves into a hidden project disappears from Discord, and one that moves out appears.
+
+The Claude Desktop app has no project, so it follows the global level: at `off` it is hidden.
+
+## Pausing
+
+A pause switches the whole presence off for a while without changing any setting. It covers every open session. In Claude Code, ask Claude to pause your Discord status, for a length of time or until you say, and to resume it: the plugin's `pause` and `resume` skills call the tool `presence_pause` for you.
+
+- A pause with a length ends by itself. The longest is one week.
+- A pause does not end when the session that asked for it closes. It lasts as long as any session is open, and for its remaining time whichever process holds the Discord connection.
+- While presence is paused nothing is sent to Discord. Your sessions go on being tracked, so that a resume shows what they are doing now.
+- The tool can pause and resume, and nothing else. It cannot change what is shown, a privacy level or a profile.
+- If another open session runs a version from before pausing and holds the Discord connection, the tool says that pausing is unavailable. Restart that session.
+
+## Previewing the card
+
+Much of the card is hover text, and Discord does not show you your own button. To see every part of the card as it is shown now, ask Claude to preview your Discord card: the plugin's `preview` skill calls the status tool with `preview` set. It lists both text lines, the timer, both images and their hover text, the button and its link, and says whether presence is paused and whether this session is hidden.
+
+The preview can name your project, so it is private. It is returned to your own session and is never written to the log. The plain status report, from the `status` skill or `rich-presence status`, names nothing and is safe to paste into a public issue.
+
+## Sharing a project
 
 A profile with a `link` puts one button on your Discord status, such as "View on GitHub", while a session inside that project is the one your status describes. With several sessions open, the button belongs to the session in focus, and it goes away when focus moves to a session whose project has no link.
 

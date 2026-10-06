@@ -13,6 +13,7 @@ const (
 )
 
 var (
-	Newer    = newer
-	Jittered = jittered
+	Newer      = newer
+	Jittered   = jittered
+	Supersedes = supersedes
 )

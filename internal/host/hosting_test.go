@@ -317,7 +317,12 @@ func TestStatusIsAnsweredFromMemory(t *testing.T) {
 	q := w.join("status")
 	q.welcomed("1.0.0")
 	want := protocol.StatusResult{Discord: protocol.DiscordConnected, Sessions: 2, Version: "1.4.0", UptimeSeconds: 90}
-	if got := q.status(); got != want {
+	got := q.status()
+	// A host that can pause always says what pause it holds, here none.
+	if got.Pause == nil || *got.Pause != (protocol.PauseState{}) {
+		t.Errorf("the pause is reported as %+v, want one that was never asked for", got.Pause)
+	}
+	if got.Pause = nil; got != want {
 		t.Errorf("status is %+v, want %+v", got, want)
 	}
 

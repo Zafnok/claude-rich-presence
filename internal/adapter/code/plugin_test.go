@@ -206,11 +206,12 @@ func TestPluginManifest(t *testing.T) {
 	}
 	privacy := p.UserConfig["privacy"]
 	for _, level := range privacy.Options {
-		if !domain.Privacy(level).Valid() {
+		if !domain.Privacy(level).Settable() {
 			t.Errorf("privacy option %q is not a privacy level", level)
 		}
 	}
-	if len(privacy.Options) != 3 || privacy.Default != string(domain.PrivacyStandard) {
+	// The three levels a session is published at, and off.
+	if len(privacy.Options) != 4 || privacy.Default != string(domain.PrivacyStandard) {
 		t.Errorf("privacy: options %v, default %q", privacy.Options, privacy.Default)
 	}
 }
@@ -267,9 +268,9 @@ func TestPluginIsJSONAndMarkdownOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The manifest, the hook file and the three skills.
-	if files != 5 {
-		t.Errorf("found %d files, want 5", files)
+	// The manifest, the hook file and the six skills.
+	if files != 8 {
+		t.Errorf("found %d files, want 8", files)
 	}
 	if !slices.Contains(strings.Split(readText(t, repoRoot+"/.gitignore"), "\n"), "plugin/.mcpb-cache/") {
 		t.Error(".gitignore does not ignore plugin/.mcpb-cache/")

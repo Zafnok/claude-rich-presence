@@ -38,7 +38,19 @@ func examples() map[string]protocol.Message {
 		"status":     protocol.Status{},
 		"status_result": protocol.StatusResult{
 			Discord: protocol.DiscordConnected, Sessions: 3, Version: "1.4.0", UptimeSeconds: 5400,
+			Pause: &protocol.PauseState{Paused: true, Until: 1790989323500, At: 1790985723500},
 		},
+		"pause":               protocol.Pause{Until: 1790989323500, At: 1790985723500},
+		"pause_until_resumed": protocol.Pause{At: 1790985723500},
+		"resume":              protocol.Resume{At: 1790985999000},
+		"preview":             protocol.Preview{},
+		"preview_result": protocol.PreviewResult{
+			Shown: true, Details: "Claude Code · example-project", State: "Editing files · Opus · 2 sessions",
+			Start: 1790985600000, LargeImage: "logo", LargeText: "Claude Code",
+			SmallImage: "working", SmallText: "Editing files",
+			ButtonLabel: "View on GitHub", ButtonURL: "https://github.com/owner/example-project",
+		},
+		"preview_result_nothing": protocol.PreviewResult{},
 	}
 }
 
@@ -88,8 +100,8 @@ func TestGoldenFilesMatchTheCodec(t *testing.T) {
 		})
 		types[m.Type()] = true
 	}
-	if len(types) != 8 {
-		t.Errorf("examples cover %d message types, want 8", len(types))
+	if len(types) != 12 {
+		t.Errorf("examples cover %d message types, want 12", len(types))
 	}
 }
 
@@ -169,6 +181,7 @@ func event(change func(*protocol.EventData)) protocol.Message {
 func TestEncodeRejectsWhatWouldNotDecode(t *testing.T) {
 	long := strings.Repeat("x", 200)
 	word := strings.Repeat("x", protocol.MaxWordLen+1)
+	card := strings.Repeat("x", protocol.MaxCardTextLen+1)
 	cases := []struct {
 		name  string
 		m     protocol.Message
@@ -195,6 +208,22 @@ func TestEncodeRejectsWhatWouldNotDecode(t *testing.T) {
 		{"status negative uptime", protocol.StatusResult{Discord: protocol.DiscordConnected, UptimeSeconds: -1, Version: "1"}, protocol.ErrInvalidValue, "status_result.uptime_seconds"},
 		{"status without version", protocol.StatusResult{Discord: protocol.DiscordConnected}, protocol.ErrMissingField, "status_result.version"},
 		{"status version is a path", protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "/home/me"}, protocol.ErrInvalidValue, "status_result.version"},
+		{"status negative pause end", protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "1", Pause: &protocol.PauseState{Until: -1}}, protocol.ErrInvalidValue, "status_result.pause.until"},
+		{"status negative pause time", protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "1", Pause: &protocol.PauseState{At: -1}}, protocol.ErrInvalidValue, "status_result.pause.at"},
+		{"pause without time", protocol.Pause{Until: 5}, protocol.ErrMissingField, "pause.at"},
+		{"pause negative time", protocol.Pause{At: -1}, protocol.ErrInvalidValue, "pause.at"},
+		{"pause negative end", protocol.Pause{Until: -1, At: 1}, protocol.ErrInvalidValue, "pause.until"},
+		{"resume without time", protocol.Resume{}, protocol.ErrMissingField, "resume.at"},
+		{"resume negative time", protocol.Resume{At: -1}, protocol.ErrInvalidValue, "resume.at"},
+		{"preview long details", protocol.PreviewResult{Details: card}, protocol.ErrInvalidValue, "preview_result.details"},
+		{"preview long state", protocol.PreviewResult{State: card}, protocol.ErrInvalidValue, "preview_result.state"},
+		{"preview negative start", protocol.PreviewResult{Start: -1}, protocol.ErrInvalidValue, "preview_result.start"},
+		{"preview long large image", protocol.PreviewResult{LargeImage: card}, protocol.ErrInvalidValue, "preview_result.large_image"},
+		{"preview long large text", protocol.PreviewResult{LargeText: card}, protocol.ErrInvalidValue, "preview_result.large_text"},
+		{"preview long small image", protocol.PreviewResult{SmallImage: card}, protocol.ErrInvalidValue, "preview_result.small_image"},
+		{"preview long small text", protocol.PreviewResult{SmallText: card}, protocol.ErrInvalidValue, "preview_result.small_text"},
+		{"preview long button label", protocol.PreviewResult{ButtonLabel: card}, protocol.ErrInvalidValue, "preview_result.button_label"},
+		{"preview long button link", protocol.PreviewResult{ButtonURL: card}, protocol.ErrInvalidValue, "preview_result.button_url"},
 
 		{"session without id", session(func(s *protocol.SessionState) { s.ID = "" }), protocol.ErrMissingField, "session.id"},
 		{"session long id", session(func(s *protocol.SessionState) { s.ID = long }), protocol.ErrInvalidValue, "session.id"},
@@ -245,6 +274,7 @@ func TestEncodeRejectsWhatWouldNotDecode(t *testing.T) {
 
 func TestEncodeAcceptsValuesAtTheLimits(t *testing.T) {
 	word := strings.Repeat("w", protocol.MaxWordLen)
+	card := strings.Repeat("c", protocol.MaxCardTextLen)
 	messages := []protocol.Message{
 		protocol.Hello{Protocol: 99, Version: strings.Repeat("1", protocol.MaxVersionLen)},
 		protocol.Welcome{Protocol: 1, Version: "v0.0.0-20261003120000-0123456789ab+dirty"},
@@ -255,6 +285,13 @@ func TestEncodeAcceptsValuesAtTheLimits(t *testing.T) {
 		protocol.StatusResult{Discord: protocol.DiscordConnecting, Version: "1"},
 		protocol.StatusResult{Discord: protocol.DiscordDisconnected, Version: "1"},
 		protocol.StatusResult{Discord: protocol.DiscordUnknown, Version: "1"},
+		protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "1", Pause: &protocol.PauseState{}},
+		protocol.Pause{At: 1},
+		protocol.Resume{At: 1},
+		protocol.PreviewResult{
+			Shown: true, Details: card, State: card, Start: 1, LargeImage: card, LargeText: card,
+			SmallImage: card, SmallText: card, ButtonLabel: card, ButtonURL: card,
+		},
 		protocol.Sync{Session: &protocol.SessionState{
 			ID: strings.Repeat("i", domain.MaxIDLen), Surface: word, Status: word, Tool: word,
 			Model: strings.Repeat("m", domain.MaxModelLen), Project: strings.Repeat("p", domain.MaxProjectLen),
@@ -293,6 +330,9 @@ func TestDecode(t *testing.T) {
 		{"unknown reason", `{"type":"refuse","reason":"moon_phase"}`, protocol.Refuse{Reason: protocol.ReasonOther}},
 		{"unknown discord state", `{"type":"status_result","discord":"napping","version":"1"}`, protocol.StatusResult{Discord: protocol.DiscordUnknown, Version: "1"}},
 		{"sessions and uptime default to zero", `{"type":"status_result","discord":"connected","version":"1"}`, protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "1"}},
+		{"a status from before pausing has no pause", `{"type":"status_result","discord":"connected","version":"1","pause":null}`, protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "1"}},
+		{"a pause that was never asked for", `{"type":"status_result","discord":"connected","version":"1","pause":{}}`, protocol.StatusResult{Discord: protocol.DiscordConnected, Version: "1", Pause: &protocol.PauseState{}}},
+		{"a preview of nothing", `{"type":"preview_result"}`, protocol.PreviewResult{}},
 		{"sync without a session field", `{"type":"sync"}`, protocol.Sync{}},
 		{"a word the domain does not know", `{"type":"event","event":{"session_id":"s","surface":"code","at":1,"kind":"levitating"}}`, protocol.Event{Event: protocol.EventData{SessionID: "s", Surface: "code", At: 1, Kind: "levitating"}}},
 		{"a newer protocol version", `{"type":"hello","protocol":7,"version":"9.0.0"}`, protocol.Hello{Protocol: 7, Version: "9.0.0"}},
@@ -336,6 +376,11 @@ func TestDecodeErrors(t *testing.T) {
 		{"reason is not a string", `{"type":"refuse","reason":7}`, protocol.ErrMalformed},
 		{"discord is not a string", `{"type":"status_result","discord":7,"version":"1"}`, protocol.ErrMalformed},
 		{"session is not an object", `{"type":"sync","session":"` + secret + `"}`, protocol.ErrMalformed},
+		{"pause is not an object", `{"type":"status_result","discord":"connected","version":"1","pause":"` + secret + `"}`, protocol.ErrMalformed},
+		{"pause end is not a number", `{"type":"pause","until":"` + secret + `","at":1}`, protocol.ErrMalformed},
+		{"pause without time", `{"type":"pause","until":5}`, protocol.ErrMissingField},
+		{"resume without time", `{"type":"resume"}`, protocol.ErrMissingField},
+		{"preview text is not a string", `{"type":"preview_result","details":7}`, protocol.ErrMalformed},
 		{"null", `null`, protocol.ErrMissingField},
 		{"no type", `{"protocol":1}`, protocol.ErrMissingField},
 		{"empty type", `{"type":""}`, protocol.ErrMissingField},
@@ -632,7 +677,19 @@ func TestMessagesCarryOnlyTheListedFields(t *testing.T) {
 		{protocol.StandDown{}, nil},
 		{protocol.Status{}, nil},
 		// Nothing here names a project, a path or a session.
-		{protocol.StatusResult{}, []string{"discord string", "sessions int", "uptime_seconds int64", "version string"}},
+		{protocol.StatusResult{}, []string{
+			"discord string", "pause.at int64", "pause.paused bool", "pause.until int64",
+			"sessions int", "uptime_seconds int64", "version string",
+		}},
+		// A pause and a resume carry times and nothing that could be shown.
+		{protocol.Pause{}, []string{"at int64", "until int64"}},
+		{protocol.Resume{}, []string{"at int64"}},
+		{protocol.Preview{}, nil},
+		// The card as the host already publishes it, and nothing else.
+		{protocol.PreviewResult{}, []string{
+			"button_label string", "button_url string", "details string", "large_image string", "large_text string",
+			"shown bool", "small_image string", "small_text string", "start int64", "state string",
+		}},
 		{protocol.Unknown{}, nil},
 	}
 	for _, c := range cases {
@@ -663,6 +720,26 @@ func TestPayloadsMirrorTheDomain(t *testing.T) {
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("%T has fields %q, the domain has %q", c.wire, got, want)
 		}
+	}
+}
+
+func TestPreviewRoundTripsAnActivity(t *testing.T) {
+	a := domain.Activity{
+		Details: "one", State: "two", Start: time.UnixMilli(1790985600000).UTC(),
+		LargeImage: "logo", LargeText: "large", SmallImage: "working", SmallText: "small",
+		Button: domain.Button{Label: "View on GitHub", URL: "https://github.com/owner/repo"},
+	}
+	got, shown := protocol.PreviewOf(a, true).Activity()
+	if !shown || got != a {
+		t.Errorf("got %+v shown %v, want %+v", got, shown, a)
+	}
+	// Whatever the activity holds, nothing shown is nothing on the wire.
+	nothing := protocol.PreviewOf(a, false)
+	if nothing != (protocol.PreviewResult{}) {
+		t.Errorf("a preview of nothing carries %+v", nothing)
+	}
+	if got, shown := nothing.Activity(); shown || got != (domain.Activity{}) {
+		t.Errorf("got %+v shown %v, want nothing", got, shown)
 	}
 }
 

@@ -112,16 +112,31 @@ func (n *Node) greet(conn io.Writer, lines *protocol.Decoder) (protocol.Welcome,
 }
 
 // hear reads what the host sends until the connection ends, and remembers
-// the latest summary of itself.
+// the latest summary of itself, the pause it holds and the card it shows.
 func (n *Node) hear(lines *protocol.Decoder) {
 	for {
 		m, err := lines.Next()
 		if err != nil && !skippable(err) {
 			return
 		}
-		if r, ok := m.(protocol.StatusResult); ok {
+		switch m := m.(type) {
+		case protocol.StatusResult:
 			n.mu.Lock()
-			n.heard = statusOf(RoleFollower, r)
+			n.heard = statusOf(RoleFollower, m)
+			n.old = m.Pause == nil
+			if n.old {
+				// A host that cannot pause shows presence, so whatever pause
+				// the node remembers is over. It is not kept for a later
+				// host, which would hide presence again long after.
+				n.pause, n.offer = protocol.PauseState{}, false
+			}
+			n.mu.Unlock()
+			if m.Pause != nil {
+				n.learn(*m.Pause)
+			}
+		case protocol.PreviewResult:
+			n.mu.Lock()
+			n.seen = &m
 			n.mu.Unlock()
 		}
 	}

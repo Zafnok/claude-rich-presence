@@ -48,7 +48,7 @@ const (
 	keyLink      = "link"
 )
 
-const problemPrivacy = "must be minimal, standard or full"
+const problemPrivacy = "must be off, minimal, standard or full"
 
 // Profile is what the user set for one project. Profiles come from the
 // user's configuration file and from nowhere else (ADR-0012).
@@ -108,6 +108,21 @@ func (c Config) Effective(goos, cwd string) Settings {
 	}
 	s.Name, s.Areas, s.Link = p.Name, p.Areas, p.Link
 	return s
+}
+
+// Hides reports whether any session could be hidden: the global level is
+// off, or a profile's is. Such a session is not to be published before its
+// working directory is known.
+func (c Config) Hides() bool {
+	if c.Privacy == domain.PrivacyOff {
+		return true
+	}
+	for _, p := range c.Projects {
+		if p.Privacy == domain.PrivacyOff {
+			return true
+		}
+	}
+	return false
 }
 
 // within reports whether dir is root or inside it. Both are normalized.
@@ -328,7 +343,7 @@ func parseProfile(goos string, msg json.RawMessage, hosts []string, label string
 	}
 	if value, ok := field(keyPrivacy); ok {
 		level, _ := decode[string](value)
-		if p.Privacy = domain.Privacy(level); !p.Privacy.Valid() {
+		if p.Privacy = domain.Privacy(level); !p.Privacy.Settable() {
 			p.Privacy = ""
 			warn(label+"."+keyPrivacy, problemPrivacy)
 		}

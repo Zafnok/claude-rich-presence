@@ -125,7 +125,7 @@ func TestPresenceOff(t *testing.T) {
 			srv := s.discord(fakediscord.Behavior{})
 
 			c := s.start("off")
-			if got, want := c.Tools(), []string{cli.ToolEvent, cli.ToolStatus}; !slices.Equal(got, want) {
+			if got, want := c.Tools(), []string{cli.ToolEvent, cli.ToolStatus, cli.ToolPause}; !slices.Equal(got, want) {
 				t.Errorf("tools = %q, want %q", got, want)
 			}
 			c.hook("UserPromptSubmit")
