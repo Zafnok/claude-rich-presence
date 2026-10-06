@@ -1,6 +1,6 @@
 # Threat model
 
-What a local, unprivileged, always-running helper could do to its user, what stops it, and the test that shows it. Written for [CRP-062](../tickets/M6-release/CRP-062-security-review.md) from a read of the code at commit `d554a88` on 2026-10-05, by a session that had not seen the implementation discussions.
+What a local, unprivileged, always-running helper could do to its user, what stops it, and the test that shows it. Written for [CRP-062](../tickets/done/CRP-062-security-review.md) from a read of the code at commit `d554a88` on 2026-10-05, by a session that had not seen the implementation discussions.
 
 Report a vulnerability as [SECURITY.md](../../SECURITY.md) describes.
 

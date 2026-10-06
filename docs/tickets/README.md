@@ -103,7 +103,7 @@ Size is rough effort for the recommended model: S is under an hour of agent time
 | [CRP-053](M5-claude-desktop/CRP-053-desktop-summary.md) | Activity summary in Claude Desktop Chat | 047, 050 | Sonnet 5.5 | medium | S |
 | [CRP-060](M6-release/CRP-060-release-pipeline.md) | Release pipeline | 003, 005, 007, 042, 043, 051 | Sonnet 5.5 | high | M |
 | [CRP-061](M6-release/CRP-061-user-documentation.md) | User documentation | 003, 042, 052 | Haiku 4.5 | n/a | S |
-| [CRP-062](M6-release/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S |
+| [CRP-062](done/CRP-062-security-review.md) | Security review and threat model | 043 | Opus 5.5 | high | S |
 | [CRP-063](M6-release/CRP-063-code-signing.md) | Code signing and notarisation | 002, 052, 060 | Owner, with Sonnet 5.5 | low | S |
 | [CRP-064](M6-release/CRP-064-directory-submission.md) | Directory submission | 003, 060, 061 | Owner, with Haiku 4.5 | n/a | S |
 | [CRP-065](M6-release/CRP-065-follower-checks-runtime-directory.md) | A follower checks the runtime directory before it dials | 062 | Opus 5.5 | high | S |
@@ -364,6 +364,5 @@ These need a person with the owner's accounts. Nothing else in the plan does.
 | Confirm presence in a real Discord client on real machines | CRP-052 |
 | Look at test activities from a second Discord account and record what is visible | CRP-070 |
 | Approve the built-in personalities and their wording | CRP-072 |
-| Enable private vulnerability reporting in the repository's security settings | CRP-062 |
 | Decide whether to pay for signing and notarisation | CRP-063 |
 | Submit to directories | CRP-064 |
