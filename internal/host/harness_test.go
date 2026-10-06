@@ -517,6 +517,7 @@ type knobs struct {
 	acquireFails   bool
 	acquirePanics  bool
 	dialFails      bool
+	dialRefused    bool // the dial reports an unsafe control socket
 	dialStalls     bool
 	listenFailures int // this many calls to Listen fail
 	listenPanics   bool
@@ -763,6 +764,9 @@ func (p *proc) dial(ctx context.Context) (io.ReadWriteCloser, error) {
 	if p.knob(func(k *knobs) bool { return k.dialStalls }) {
 		<-ctx.Done()
 		return nil, ctx.Err()
+	}
+	if p.knob(func(k *knobs) bool { return k.dialRefused }) {
+		return nil, fmt.Errorf("dial: %w", host.ErrUnsafe)
 	}
 	if p.knob(func(k *knobs) bool { return k.dialFails }) || !p.alive() {
 		return nil, errBroken

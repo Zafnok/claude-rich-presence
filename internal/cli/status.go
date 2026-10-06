@@ -15,6 +15,10 @@ import (
 // deadline of its own, so a timer closes it.
 const askTimeout = 2 * time.Second
 
+// unsafeDirMessage is all that status says of a runtime directory it will
+// not connect in. The doctor names the directory and what to do.
+const unsafeDirMessage = "the runtime directory is not safe to use, so no host was asked; run `" + BinaryName + " doctor`"
+
 var (
 	errNoWelcome = errors.New("the host did not welcome this binary")
 	errNoAnswer  = errors.New("the host did not answer the status request")
@@ -22,7 +26,8 @@ var (
 
 // ask connects to the host's socket, introduces itself, asks for the host's
 // status and closes. It is not a node: it sends no session. An error that
-// matches ctransport.ErrNoHost means nothing is listening.
+// matches ctransport.ErrNoHost means nothing is listening, and one that
+// matches ctransport.ErrUnsafeDir that nothing was connected to.
 func (s system) ask(socket string) (protocol.StatusResult, error) {
 	conn, err := ctransport.Dial(context.Background(), socket, askTimeout)
 	if err != nil {
@@ -61,7 +66,8 @@ func isWelcome(m protocol.Message) bool {
 }
 
 // runStatus prints what the running host says of itself. It exits 3 when no
-// host is running, which is not a failure of this command.
+// host is running, which is not a failure of this command. A runtime
+// directory that another user could be listening in is a failure.
 func (s system) runStatus(args []string, stdout, stderr io.Writer, getenv func(string) string) int {
 	if code, ok := parseFlags("status", args, stderr); !ok {
 		return code
@@ -76,6 +82,9 @@ func (s system) runStatus(args []string, stdout, stderr io.Writer, getenv func(s
 	case errors.Is(err, ctransport.ErrNoHost):
 		fmt.Fprintf(stdout, "No presence host is running.\n")
 		return exitNoHost
+	case errors.Is(err, ctransport.ErrUnsafeDir):
+		fmt.Fprintf(stderr, "%s: status: %s\n", BinaryName, unsafeDirMessage)
+		return exitFailure
 	case err != nil:
 		fmt.Fprintf(stderr, "%s: status: %v\n", BinaryName, err)
 		return exitFailure

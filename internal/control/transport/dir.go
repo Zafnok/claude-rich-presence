@@ -8,7 +8,7 @@ import (
 	"runtime"
 )
 
-// Errors returned by Prepare.
+// Errors returned by Prepare, and by Dial inside an ErrUnsafeDir.
 var (
 	// ErrNotDirectory reports a runtime directory that is a file or a link.
 	ErrNotDirectory = errors.New("is not a directory")
@@ -36,10 +36,18 @@ func Prepare(dir string) error {
 	if err != nil {
 		return fmt.Errorf("runtime directory: %w", errors.Join(mkdirErr, err))
 	}
-	if err := checkDir(info.Mode(), dirOwner(info), os.Getuid(), runtime.GOOS != "windows"); err != nil {
+	if err := checkInfo(info, os.Getuid(), runtime.GOOS != "windows"); err != nil {
 		return fmt.Errorf("runtime directory %s %w", dir, err)
 	}
 	return nil
+}
+
+// checkInfo applies checkDir to what Lstat said of a directory. Prepare and
+// Dial both come through here, so that a host and a follower refuse the
+// same directories. info must come from Lstat and not Stat, so that a link
+// is seen as a link.
+func checkInfo(info fs.FileInfo, self int, unixRules bool) error {
+	return checkDir(info.Mode(), dirOwner(info), self, unixRules)
 }
 
 // checkDir decides whether a directory with this mode and owner may hold

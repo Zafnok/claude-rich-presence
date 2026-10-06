@@ -81,6 +81,9 @@ const (
 	HostAbsent
 	// HostAnswered means a host answered.
 	HostAnswered
+	// HostUnasked means no host was asked, because the runtime directory is
+	// not safe to connect in.
+	HostUnasked
 )
 
 // HostAnswer is what a host said of itself. Only State is set unless it is
@@ -245,6 +248,10 @@ func checkHost(host HostAnswer) Finding {
 		f.Result = Warn
 		f.Detail = "no host is running"
 		f.Action = "Start a Claude session; the first one becomes the host"
+	case HostUnasked:
+		f.Result = Warn
+		f.Detail = "no host was asked, because the runtime directory is not safe to use"
+		f.Action = "Fix the runtime directory, then run this again"
 	default:
 		f.Result = Fail
 		f.Detail = "something holds the control socket and did not answer"

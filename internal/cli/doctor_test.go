@@ -80,7 +80,7 @@ func TestDoctorFindsProblems(t *testing.T) {
 					t.Fatal(err)
 				}
 			},
-			want: []string{"[fail] Runtime directory"},
+			want: []string{"[fail] Runtime directory", "[warn] Host: no host was asked"},
 		},
 		{
 			name:    "something holds the socket and does not answer",

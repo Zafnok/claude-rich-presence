@@ -103,6 +103,53 @@ func TestElectingToJoiningWhenTheLockCannotBeTried(t *testing.T) {
 	}
 }
 
+// The lock cannot be tried and the dial is refused when the runtime
+// directory is not the user's alone: somebody else may be the host there.
+func TestElectingSendsNothingWhenTheDialIsRefused(t *testing.T) {
+	w := newWorld(t)
+	s := w.stubHost().listen()
+	b := w.spawn("b").open()
+	b.set(func(k *knobs) { k.acquireFails, k.dialRefused = true, true })
+	b.run()
+
+	// It comes round again and again, with its usual backoff.
+	var waits []time.Duration
+	for i := range 4 {
+		w.sleeping(1)
+		waits = append(waits, w.lastWait())
+		if i > 0 && waits[i] <= waits[i-1] {
+			t.Errorf("the waits are %v, want each longer than the last", waits)
+		}
+		w.clock.Advance(w.lastWait())
+	}
+	w.sleeping(1)
+	if got := b.lastConn(); got != nil {
+		t.Errorf("the node connected to a host it was refused")
+	}
+	if got := b.role(); got != host.RoleNone {
+		t.Errorf("role is %v, want none", got)
+	}
+	if got := b.logs.count("the control socket is not in a safe place"); got != 1 {
+		t.Errorf("the refused dial was reported %d times, want once", got)
+	}
+	if got := b.logs.count("socket_unsafe"); got != 1 {
+		t.Errorf("the class was logged %d times, want once", got)
+	}
+	// The harness wraps the error it injects. What wraps it could name a
+	// path, so none of it is logged.
+	if got := b.logs.count("dial: "); got != 0 {
+		t.Errorf("the error itself was logged %d times, want only its class", got)
+	}
+
+	// Once the dial is allowed, the node follows the host that was there.
+	b.set(func(k *knobs) { k.dialRefused = false })
+	w.clock.Advance(w.lastWait())
+	q := s.accept()
+	if _, ok := q.hear().(protocol.Hello); !ok {
+		t.Error("the first message to the host is not a hello")
+	}
+}
+
 func TestJoiningToFollowingOnWelcome(t *testing.T) {
 	w := newWorld(t)
 	s := w.stubHost().listen()
