@@ -3,7 +3,7 @@ id: CRP-080
 title: Check the repository link button on Discord's mobile app
 milestone: M4 Claude Code
 type: owner-task
-status: todo
+status: in-progress
 priority: P2
 blocked_by: [CRP-048]
 blocks: []
