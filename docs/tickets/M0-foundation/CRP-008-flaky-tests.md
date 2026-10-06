@@ -27,6 +27,8 @@ On the first two CI runs of the pull request for [CRP-051](done/CRP-051-mcpb-bun
 | `TestRefusedUpdateIsDeliveredAgainWhenSubmittedAgain` | `internal/schedule` | Windows, race detector: the test ran for 30 seconds and failed |
 | `TestStopWhileReadyClearsBeforeClosing` | `internal/discord/session` | Linux, race detector: failed after 0.00 seconds |
 
+A third was seen on 2026-10-05, on the pull request for [CRP-062](../done/CRP-062-security-review.md), which changed no product code: `TestAnIntervalThatIsNotPositiveIsTheDiscordLimit/-1s` in `internal/discord/session`, on Linux with the race detector, failed after 10 seconds with "waited 10s for 2 set-activity events, have 1". It is in scope here as a neighbouring test of the same file.
+
 A different test failed on each operating system, and the change under test was unrelated. That points to a timing assumption in the tests or a race in the code, not to a platform bug. Both packages use a fake clock and, for the manager, the fake Discord server.
 
 ## Scope
