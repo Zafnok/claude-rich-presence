@@ -3,7 +3,7 @@ id: CRP-062
 title: Security review and threat model
 milestone: M6 Release
 type: chore
-status: todo
+status: in-progress
 priority: P1
 blocked_by: [CRP-043]
 blocks: []
