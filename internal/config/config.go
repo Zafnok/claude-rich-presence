@@ -52,8 +52,9 @@ type Config struct {
 	Enabled              bool
 	Privacy              domain.Privacy
 	DiscordApplicationID string
-	// IdleClearAfter is how long every session must be idle before the
-	// activity is cleared. Zero means never.
+	// IdleClearAfter is how long every Claude Code session must be idle
+	// before those sessions stop being shown. Zero means never. Claude
+	// Desktop is shown for as long as it is open.
 	IdleClearAfter    time.Duration
 	MinUpdateInterval time.Duration
 	LogLevel          LogLevel

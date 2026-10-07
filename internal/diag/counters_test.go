@@ -29,17 +29,20 @@ func TestCounters(t *testing.T) {
 				c.Reconnected()
 			}
 			c.FailedOver()
+			for j := 0; j < 5; j++ {
+				c.ConnectionRejected()
+			}
 		}()
 	}
 	wg.Wait()
-	want := diag.Counts{EventsReceived: 32, EventsDropped: 24, Reconnects: 16, Failovers: 8}
+	want := diag.Counts{EventsReceived: 32, EventsDropped: 24, Reconnects: 16, Failovers: 8, ConnectionsRejected: 40}
 	if got := c.Snapshot(); got != want {
 		t.Errorf("Snapshot = %+v, want %+v", got, want)
 	}
 
 	var out lines
 	diag.NewLogger(&out, config.LogInfo, now).Info("counters", want.Attrs()...)
-	if suffix := "events_received=32 events_dropped=24 reconnects=16 failovers=8\n"; !strings.HasSuffix(out.String(), suffix) {
+	if suffix := "events_received=32 events_dropped=24 reconnects=16 failovers=8 connections_rejected=40\n"; !strings.HasSuffix(out.String(), suffix) {
 		t.Errorf("logged %q, want it to end %q", out.String(), suffix)
 	}
 }

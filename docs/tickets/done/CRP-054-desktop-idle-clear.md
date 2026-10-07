@@ -3,7 +3,7 @@ id: CRP-054
 title: Decide how long Claude Desktop is shown when nothing else is running
 milestone: M5 Claude Desktop
 type: feature
-status: todo
+status: done
 priority: P1
 blocked_by: [CRP-050]
 blocks: []
@@ -50,11 +50,11 @@ Whichever is chosen, state it in the pull request in plain language.
 
 For option A:
 
-- [ ] A Desktop session alone is still rendered after more than the idle-clear period has passed.
-- [ ] Idle Code sessions alone are cleared after the period, as before.
-- [ ] An idle Desktop session beside Code sessions that have all been idle past the period renders the Desktop session.
-- [ ] The host arms no idle-clear timer while a Desktop session is open.
-- [ ] `docs/architecture/README.md` describes the rule as built.
+- [x] A Desktop session alone is still rendered after more than the idle-clear period has passed.
+- [x] Idle Code sessions alone are cleared after the period, as before.
+- [x] An idle Desktop session beside Code sessions that have all been idle past the period renders the Desktop session.
+- [x] The host arms no idle-clear timer while a Desktop session is open.
+- [x] `docs/architecture/README.md` describes the rule as built.
 
 For option B:
 

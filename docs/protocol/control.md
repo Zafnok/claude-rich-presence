@@ -24,9 +24,13 @@ Current protocol version: **1**.
 
 A follower may send `sync` again at any time. It replaces what the host holds for that connection.
 
+A connection holds one session. An `event` or a `sync` for another session id than the one the connection holds replaces it: the host drops the earlier session and holds the later. An `event` the host does not take, because the session belongs to another connection or because the event is not valid, replaces nothing. An `event` of kind `session_ended` ends the session it names and no other.
+
 A session exists on the host exactly while its follower's connection is open. There is no "goodbye" message: closing the connection is the signal. A session belongs to one connection: the one whose `event` created it, or the last to `sync` it. It is removed when that connection closes. Only a `sync` moves a session to another connection, and an `event` for a session that belongs to another connection is ignored. So a follower that reconnects before the host has seen its old connection close keeps its session, and whatever the host still reads from the old connection can neither take the session back nor end it.
 
 After a `refuse` the only message the host still reads is `stand_down`. The follower sends it or not, and closes the connection. The host does not wait for long: it closes a connection that has not been welcomed one second after accepting it, whether the connection was refused or has said nothing.
+
+The host serves at most 256 connections at once, whatever they are for. It closes one more as it accepts it, without reading its `hello` and without a `refuse`. To a follower that is a host that went away: it goes back to the election and tries again later. The number is far above what a machine has, which is a connection for each open session.
 
 `status`, `preview`, `pause`, `resume` and `stand_down` are requests that can be sent on any connection after `welcome`. The `status` command opens a connection of its own, says `hello`, asks, reads the answer and closes without ever sending a `sync`. A follower may ask for `status` and `preview` as often as it likes. This binary asks for both after each thing it sends, so that what it reports of its host is recent.
 
@@ -131,7 +135,7 @@ With no session:
 
 ### `event`
 
-One thing that happened in one session.
+One thing that happened in one session. If the connection holds a session with another id, the session this event creates replaces it.
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|

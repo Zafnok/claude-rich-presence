@@ -80,19 +80,22 @@ func TestAnInvalidLinkIsDroppedAndTheSessionIsKept(t *testing.T) {
 			s := sessionAt("session-one", w.clock.Now())
 			s.Link = link
 			q.say(protocol.Sync{Session: s})
+			mark(w, a, q, a.rendersSinceLock())
+			if got, held := linkOf(a, "session-one"); !held || got != "" {
+				t.Errorf("the synced session: held %v with the link %q, want held with none", held, got)
+			}
+			// The opening event is for another session, which replaces the
+			// first on this connection.
 			q.say(protocol.Event{Event: protocol.EventData{SessionID: "session-two", Surface: "code", At: w.clock.Now().UnixMilli(), Kind: "session_opened", Link: link}})
 			mark(w, a, q, a.rendersSinceLock())
-
-			for _, id := range []string{"session-one", "session-two"} {
-				if got, held := linkOf(a, id); !held || got != "" {
-					t.Errorf("%s: held %v with the link %q, want held with none", id, held, got)
-				}
+			if got, held := linkOf(a, "session-two"); !held || got != "" {
+				t.Errorf("the opened session: held %v with the link %q, want held with none", held, got)
 			}
 			if got := a.counters.Snapshot().EventsDropped - before; got != 0 {
 				t.Errorf("%d messages dropped, want none: only the link is dropped", got)
 			}
-			if got := q.status().Sessions; got != 4 {
-				t.Errorf("the host reports %d sessions, want 4", got)
+			if got := q.status().Sessions; got != 2 {
+				t.Errorf("the host reports %d sessions, want 2", got)
 			}
 			log := a.logs.String()
 			if !strings.Contains(log, "link_invalid") {

@@ -36,23 +36,19 @@ func follower(w *world, a *proc, name string) *peer {
 	return q
 }
 
-// mark sends, on q, an event that the host renders, and waits until it has.
-// The host takes the messages of a connection in order, so everything q sent
-// before has been dealt with by then. It returns how many times the host
-// rendered since before was read, the mark's own render not counted.
-func mark(w *world, a *proc, q *peer, before int) int {
-	w.t.Helper()
-	at := w.clock.Now().Add(time.Duration(before+1) * time.Hour)
-	q.say(eventOf("session-mark", domain.KindSessionRefreshed, at))
-	w.eventually("the mark to be rendered", func() bool {
-		for _, s := range a.held() {
-			if s.ID == "session-mark" && s.LastActivity == at.UnixMilli() {
-				return true
-			}
+// mark asks, on q, for the card, and waits for the answer. The host takes the
+// messages of a connection in order and answers this one when it has shown
+// everything before it, so everything q sent before has been dealt with by
+// then. Asking changes nothing. It returns how many times the host rendered
+// since before was read.
+func mark(_ *world, a *proc, q *peer, before int) int {
+	q.t.Helper()
+	q.say(protocol.Preview{})
+	for {
+		if _, ok := q.hear().(protocol.PreviewResult); ok {
+			return a.rendersSinceLock() - before
 		}
-		return false
-	})
-	return a.rendersSinceLock() - before - 1
+	}
 }
 
 // closedByHost reports whether the host has closed its end of connection n.
@@ -93,30 +89,77 @@ func TestASessionEndsWithItsConnection(t *testing.T) {
 	}
 }
 
-func TestEverySessionOfAConnectionEndsWithIt(t *testing.T) {
+// TestAConnectionHoldsOneSession plays a follower that sends events for one
+// session id after another. The host holds the latest and no other, however
+// many ids the connection names.
+func TestAConnectionHoldsOneSession(t *testing.T) {
 	w, a := hosting(t)
 	q := follower(w, a, "one")
-	// A follower may send events for a session it did not sync.
+	// A follower may send events for a session it did not sync. The session
+	// replaces the one the connection had.
 	q.say(eventOf("session-two", domain.KindTurnStarted, w.clock.Now()))
-	w.eventually("both sessions to be held", holdsIDs(a, "session-a", "session-one", "session-two"))
+	w.eventually("the later session to replace the earlier", holdsIDs(a, "session-a", "session-two"))
+	if got := q.status().Sessions; got != 2 {
+		t.Errorf("the host reports %d sessions, want 2", got)
+	}
+
+	for i := range 50 {
+		q.say(eventOf(fmt.Sprintf("session-many-%02d", i), domain.KindTurnStarted, w.clock.Now()))
+	}
+	mark(w, a, q, a.rendersSinceLock())
+	if !holdsIDs(a, "session-a", "session-many-49")() {
+		t.Errorf("after events for 50 session ids the host holds %v, want the last alone", ids(a.held()))
+	}
+
+	// An event that is not taken replaces nothing: one for a session of
+	// another connection, and one the domain does not accept.
+	other := follower(w, a, "other")
+	q.say(eventOf("session-other", domain.KindTurnStarted, w.clock.Now()))
+	q.write(`{"type":"event","event":{"session_id":"session-bad","surface":"code","at":1,"kind":"from_a_later_version"}}` + "\n")
+	mark(w, a, q, a.rendersSinceLock())
+	if !holdsIDs(a, "session-a", "session-many-49", "session-other")() {
+		t.Errorf("after two events that were dropped the host holds %v", ids(a.held()))
+	}
+	other.c.Close()
+	w.eventually("the other connection's session to end", holdsIDs(a, "session-a", "session-many-49"))
 
 	q.c.Close()
-	w.eventually("both sessions to disappear", holdsIDs(a, "session-a"))
+	w.eventually("the session to end with its connection", holdsIDs(a, "session-a"))
+}
+
+// TestASessionAConnectionLeftBehindBelongsToNobody: when a connection moves
+// to another session id, the id it had is free again, so another connection
+// can open a session with it, and keeps it when the first connection closes.
+func TestASessionAConnectionLeftBehindBelongsToNobody(t *testing.T) {
+	w, a := hosting(t)
+	first := follower(w, a, "one")
+	first.say(eventOf("session-two", domain.KindTurnStarted, w.clock.Now()))
+	w.eventually("the first connection to move to another session", holdsIDs(a, "session-a", "session-two"))
+
+	second := w.join("second")
+	second.welcomed("1.0.0")
+	before := a.counters.Snapshot().EventsDropped
+	second.say(eventOf("session-one", domain.KindTurnStarted, w.clock.Now()))
+	w.eventually("the second connection to open the session the first left", holdsIDs(a, "session-a", "session-one", "session-two"))
+	if got := a.counters.Snapshot().EventsDropped - before; got != 0 {
+		t.Errorf("%d events counted as dropped, want none", got)
+	}
+
+	first.c.Close()
+	w.eventually("the first connection's session to end, and no other", holdsIDs(a, "session-a", "session-one"))
 }
 
 func TestASyncReplacesWhatTheConnectionHolds(t *testing.T) {
 	w, a := hosting(t)
 	q := follower(w, a, "one")
-	q.say(eventOf("session-extra", domain.KindTurnStarted, w.clock.Now()))
-	w.eventually("the sessions to be held", holdsIDs(a, "session-a", "session-extra", "session-one"))
 
 	q.say(protocol.Sync{Session: sessionAt("session-two", w.clock.Now())})
-	w.eventually("the sync to replace them", holdsIDs(a, "session-a", "session-two"))
+	w.eventually("the sync to replace it", holdsIDs(a, "session-a", "session-two"))
 
 	// The same sync again holds the same: it is idempotent.
 	q.say(protocol.Sync{Session: sessionAt("session-two", w.clock.Now())})
 	mark(w, a, q, a.rendersSinceLock())
-	if !holdsIDs(a, "session-a", "session-mark", "session-two")() {
+	if !holdsIDs(a, "session-a", "session-two")() {
 		t.Errorf("after the same sync twice the host holds %v", ids(a.held()))
 	}
 
@@ -158,7 +201,7 @@ func TestASyncMovesASessionToTheConnectionThatSentIt(t *testing.T) {
 	first.c.Close()
 	w.eventually("the host to see the first connection close", closedByHost(w, 1))
 	mark(w, a, second, a.rendersSinceLock())
-	if !holdsIDs(a, "session-a", "session-mark", "session-one")() {
+	if !holdsIDs(a, "session-a", "session-one")() {
 		t.Fatalf("the host holds %v after the old connection closed, want the session kept", ids(a.held()))
 	}
 
@@ -183,7 +226,7 @@ func TestAnEventForAnotherConnectionsSessionIsDropped(t *testing.T) {
 	if got := mark(w, a, other, renders); got != 0 {
 		t.Errorf("rendered %d times for events on a session of another connection, want none", got)
 	}
-	if got := a.held()[2]; got != held {
+	if got := a.held()[1]; got != held {
 		t.Errorf("the session is now %+v, want it unchanged, %+v", got, held)
 	}
 	if got := a.counters.Snapshot().EventsDropped - before; got != 2 {
@@ -194,7 +237,7 @@ func TestAnEventForAnotherConnectionsSessionIsDropped(t *testing.T) {
 	other.c.Close()
 	w.eventually("the host to see the other connection close", closedByHost(w, 2))
 	mark(w, a, owner, a.rendersSinceLock())
-	if !holdsIDs(a, "session-a", "session-mark", "session-one")() {
+	if !holdsIDs(a, "session-a", "session-one")() {
 		t.Fatalf("the host holds %v after the other connection closed", ids(a.held()))
 	}
 	owner.c.Close()
@@ -292,8 +335,8 @@ func TestWhatCannotBeUsedIsSkippedAndTheConnectionStays(t *testing.T) {
 	if got := mark(w, a, q, renders); got != 0 {
 		t.Errorf("rendered %d times for messages that changed nothing", got)
 	}
-	if got := q.status().Sessions; got != 3 {
-		t.Errorf("the host reports %d sessions, want 3", got)
+	if got := q.status().Sessions; got != 2 {
+		t.Errorf("the host reports %d sessions, want 2", got)
 	}
 	if got := a.counters.Snapshot().EventsDropped - before.EventsDropped; got != 5 {
 		t.Errorf("%d messages counted as dropped, want 5", got)
@@ -301,8 +344,8 @@ func TestWhatCannotBeUsedIsSkippedAndTheConnectionStays(t *testing.T) {
 
 	q.say(protocol.Event{Event: protocol.EventData{SessionID: "session-one", Surface: "code", At: now, Kind: "turn_started"}})
 	w.eventually("the next good event to be applied", func() bool { return a.shows("Thinking") })
-	if got := a.counters.Snapshot().EventsReceived - before.EventsReceived; got != 3 {
-		t.Errorf("%d events counted as received, want 3: the one with an unknown word, the mark and the good one", got)
+	if got := a.counters.Snapshot().EventsReceived - before.EventsReceived; got != 2 {
+		t.Errorf("%d events counted as received, want 2: the one with an unknown word and the good one", got)
 	}
 }
 
@@ -340,17 +383,17 @@ func TestStatusIsAnsweredFromMemory(t *testing.T) {
 	w.eventually("the host to see the connection close", closedByHost(w, 2))
 
 	// Asking changed nothing: nothing was rendered, and the Discord
-	// connection was told nothing but the mark that shows it.
+	// connection was told nothing.
 	if got := mark(w, a, one, renders); got != 0 {
 		t.Errorf("rendered %d times while status was asked", got)
 	}
-	if got := len(a.discord().all()); got != told+1 {
-		t.Errorf("the Discord connection was told %d things while status was asked", got-told-1)
+	if got := len(a.discord().all()); got != told {
+		t.Errorf("the Discord connection was told %d things while status was asked", got-told)
 	}
 
 	// The node answers the same from its own Status.
 	a.set(func(k *knobs) { k.discordState = protocol.DiscordDisconnected })
-	wantOwn := host.Status{Role: host.RoleHost, Discord: protocol.DiscordDisconnected, Sessions: 3, Version: "1.4.0", Uptime: 90 * time.Second}
+	wantOwn := host.Status{Role: host.RoleHost, Discord: protocol.DiscordDisconnected, Sessions: 2, Version: "1.4.0", Uptime: 90 * time.Second}
 	if got := a.node.Status(); got != wantOwn {
 		t.Errorf("the host's own status is %+v, want %+v", got, wantOwn)
 	}
@@ -530,6 +573,32 @@ func TestTheActivityIsClearedWhenTheIdlePeriodEnds(t *testing.T) {
 	}
 }
 
+func TestNoIdleTimerIsArmedWhileADesktopSessionIsOpen(t *testing.T) {
+	const period = 15 * time.Minute
+	w, a := hosting(t, idleClear(period))
+	w.sleeping(1)
+
+	q := w.join("desktop")
+	q.welcomed("1.0.0")
+	desktop := protocol.SessionFromDomain(domain.Session{
+		ID: "session-desktop", Surface: domain.SurfaceDesktop, Status: domain.StatusIdle,
+		Privacy: domain.PrivacyStandard, Start: w.clock.Now(), LastActivity: w.clock.Now(),
+	})
+	q.say(protocol.Sync{Session: &desktop})
+	w.eventually("the Desktop session to be held and the timer dropped", func() bool {
+		return len(a.held()) == 2 && w.clock.Timers() == 0
+	})
+
+	// However long passes, something is shown and no timer is armed.
+	w.clock.Advance(100 * period)
+	if last, _ := a.discord().last(); !last.show {
+		t.Error("nothing is shown while a Desktop session is open")
+	}
+	if got := w.clock.Timers(); got != 0 {
+		t.Errorf("%d timers are armed while a Desktop session is open, want none", got)
+	}
+}
+
 func TestAHostWhoseSocketCannotBeOpenedServesItselfAndRetries(t *testing.T) {
 	w := newWorld(t)
 	a := w.spawn("a").open()
@@ -649,5 +718,73 @@ func TestTextThatIsNotCleanIsDroppedAndCounted(t *testing.T) {
 	}
 	if got := a.counters.Snapshot().EventsDropped - before; got != 12 {
 		t.Errorf("%d messages counted as dropped, want 12", got)
+	}
+}
+
+// full returns a world whose host serves as many connections as it will, each
+// welcomed, and those connections in the order they were made. The host's end
+// of connection i is numbered i+1.
+func full(t *testing.T) (*world, *proc, []*peer) {
+	t.Helper()
+	w, a := hosting(t)
+	peers := make([]*peer, 0, host.MaxConns)
+	for i := range host.MaxConns {
+		q := w.join(fmt.Sprintf("peer-%03d", i))
+		q.welcomed("1.0.0")
+		peers = append(peers, q)
+	}
+	return w, a, peers
+}
+
+// TestAConnectionOverTheCeilingIsClosedAtOnce fills the host with
+// connections. The next is closed before anything is read from it: it gets no
+// welcome and no refusal, and no time has to pass. The others are served as
+// before.
+func TestAConnectionOverTheCeilingIsClosedAtOnce(t *testing.T) {
+	w, a, peers := full(t)
+	if got := a.counters.Snapshot().ConnectionsRejected; got != 0 {
+		t.Fatalf("%d connections counted as rejected before the ceiling, want none", got)
+	}
+
+	for range 3 {
+		w.join("one-too-many").hearEnd()
+	}
+	if got := a.counters.Snapshot().ConnectionsRejected; got != 3 {
+		t.Errorf("%d connections counted as rejected, want 3", got)
+	}
+
+	// The connections that were there still work: each can hold a session,
+	// and each is answered.
+	for i, q := range peers {
+		q.say(protocol.Sync{Session: sessionAt(fmt.Sprintf("session-peer-%03d", i), w.clock.Now())})
+	}
+	for _, q := range peers {
+		q.status()
+	}
+	w.eventually("every session to be held", func() bool { return len(a.held()) == host.MaxConns+1 })
+	if got := peers[0].status().Sessions; got != host.MaxConns+1 {
+		t.Errorf("the host reports %d sessions, want its own and one for each connection, %d", got, host.MaxConns+1)
+	}
+	if !a.isHost() {
+		t.Errorf("role is %v, want host", a.role())
+	}
+}
+
+// TestClosingAConnectionMakesRoomForAnother: the ceiling is on the
+// connections that are open, not on how many there have been.
+func TestClosingAConnectionMakesRoomForAnother(t *testing.T) {
+	w, a, peers := full(t)
+	w.join("one-too-many").hearEnd()
+
+	peers[7].c.Close()
+	w.eventually("the host to see the connection close", closedByHost(w, 8))
+	q := follower(w, a, "newcomer")
+	if got := q.status().Sessions; got != 2 {
+		t.Errorf("the host reports %d sessions, want 2", got)
+	}
+	// And the host is full again.
+	w.join("one-too-many").hearEnd()
+	if got := a.counters.Snapshot().ConnectionsRejected; got != 2 {
+		t.Errorf("%d connections counted as rejected, want 2", got)
 	}
 }
