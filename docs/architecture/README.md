@@ -171,7 +171,7 @@ Discord shows one activity. The renderer picks a **focus session** and summarise
 2. Build the two text lines from the focus session and the configured privacy level.
 3. Add a count when more than one session is open.
 4. Use the focus session's start time for the elapsed timer.
-5. If every session has been idle longer than the configured period (default 15 minutes), clear the activity instead. The next event restores it.
+5. If every Claude Code session has been idle longer than the configured period (default 15 minutes), stop showing those sessions. A Claude Desktop session is not subject to the period: it is shown for as long as the app is open, because the app reports nothing after it opens and would otherwise disappear 15 minutes after launch. So with a Desktop session open, the focus is chosen from the Desktop sessions; with none, the activity is cleared. The next event restores the Code sessions.
 
 Privacy levels, set per adapter and enforced before anything is sent to the host:
 

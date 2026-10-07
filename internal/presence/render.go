@@ -21,8 +21,9 @@ const (
 
 // Settings are the display settings the renderer needs.
 type Settings struct {
-	// IdleClear is how long every session must have been idle before the
-	// activity is cleared. Zero or less means it is never cleared.
+	// IdleClear is how long every Claude Code session must have been idle
+	// before those sessions stop being shown. Zero or less means they always
+	// are. A Claude Desktop session is shown for as long as it is open.
 	IdleClear time.Duration
 }
 
@@ -34,10 +35,11 @@ type Settings struct {
 // The elapsed timer is the focus session's own start time. It jumps when
 // focus moves to another session and at no other time.
 func Render(sessions []domain.Session, now time.Time, set Settings) (domain.Activity, bool) {
-	if len(sessions) == 0 || allIdleSince(sessions, now, set.IdleClear) {
+	shown := stillShown(sessions, now, set.IdleClear)
+	if len(shown) == 0 {
 		return domain.Activity{}, false
 	}
-	s := focus(sessions)
+	s := focus(shown)
 	surface := surfacePhrases[s.Surface]
 	a := domain.Activity{
 		Details:    line(surface),
@@ -71,24 +73,35 @@ func Render(sessions []domain.Session, now time.Time, set Settings) (domain.Acti
 	return a, true
 }
 
-// allIdleSince reports whether every session is idle and was last active
-// more than period ago. A period of zero or less never matches.
-func allIdleSince(sessions []domain.Session, now time.Time, period time.Duration) bool {
+// stillShown returns the sessions the focus is chosen from. That is all of
+// them, unless every Claude Code session is idle and was last active more
+// than period ago: then it is the Claude Desktop sessions alone, which may be
+// none. A period of zero or less sets no session aside.
+//
+// Claude Desktop reports nothing after it opens, so its session would always
+// look idle. It is shown for as long as the app is open instead.
+func stillShown(sessions []domain.Session, now time.Time, period time.Duration) []domain.Session {
 	if period <= 0 {
-		return false
+		return sessions
 	}
+	var desktop []domain.Session
 	for _, s := range sessions {
+		if s.Surface == domain.SurfaceDesktop {
+			desktop = append(desktop, s)
+			continue
+		}
 		if s.Status != domain.StatusIdle || now.Sub(s.LastActivity) <= period {
-			return false
+			return sessions
 		}
 	}
-	return true
+	return desktop
 }
 
 // ClearsIn returns how long after now Render first shows nothing for these
 // sessions, if none of them changes. It reports false when that moment does
-// not come, because there are no sessions, one of them is not idle or the
-// activity is never cleared, and when it has passed already.
+// not come, because there are no sessions, one of them is not idle, one of
+// them is Claude Desktop's or the activity is never cleared, and when it has
+// passed already.
 //
 // The host arms a timer with it, so that the activity is cleared when the
 // idle period ends and not at the next event.
@@ -98,7 +111,7 @@ func ClearsIn(sessions []domain.Session, now time.Time, set Settings) (time.Dura
 	}
 	var last time.Time
 	for _, s := range sessions {
-		if s.Status != domain.StatusIdle {
+		if s.Status != domain.StatusIdle || s.Surface == domain.SurfaceDesktop {
 			return 0, false
 		}
 		if s.LastActivity.After(last) {

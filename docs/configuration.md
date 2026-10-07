@@ -33,6 +33,8 @@ The file is JSON. Its location:
 | `link_hosts` | A list of host names | None | No, file only |
 | `projects` | A list of project profiles | None | No, file only |
 
+`idle_clear_after` applies to Claude Code sessions: once all of them have been idle that long, they are no longer shown until one does something. Claude Desktop is shown for as long as the app is open, whatever this is set to, because the app cannot say when it is in use. To hide it, set `enabled` to `false` or pause presence.
+
 Two more environment variables exist for tests and unusual setups. They are not settings and have no entry in the file. `RICH_PRESENCE_RUNTIME_DIR` moves the directory of the control socket ([ADR-0006](architecture/adr/0006-control-channel.md)). `RICH_PRESENCE_DISCORD_ENDPOINT` replaces the search for Discord with one endpoint name ([ADR-0018](architecture/adr/0018-discord-endpoint-override.md)).
 
 What each privacy level publishes is in [ADR-0008](architecture/adr/0008-privacy-and-safety-by-default.md). `off` publishes nothing: see [Hiding a project](#hiding-a-project).
