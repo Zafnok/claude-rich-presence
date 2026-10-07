@@ -93,7 +93,7 @@ Consequences worth knowing:
 - **Nothing outlives Claude.** When the last adapter exits, there is no process left.
 - **A dead session cannot leave presence stuck.** A session is live exactly while its adapter's connection is open.
 - **The host's state is disposable.** It is rebuilt from followers after any failover.
-- **Failover causes a brief gap** in presence, well under a second on a local socket plus Discord's handshake. The elapsed timer does not reset because the start time is part of session state.
+- **Failover causes a brief gap** in presence, well under a second on a local socket plus Discord's handshake. The elapsed timer does not restart at the takeover because start times are part of session state. If the host that went held the session that started first, the timer moves forward to the next earliest start, as it does when any such session closes.
 
 ## Session state
 
@@ -170,7 +170,7 @@ Discord shows one activity. The renderer picks a **focus session** and summarise
 1. Rank sessions: `Working` over `Waiting` over `Compacting` over `Idle`; `code` over `desktop`; then most recent activity.
 2. Build the two text lines from the focus session and the configured privacy level.
 3. Add a count when more than one session is open.
-4. Use the focus session's start time for the elapsed timer.
+4. Use the earliest start time among the open sessions for the elapsed timer, whichever session is the focus. The timer reads as how long Claude has been open in any form. It does not move when the focus does; when the session that started first closes, it moves forward once to the next earliest start. A session that is open still counts here when step 5 has stopped showing it.
 5. If every Claude Code session has been idle longer than the configured period (default 15 minutes), stop showing those sessions. A Claude Desktop session is not subject to the period: it is shown for as long as the app is open, because the app reports nothing after it opens and would otherwise disappear 15 minutes after launch. So with a Desktop session open, the focus is chosen from the Desktop sessions; with none, the activity is cleared. The next event restores the Code sessions.
 
 Privacy levels, set per adapter and enforced before anything is sent to the host:

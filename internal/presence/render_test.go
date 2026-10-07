@@ -101,8 +101,14 @@ func TestRenderGolden(t *testing.T) {
 						}))
 					}
 					a := mustRender(t, sessions, presence.Settings{})
-					if !a.Start.Equal(t0) || a.Type != domain.ActivityPlaying {
-						t.Errorf("%s: start %v type %v, want the focus session's start and playing", surface, a.Start, a.Type)
+					// The others started an hour earlier, and the timer is
+					// the earliest start among the open sessions.
+					wantStart := t0
+					if n > 1 {
+						wantStart = t0.Add(-time.Hour)
+					}
+					if !a.Start.Equal(wantStart) || a.Type != domain.ActivityPlaying {
+						t.Errorf("%s: start %v type %v, want the earliest start %v and playing", surface, a.Start, a.Type, wantStart)
 					}
 					fmt.Fprintf(&b, "%s/%s/%s/%s/%d | %s | %s | %s | %s | %s | %s\n",
 						surface, st.status, show(string(st.tool)), privacy, n,
@@ -277,7 +283,8 @@ func TestRenderFocus(t *testing.T) {
 		return session(id, func(s *domain.Session) {
 			s.Status, s.Surface = status, surface
 			s.LastActivity = t0.Add(last)
-			// Each session has its own start, so the timer shows the focus.
+			// Each session has its own start, and the longest id has the
+			// earliest, so the timer cannot follow the focus unnoticed.
 			s.Start = t0.Add(-time.Duration(len(id)) * time.Hour)
 		})
 	}
@@ -338,14 +345,112 @@ func TestRenderFocus(t *testing.T) {
 				if want := "Claude Desktop · proj-" + tt.want; a.LargeText == "Claude Desktop" && a.Details != want {
 					t.Errorf("order %d: details = %q, want %q", i, a.Details, want)
 				}
-				if want := t0.Add(-time.Duration(len(tt.want)) * time.Hour); !a.Start.Equal(want) {
-					t.Errorf("order %d: start = %v, want %v, the focus session's", i, a.Start, want)
+				longest := 0
+				for _, s := range tt.sessions {
+					longest = max(longest, len(s.ID))
+				}
+				if want := t0.Add(-time.Duration(longest) * time.Hour); !a.Start.Equal(want) {
+					t.Errorf("order %d: start = %v, want %v, the earliest start", i, a.Start, want)
 				}
 				if i == 0 {
 					first = a
 				} else if !a.Equal(first) {
 					t.Errorf("order %d: %+v, want the same as order 0: %+v", i, a, first)
 				}
+			}
+		})
+	}
+}
+
+func TestRenderStartWithOneSessionIsThatSessionsStart(t *testing.T) {
+	start := t0.Add(-42 * time.Minute)
+	a := mustRender(t, []domain.Session{session("a", func(s *domain.Session) { s.Start = start })}, presence.Settings{})
+	if !a.Start.Equal(start) {
+		t.Errorf("start = %v, want %v, the only session's start", a.Start, start)
+	}
+}
+
+// TestRenderStartIsTheEarliestWhicheverSessionHasFocus moves the focus
+// through three sessions by each rule that ranks them. The timer is the
+// earliest start throughout, so it does not move when the card does.
+func TestRenderStartIsTheEarliestWhicheverSessionHasFocus(t *testing.T) {
+	const code, desktop = domain.SurfaceCode, domain.SurfaceDesktop
+	type state struct {
+		status  domain.Status
+		surface domain.Surface
+		last    time.Duration
+	}
+	ids := []string{"old", "mid", "new"}
+	starts := map[string]time.Time{
+		"old": t0.Add(-3 * time.Hour),
+		"mid": t0.Add(-2 * time.Hour),
+		"new": t0.Add(-time.Hour),
+	}
+	tests := []struct {
+		name          string
+		old, mid, new state
+		wantFocus     string
+	}{
+		{"by status, the oldest", state{domain.StatusWorking, code, 0}, state{domain.StatusWaiting, code, 0}, state{domain.StatusIdle, code, 0}, "old"},
+		{"by status, the middle", state{domain.StatusCompacting, code, 0}, state{domain.StatusWorking, code, 0}, state{domain.StatusIdle, code, 0}, "mid"},
+		{"by status, the newest", state{domain.StatusIdle, code, 0}, state{domain.StatusWaiting, code, 0}, state{domain.StatusWorking, code, 0}, "new"},
+		{"by surface, the oldest", state{domain.StatusWorking, code, 0}, state{domain.StatusWorking, desktop, 0}, state{domain.StatusWorking, desktop, 0}, "old"},
+		{"by surface, the middle", state{domain.StatusWorking, desktop, 0}, state{domain.StatusWorking, code, 0}, state{domain.StatusWorking, desktop, 0}, "mid"},
+		{"by surface, the newest", state{domain.StatusWorking, desktop, 0}, state{domain.StatusWorking, desktop, 0}, state{domain.StatusWorking, code, 0}, "new"},
+		{"by last activity, the oldest", state{domain.StatusWorking, code, time.Minute}, state{domain.StatusWorking, code, 0}, state{domain.StatusWorking, code, 0}, "old"},
+		{"by last activity, the middle", state{domain.StatusWorking, code, 0}, state{domain.StatusWorking, code, time.Minute}, state{domain.StatusWorking, code, 0}, "mid"},
+		{"by last activity, the newest", state{domain.StatusWorking, code, 0}, state{domain.StatusWorking, code, 0}, state{domain.StatusWorking, code, time.Minute}, "new"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var sessions []domain.Session
+			for i, st := range []state{tt.old, tt.mid, tt.new} {
+				sessions = append(sessions, session(ids[i], func(s *domain.Session) {
+					s.Status, s.Surface = st.status, st.surface
+					s.LastActivity = t0.Add(st.last)
+					s.Start = starts[ids[i]]
+				}))
+			}
+			// Every rotation and the reverse: the order of the input does
+			// not change the start.
+			for i := range 2 * len(sessions) {
+				in := slices.Clone(sessions)
+				if i >= len(in) {
+					slices.Reverse(in)
+				}
+				k := i % len(in)
+				in = append(in[k:], in[:k]...)
+				a := mustRender(t, in, presence.Settings{})
+				if !strings.HasSuffix(a.Details, "proj-"+tt.wantFocus) {
+					t.Errorf("order %d: details = %q, want the focus on %q", i, a.Details, tt.wantFocus)
+				}
+				if !a.Start.Equal(starts["old"]) {
+					t.Errorf("order %d: start = %v, want %v, the earliest start", i, a.Start, starts["old"])
+				}
+			}
+		})
+	}
+}
+
+func TestRenderStartWhenASessionCloses(t *testing.T) {
+	old := session("old", func(s *domain.Session) { s.Start = t0.Add(-3 * time.Hour) })
+	mid := session("mid", func(s *domain.Session) { s.Start = t0.Add(-2 * time.Hour) })
+	newest := session("new", func(s *domain.Session) { s.Start = t0.Add(-time.Hour) })
+	tests := []struct {
+		name     string
+		sessions []domain.Session
+		want     time.Time
+	}{
+		{"all open", []domain.Session{newest, old, mid}, old.Start},
+		{"the earliest closes", []domain.Session{newest, mid}, mid.Start},
+		{"the middle closes", []domain.Session{newest, old}, old.Start},
+		{"the newest closes", []domain.Session{mid, old}, old.Start},
+		{"the two earliest close", []domain.Session{newest}, newest.Start},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if a := mustRender(t, tt.sessions, presence.Settings{}); !a.Start.Equal(tt.want) {
+				t.Errorf("start = %v, want %v", a.Start, tt.want)
 			}
 		})
 	}
@@ -516,5 +621,39 @@ func TestPhrasesFitDiscord(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// An idle Claude Code session that is no longer shown is still open, so the
+// timer does not move when the card falls back to Claude Desktop.
+func TestRenderStartCountsSessionsThatAreSetAside(t *testing.T) {
+	const period = 15 * time.Minute
+	code := session("code", func(s *domain.Session) {
+		s.Status = domain.StatusIdle
+		s.Start = t0.Add(-3 * time.Hour)
+	})
+	app := session("app", func(s *domain.Session) {
+		s.Surface, s.Status = domain.SurfaceDesktop, domain.StatusIdle
+		s.Start = t0.Add(-time.Hour)
+	})
+	sessions := []domain.Session{app, code}
+	for _, tt := range []struct {
+		name        string
+		last        time.Time
+		wantSurface string
+	}{
+		{"before the period ends", now.Add(-period), "Claude Code"},
+		{"after the period ends", now.Add(-period - time.Nanosecond), "Claude Desktop"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			sessions[1].LastActivity = tt.last
+			a := mustRender(t, sessions, presence.Settings{IdleClear: period})
+			if a.LargeText != tt.wantSurface {
+				t.Errorf("the card shows %q, want %q", a.LargeText, tt.wantSurface)
+			}
+			if !a.Start.Equal(code.Start) {
+				t.Errorf("start = %v, want %v, the earliest start among the open sessions", a.Start, code.Start)
+			}
+		})
 	}
 }

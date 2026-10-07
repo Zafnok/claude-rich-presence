@@ -143,8 +143,8 @@ func TestMCPDesktopBesideAWorkingCodeSession(t *testing.T) {
 	app.initializeAs(clientDesktop)
 	w.passUntilStatus(t, app, "Role: host", "Discord: connected")
 
+	opened := w.clock.Now().Unix()
 	w.clock.Advance(time.Minute)
-	started := w.clock.Now().Unix()
 	w.sys.sessionID = func() string { return "code-session" }
 	coding := w.startSession(t)
 	coding.initialize()
@@ -158,8 +158,8 @@ func TestMCPDesktopBesideAWorkingCodeSession(t *testing.T) {
 	coding.request("tools/call", string(call))
 
 	got := w.passUntilShown(t, srv, "the Code session", func(c card) bool { return c.Details == "Claude Code" && c.State != "" })
-	if got.State != "Thinking · 2 sessions" || got.Timestamps.Start < started {
-		t.Errorf("Discord shows %+v, want the Code session thinking, a count of two, and its own timer from %d", got, started)
+	if got.State != "Thinking · 2 sessions" || got.Timestamps.Start != opened {
+		t.Errorf("Discord shows %+v, want the Code session thinking, a count of two, and the timer from %d, when the app opened a minute earlier", got, opened)
 	}
 
 	// The Code session ends, and the app is what is left.
